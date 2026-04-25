@@ -83,6 +83,7 @@ public sealed class Shipment
 
         Status = ShipmentStatus.Delivered;
         DeliveredAt = DateTimeOffset.UtcNow;
+        domainEvents.Add(new DeliveryConfirmedEvent(Id, OrderId, DeliveredAt.Value));
     }
 
     public void Cancel()

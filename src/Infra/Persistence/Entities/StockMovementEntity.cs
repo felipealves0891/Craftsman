@@ -12,6 +12,8 @@ public sealed class StockMovementEntity : IPersistenceEntity<Guid>
 
     public decimal Quantity { get; set; }
 
+    public decimal UnitCostAmount { get; set; }
+
     public string Reason { get; set; } = string.Empty;
 
     public string? BusinessReference { get; set; }

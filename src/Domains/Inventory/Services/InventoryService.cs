@@ -53,6 +53,8 @@ public sealed class InventoryService
 
         foreach (var requirement in materialRequirements)
         {
+            var averageUnitCost = await stockMovementRepository.GetAverageUnitCostAsync(requirement.RawMaterialId, cancellationToken);
+
             await stockMovementRepository.AddAsync(
                 new StockMovement(
                     Guid.NewGuid(),
@@ -60,7 +62,8 @@ public sealed class InventoryService
                     StockMovementType.Outbound,
                     requirement.RequiredQuantity,
                     "Production consumption",
-                    productionTaskId.ToString()),
+                    productionTaskId.ToString(),
+                    unitCostAmount: averageUnitCost),
                 cancellationToken);
         }
     }

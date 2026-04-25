@@ -60,6 +60,13 @@ public sealed class ShippingService
         }
 
         await shipmentRepository.UpdateAsync(shipment, cancellationToken);
+
+        foreach (var domainEvent in shipment.DomainEvents)
+        {
+            await domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
+        }
+
+        shipment.ClearDomainEvents();
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

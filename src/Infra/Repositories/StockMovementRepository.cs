@@ -42,6 +42,31 @@ public sealed class StockMovementRepository : IStockMovementRepository
         return movements.Sum(movement => movement.SignedQuantity);
     }
 
+    public async Task<IReadOnlyCollection<StockMovement>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        var movements = await dbContext.StockMovements
+            .OrderBy(movement => movement.OccurredAt)
+            .ToListAsync(cancellationToken);
+
+        return movements.Select(ToModel).ToList().AsReadOnly();
+    }
+
+    public async Task<decimal> GetAverageUnitCostAsync(Guid rawMaterialId, CancellationToken cancellationToken = default)
+    {
+        var inboundMovements = await dbContext.StockMovements
+            .Where(movement => movement.RawMaterialId == rawMaterialId && movement.Type == StockMovementType.Inbound.ToString())
+            .ToListAsync(cancellationToken);
+
+        var totalQuantity = inboundMovements.Sum(movement => movement.Quantity);
+
+        if (totalQuantity == 0)
+        {
+            return 0;
+        }
+
+        return inboundMovements.Sum(movement => movement.Quantity * movement.UnitCostAmount) / totalQuantity;
+    }
+
     private static StockMovement ToModel(StockMovementEntity entity)
     {
         return new StockMovement(
@@ -51,7 +76,8 @@ public sealed class StockMovementRepository : IStockMovementRepository
             entity.Quantity,
             entity.Reason,
             entity.BusinessReference,
-            entity.OccurredAt);
+            entity.OccurredAt,
+            entity.UnitCostAmount);
     }
 
     private static StockMovementEntity ToEntity(StockMovement movement)
@@ -62,6 +88,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
             RawMaterialId = movement.RawMaterialId,
             Type = movement.Type.ToString(),
             Quantity = movement.Quantity,
+            UnitCostAmount = movement.UnitCostAmount,
             Reason = movement.Reason,
             BusinessReference = movement.BusinessReference,
             OccurredAt = movement.OccurredAt

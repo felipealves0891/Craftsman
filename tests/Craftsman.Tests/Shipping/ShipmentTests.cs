@@ -27,4 +27,17 @@ public sealed class ShipmentTests
 
         Assert.Contains("expected InTransit", exception.Message);
     }
+
+    [Fact]
+    public void Delivered_shipment_records_delivery_event()
+    {
+        var shipment = new Shipment(Guid.NewGuid(), Guid.NewGuid(), "TRACK-1");
+
+        shipment.MarkInTransit();
+        shipment.MarkDelivered();
+
+        Assert.Equal(ShipmentStatus.Delivered, shipment.Status);
+        Assert.NotNull(shipment.DeliveredAt);
+        Assert.Contains(shipment.DomainEvents, domainEvent => domainEvent is DeliveryConfirmedEvent);
+    }
 }

@@ -1,4 +1,6 @@
 using Craftsman.Domain.Events;
+using Craftsman.Domain.Finance.Repositories;
+using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Integration.Services;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.Inventory.Services;
@@ -38,8 +40,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
         services.AddScoped<IProductionTaskRepository, ProductionTaskRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
+        services.AddScoped<IFinancialSettlementRepository, FinancialSettlementRepository>();
         services.AddScoped<InventoryService>();
         services.AddScoped<IProductionPlanner, ProductionPlanner>();
+        services.AddScoped<ISettlementCalculator, SettlementCalculator>();
         services.AddScoped<IOrderNormalizer, OrderNormalizer>();
         services.AddScoped<IOrderImportPipeline, OrderImportPipeline>();
         services.AddScoped<IOrderSource, InMemoryOrderSource>();
@@ -51,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDomainEventHandler<ProductionPlannedEvent>, DomainEventPersistenceHandler<ProductionPlannedEvent>>();
         services.AddScoped<IDomainEventHandler<ShipmentCreatedEvent>, DomainEventPersistenceHandler<ShipmentCreatedEvent>>();
         services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DomainEventPersistenceHandler<DeliveryConfirmedEvent>>();
+        services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DeliveryConfirmedSettlementHandler>();
         services.AddScoped<IDomainEventHandler<FinancialSettlementCalculatedEvent>, DomainEventPersistenceHandler<FinancialSettlementCalculatedEvent>>();
         services.AddSingleton<IApplicationCache, MemoryApplicationCache>();
 

@@ -16,6 +16,10 @@ public sealed class StockMovement
 
     public DateTimeOffset OccurredAt { get; }
 
+    public decimal UnitCostAmount { get; }
+
+    public decimal TotalCostAmount => Quantity * UnitCostAmount;
+
     public decimal SignedQuantity => Type switch
     {
         StockMovementType.Inbound => Quantity,
@@ -31,7 +35,8 @@ public sealed class StockMovement
         decimal quantity,
         string reason,
         string? businessReference,
-        DateTimeOffset? occurredAt = null)
+        DateTimeOffset? occurredAt = null,
+        decimal unitCostAmount = 0)
     {
         if (id == Guid.Empty)
         {
@@ -53,6 +58,11 @@ public sealed class StockMovement
             throw new ArgumentException("Reason is required.", nameof(reason));
         }
 
+        if (unitCostAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(unitCostAmount), "Unit cost cannot be negative.");
+        }
+
         Id = id;
         RawMaterialId = rawMaterialId;
         Type = type;
@@ -60,5 +70,6 @@ public sealed class StockMovement
         Reason = reason.Trim();
         BusinessReference = string.IsNullOrWhiteSpace(businessReference) ? null : businessReference.Trim();
         OccurredAt = occurredAt ?? DateTimeOffset.UtcNow;
+        UnitCostAmount = unitCostAmount;
     }
 }

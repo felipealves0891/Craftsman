@@ -9,4 +9,8 @@ public interface IStockMovementRepository
     Task<IReadOnlyCollection<StockMovement>> GetByRawMaterialAsync(Guid rawMaterialId, CancellationToken cancellationToken = default);
 
     Task<decimal> GetBalanceAsync(Guid rawMaterialId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<StockMovement>> ListAsync(CancellationToken cancellationToken = default);
+
+    Task<decimal> GetAverageUnitCostAsync(Guid rawMaterialId, CancellationToken cancellationToken = default);
 }

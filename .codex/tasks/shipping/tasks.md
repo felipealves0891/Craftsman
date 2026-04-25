@@ -26,9 +26,9 @@ Critérios de aceitação:
 - Atualizações inválidas de status são rejeitadas.
 
 ### SH-003 - Registrar entrega
-- [ ] Criar fluxo de confirmação de entrega.
-- [ ] Emitir evento de entrega confirmada.
-- [ ] Disponibilizar entrega como gatilho para cálculo financeiro.
+- [x] Criar fluxo de confirmação de entrega.
+- [x] Emitir evento de entrega confirmada.
+- [x] Disponibilizar entrega como gatilho para cálculo financeiro.
 
 Critérios de aceitação:
 - Entrega confirmada registra data de entrega.

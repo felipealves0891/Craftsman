@@ -7,6 +7,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<OrderQueryService>();
         services.AddScoped<ProductionScheduleService>();
         services.AddScoped<ShippingAppService>();
+        services.AddScoped<FinanceAppService>();
 
         return services;
     }

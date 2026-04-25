@@ -1,0 +1,26 @@
+@model Craftsman.App.Models.FinancialSettlementDetailViewModel
+
+@{
+    ViewData["Title"] = "Acerto financeiro";
+}
+
+<h1>Acerto financeiro</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Pedido</dt>
+    <dd class="col-sm-9">@Model.OrderId</dd>
+    <dt class="col-sm-3">Receita</dt>
+    <dd class="col-sm-9">@Model.RevenueAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo de produção</dt>
+    <dd class="col-sm-9">@Model.ProductionCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo de envio</dt>
+    <dd class="col-sm-9">@Model.ShippingCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo total</dt>
+    <dd class="col-sm-9">@Model.TotalCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Margem</dt>
+    <dd class="col-sm-9">@Model.MarginAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+    <dt class="col-sm-3">Calculado em</dt>
+    <dd class="col-sm-9">@Model.CalculatedAt.ToLocalTime().ToString("g")</dd>
+</dl>

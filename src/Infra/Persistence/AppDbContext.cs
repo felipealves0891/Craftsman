@@ -30,6 +30,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ShipmentEntity> Shipments => Set<ShipmentEntity>();
 
+    public DbSet<FinancialSettlementEntity> FinancialSettlements => Set<FinancialSettlementEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

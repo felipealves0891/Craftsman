@@ -16,6 +16,7 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
         builder.Property(movement => movement.RawMaterialId).HasColumnName("raw_material_id");
         builder.Property(movement => movement.Type).HasColumnName("type").HasMaxLength(50).IsRequired();
         builder.Property(movement => movement.Quantity).HasColumnName("quantity").HasPrecision(18, 4).IsRequired();
+        builder.Property(movement => movement.UnitCostAmount).HasColumnName("unit_cost_amount").HasPrecision(18, 2).IsRequired();
         builder.Property(movement => movement.Reason).HasColumnName("reason").HasMaxLength(300).IsRequired();
         builder.Property(movement => movement.BusinessReference).HasColumnName("business_reference").HasMaxLength(150);
         builder.Property(movement => movement.OccurredAt).HasColumnName("occurred_at").IsRequired();
