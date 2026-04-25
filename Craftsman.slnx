@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/App/">
+    <Project Path="src/App/Craftsman.csproj" />
+  </Folder>
+  <Folder Name="/src/Domains/">
+    <Project Path="src/Domains/Craftsman.Domains.csproj" />
+  </Folder>
+  <Folder Name="/src/Infra/">
+    <Project Path="src/Infra/Craftsman.Infra.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Craftsman.Tests/Craftsman.Tests.csproj" />
+  </Folder>
+</Solution>

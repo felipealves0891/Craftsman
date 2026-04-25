@@ -1,4 +1,4 @@
-# Architecture Tasks
+# Fase 1
 
 ## Objetivo
 Preparar a base da aplicação C# com Razor, DDD, separação por bounded contexts, Entity Framework com PostgreSQL, cache em memória e eventos de domínio.
@@ -6,10 +6,10 @@ Preparar a base da aplicação C# com Razor, DDD, separação por bounded contex
 ## Tarefas
 
 ### A-001 - Criar estrutura inicial do projeto
-- [x] Criar a estrutura de pastas `/App`, `/Domains` e `/Infra`.
-- [x] Separar `Controllers`, `Models`, `Views`, `wwwroot` e `Services` em `/App`.
-- [x] Separar `Repositories`, `Entities`, `ObjectValues`, `Services` e `Events` em cada domínio dentro de `/Domains`.
-- [x] Separar `Persistence`, `Configurations`, `Migrations`, `Repositories` e `Services` em `/Infra`.
+- [ ] Criar a estrutura de pastas `/App`, `/Domains` e `/Infra`.
+- [ ] Separar `Controllers`, `Models`, `Views`, `wwwroot` e `Services` em `/App`.
+- [ ] Separar `Repositories`, `Entities`, `ObjectValues`, `Services` e `Events` em `/Domains/Domain` onde Domain é o domnio criado exemplo: Sales, Finance, ProductCatalog.
+- [ ] Separar `Persistence`, `Configurations`, `Migrations`, `Repositories` e `Services` em `/Infra`.
 
 Critérios de aceitação:
 - A solução compila com a estrutura definida.
@@ -17,10 +17,10 @@ Critérios de aceitação:
 - A camada de domínio não referencia Entity Framework.
 
 ### A-002 - Configurar persistência com PostgreSQL e Entity Framework
-- [x] Configurar `DbContext` em `/Infra/Persistence`.
-- [x] Criar entidades de persistência separadas das entidades de domínio.
-- [x] Configurar migrations.
-- [x] Configurar string de conexão por ambiente.
+- [ ] Configurar `DbContext` em `/Infra/Persistence`.
+- [ ] Criar entidades de persistência separadas das entidades de domínio.
+- [ ] Configurar migrations.
+- [ ] Configurar string de conexão por ambiente.
 
 Critérios de aceitação:
 - O banco usado pela aplicação é PostgreSQL.
@@ -28,9 +28,9 @@ Critérios de aceitação:
 - Existe mapeamento explícito entre entidades de persistência e modelos de domínio/DTOs.
 
 ### A-003 - Definir contratos base de repositório por domínio
-- [x] Criar contratos de repositório na camada de domínio.
-- [x] Implementar repositórios na infraestrutura.
-- [x] Garantir que os repositórios façam o mapeamento entre DTOs/modelos internos e entidades de persistência.
+- [ ] Criar contratos de repositório na camada de domínio.
+- [ ] Implementar repositórios na infraestrutura.
+- [ ] Garantir que os repositórios façam o mapeamento entre DTOs/modelos internos e entidades de persistência.
 
 Critérios de aceitação:
 - A aplicação não acessa `DbContext` diretamente fora da infraestrutura.
@@ -38,9 +38,9 @@ Critérios de aceitação:
 - Os repositórios não contêm regras de negócio.
 
 ### A-004 - Implementar eventos de domínio
-- [x] Criar abstrações para eventos de domínio.
-- [x] Criar mecanismo simples de publicação interna de eventos.
-- [x] Registrar eventos principais do fluxo: pedido normalizado, produção planejada, envio criado, entrega confirmada e financeiro calculado.
+- [ ] Criar abstrações para eventos de domínio.
+- [ ] Criar mecanismo simples de publicação interna de eventos.
+- [ ] Registrar eventos principais do fluxo: pedido normalizado, produção planejada, envio criado, entrega confirmada e financeiro calculado.
 
 Critérios de aceitação:
 - Eventos representam fatos de negócio já ocorridos.
@@ -48,9 +48,9 @@ Critérios de aceitação:
 - Handlers podem ser adicionados sem alterar os serviços de domínio existentes.
 
 ### A-005 - Configurar cache em memória com invalidação
-- [x] Criar serviço de cache em memória.
-- [x] Definir estratégia de invalidação quando dados mudarem.
-- [x] Aplicar cache apenas em consultas apropriadas.
+- [ ] Criar serviço de cache em memória.
+- [ ] Definir estratégia de invalidação quando dados mudarem.
+- [ ] Aplicar cache apenas em consultas apropriadas.
 
 Critérios de aceitação:
 - Dados alterados invalidam entradas relacionadas no cache.
@@ -58,12 +58,12 @@ Critérios de aceitação:
 - O sistema continua funcionando corretamente com cache desativado.
 
 ### A-006 - Criar Dockerfile e docker-compose
-- [x] Criar `Dockerfile` para build e execução da aplicação C# com Razor.
-- [x] Criar `docker-compose.yml` com os serviços necessários para desenvolvimento.
-- [x] Configurar serviço da aplicação.
-- [x] Configurar serviço do PostgreSQL.
-- [x] Configurar variáveis de ambiente para conexão com banco de dados.
-- [x] Configurar volume persistente para dados do PostgreSQL.
+- [ ] Criar `Dockerfile` para build e execução da aplicação C# com Razor.
+- [ ] Criar `docker-compose.yml` com os serviços necessários para desenvolvimento.
+- [ ] Configurar serviço da aplicação.
+- [ ] Configurar serviço do PostgreSQL.
+- [ ] Configurar variáveis de ambiente para conexão com banco de dados.
+- [ ] Configurar volume persistente para dados do PostgreSQL.
 
 Critérios de aceitação:
 - A aplicação pode ser iniciada com `docker compose up`.

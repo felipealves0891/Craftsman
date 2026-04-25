@@ -11,7 +11,7 @@ O arquivo PRODUCT.md contém informações sobre o produto, leia e, em caso de d
 1. Leia as especificações no diretório /specs
 2. Gere tasks.md se ele não existir
 3. Implemente com base nas tarefas
-4. Crie testes automatizados
+4. Crie testes automatizados, unitarios e de integração
 5. Garanta que todos os critérios de aceitação sejam atendidos
 
 ## Testes

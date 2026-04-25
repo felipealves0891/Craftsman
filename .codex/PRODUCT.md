@@ -100,25 +100,26 @@ Para acesso a banco de dados, usaremos Entity Framework com uma representação 
 
 Estrutura de Pastas:
 ```
-/App
-  /Controllers
-  /Models
-  /Views
-  /wwwroot
-  /Services
-/Domains
-  /Domain
-    /Repositories
-    /Entities
-    /ObjectValues
+/src
+  /App
+    /Controllers
+    /Models
+    /Views
+    /wwwroot
     /Services
-    /Events
-/Infra
-  /Persistence
-    /Configurations
-    /Migrations
-    /Repositories
-    /Services
+  /Domains
+    /Domain
+      /Repositories
+      /Entities
+      /ObjectValues
+      /Services
+      /Events
+  /Infra
+    /Persistence
+      /Configurations
+      /Migrations
+      /Repositories
+      /Services
 ```
 
 ### Banco de Dados

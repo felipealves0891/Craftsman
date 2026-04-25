@@ -1,0 +1,10 @@
+**/.git
+**/.codex
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.templateengine
+**/.dotnet
+**/.nuget
+**/.aspnet
