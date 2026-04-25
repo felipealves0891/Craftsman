@@ -1,0 +1,39 @@
+@model IReadOnlyCollection<Craftsman.App.Models.ProductListItemViewModel>
+
+@{
+    ViewData["Title"] = "Produtos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Produtos</h1>
+    <div>
+        <a asp-action="Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
+        <a asp-action="Create" class="btn btn-primary">Novo produto</a>
+    </div>
+</div>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Status</th>
+            <th>Ficha tecnica</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model)
+        {
+            <tr>
+                <td>@product.Name</td>
+                <td>@product.Status</td>
+                <td>@product.BillOfMaterialsItems item(ns)</td>
+                <td class="text-end">
+                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id">Ficha tecnica</a>
+                    <span class="mx-1">|</span>
+                    <a asp-action="Edit" asp-route-id="@product.Id">Editar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -45,3 +45,29 @@ Critérios de aceitação:
 - Pedidos podem ser salvos e carregados com seus itens.
 - O mapeamento entre persistência e domínio é explícito.
 - Consultas de pedidos não expõem entidades do EF para a aplicação.
+
+### S-005 - Criar entrada manual de pedidos
+- [ ] Criar serviço de aplicação para cadastrar pedido manual.
+- [ ] Criar tela Razor para informar cliente, itens, quantidades e valores.
+- [ ] Registrar origem do pedido como `Manual`.
+- [ ] Emitir o mesmo evento de pedido normalizado usado por pedidos importados.
+- [ ] Persistir o pedido manual usando o mesmo repositório de pedidos.
+
+Critérios de aceitação:
+- Pedido manual gera o mesmo modelo interno de `Order` usado por integrações externas.
+- A origem manual fica registrada como metadado rastreável.
+- Itens, quantidades, valores e dados do cliente são obrigatórios conforme regras do domínio.
+- A tela não contém regra de negócio de normalização ou ciclo de vida.
+- Pedido manual pode seguir para mapeamento, produção, envio e financeiro sem fluxo especial.
+
+### S-006 - Permitir vínculo manual de itens do pedido a produtos internos
+- [ ] Exibir itens de pedido sem produto interno vinculado.
+- [ ] Permitir selecionar produto interno para cada item.
+- [ ] Atualizar o item do pedido preservando rastreabilidade do item externo/manual.
+- [ ] Impedir planejamento de produção para itens sem produto interno.
+
+Critérios de aceitação:
+- Item de pedido manual ou importado pode ser vinculado a um produto interno.
+- O vínculo não altera dados originais do item do pedido.
+- O processo não cria regra específica por origem.
+- O vínculo fica persistido e disponível para o planejador de produção.

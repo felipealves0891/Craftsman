@@ -1,0 +1,49 @@
+@model Craftsman.App.Models.ProductMappingInputModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Mapeamentos";
+    var products = ViewBag.Products as List<SelectListItem> ?? [];
+    var mappings = ViewBag.Mappings as IReadOnlyCollection<Craftsman.App.Models.ProductMappingListItemViewModel> ?? [];
+}
+
+<h1>Mapeamentos externos</h1>
+
+<form asp-action="Mappings" method="post" class="row g-3 mb-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-3">
+        <label asp-for="Source" class="form-label"></label>
+        <input asp-for="Source" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ExternalItemId" class="form-label"></label>
+        <input asp-for="ExternalItemId" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="ProductId" class="form-label"></label>
+        <select asp-for="ProductId" asp-items="products" class="form-select"></select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+    </div>
+</form>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Origem</th>
+            <th>Item externo</th>
+            <th>Produto</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var mapping in mappings)
+        {
+            <tr>
+                <td>@mapping.Source</td>
+                <td>@mapping.ExternalItemId</td>
+                <td>@mapping.ProductName</td>
+            </tr>
+        }
+    </tbody>
+</table>

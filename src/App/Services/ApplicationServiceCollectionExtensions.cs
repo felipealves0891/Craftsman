@@ -8,6 +8,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ProductionScheduleService>();
         services.AddScoped<ShippingAppService>();
         services.AddScoped<FinanceAppService>();
+        services.AddScoped<ManualOrderService>();
+        services.AddScoped<ProductCatalogAppService>();
+        services.AddScoped<InventoryAppService>();
 
         return services;
     }

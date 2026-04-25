@@ -44,3 +44,40 @@ Critérios de aceitação:
 - Produtos, mapeamentos e fichas técnicas podem ser salvos e carregados.
 - O domínio não referencia entidades de persistência.
 - Consultas de catálogo podem ser cacheadas e invalidadas quando houver alteração.
+
+### PC-005 - Criar cadastro manual de produtos
+- [ ] Criar serviço de aplicação para cadastrar e editar produtos.
+- [ ] Criar telas Razor para listar, criar, editar, ativar e inativar produtos.
+- [ ] Validar nome, status e dados mínimos para produção.
+- [ ] Persistir alterações pelo repositório do catálogo.
+- [ ] Invalidar cache de catálogo quando produto mudar.
+
+Critérios de aceitação:
+- Produto cadastrado manualmente usa a mesma entidade `Product` do domínio.
+- Produtos inativos não ficam disponíveis para novos planejamentos de produção.
+- A interface não acessa `DbContext` diretamente.
+- Alterações de produto invalidam consultas cacheadas relacionadas.
+
+### PC-006 - Criar manutenção manual de ficha técnica
+- [ ] Criar tela para informar matérias-primas e quantidades por produto.
+- [ ] Permitir substituir ficha técnica completa de um produto.
+- [ ] Validar materiais duplicados e quantidades inválidas.
+- [ ] Preservar pedidos já registrados quando ficha técnica mudar.
+
+Critérios de aceitação:
+- Ficha técnica manual é consultada pelo mesmo planejador de produção.
+- Ficha técnica vazia, duplicada ou com quantidade inválida é rejeitada.
+- Alterações em ficha técnica não alteram pedidos já existentes.
+- Alterações invalidam cache de catálogo relacionado.
+
+### PC-007 - Criar manutenção manual de mapeamentos externos
+- [ ] Criar tela para mapear origem e código externo a produto interno.
+- [ ] Permitir criar mapeamentos para origens externas e para origem manual quando necessário.
+- [ ] Bloquear conflitos de origem/código externo.
+- [ ] Persistir mapeamentos pelo repositório do catálogo.
+
+Critérios de aceitação:
+- Mapeamento manual usa a mesma regra de conflito do domínio.
+- O sistema não usa `if/else` por origem para resolver produto.
+- Mapeamentos ficam disponíveis para importação e planejamento.
+- Alterações invalidam cache de catálogo relacionado.

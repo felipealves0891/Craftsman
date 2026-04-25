@@ -1,0 +1,51 @@
+@model Craftsman.App.Models.OrderDetailViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Vincular itens";
+    var products = ViewBag.Products as List<SelectListItem> ?? [];
+}
+
+<h1>Vincular itens do pedido</h1>
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<p class="text-muted">@Model.Source - @Model.ExternalOrderId - @Model.CustomerName</p>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Item externo</th>
+            <th>Descricao</th>
+            <th>Quantidade</th>
+            <th>Produto atual</th>
+            <th>Novo produto</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.ExternalItemId</td>
+                <td>@item.Description</td>
+                <td>@item.Quantity</td>
+                <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
+                <td>
+                    <form asp-action="LinkItem" method="post" class="d-flex gap-2">
+                        <input type="hidden" name="orderId" value="@Model.Id" />
+                        <input type="hidden" name="itemId" value="@item.Id" />
+                        <select name="productId" class="form-select" asp-items="products"></select>
+                        <button type="submit" class="btn btn-primary">Vincular</button>
+                    </form>
+                </td>
+                <td></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Voltar</a>

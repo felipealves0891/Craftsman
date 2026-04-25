@@ -1,0 +1,36 @@
+@model IReadOnlyCollection<Craftsman.App.Models.RawMaterialListItemViewModel>
+
+@{
+    ViewData["Title"] = "Estoque";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Materias-primas</h1>
+    <div>
+        <a asp-action="Balances" class="btn btn-outline-secondary">Saldos</a>
+        <a asp-action="Movements" class="btn btn-outline-secondary">Movimentos</a>
+        <a asp-action="CreateMaterial" class="btn btn-primary">Nova materia-prima</a>
+    </div>
+</div>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Unidade</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var material in Model)
+        {
+            <tr>
+                <td>@material.Name</td>
+                <td>@material.UnitOfMeasure</td>
+                <td>@material.Status</td>
+                <td class="text-end"><a asp-action="EditMaterial" asp-route-id="@material.Id">Editar</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,71 @@
+@model Craftsman.App.Models.StockMovementInputModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Movimentos de estoque";
+    var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
+    var movements = ViewBag.Movements as IReadOnlyCollection<Craftsman.App.Models.StockMovementViewModel> ?? [];
+}
+
+<h1>Movimentos de estoque</h1>
+
+<form asp-action="Movements" method="post" class="row g-3 mb-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="col-md-3">
+        <label asp-for="RawMaterialId" class="form-label"></label>
+        <select asp-for="RawMaterialId" asp-items="rawMaterials" class="form-select"></select>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Type" class="form-label"></label>
+        <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select"></select>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Quantity" class="form-label"></label>
+        <input asp-for="Quantity" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="UnitCostAmount" class="form-label"></label>
+        <input asp-for="UnitCostAmount" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Reason" class="form-label"></label>
+        <input asp-for="Reason" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="BusinessReference" class="form-label"></label>
+        <input asp-for="BusinessReference" class="form-control" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Registrar</button>
+    </div>
+</form>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Materia-prima</th>
+            <th>Tipo</th>
+            <th>Quantidade</th>
+            <th>Custo unitario</th>
+            <th>Total</th>
+            <th>Motivo</th>
+            <th>Referencia</th>
+            <th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var movement in movements)
+        {
+            <tr>
+                <td>@movement.RawMaterialName</td>
+                <td>@movement.Type</td>
+                <td>@movement.Quantity</td>
+                <td>@movement.UnitCostAmount.ToString("C")</td>
+                <td>@movement.TotalCostAmount.ToString("C")</td>
+                <td>@movement.Reason</td>
+                <td>@movement.BusinessReference</td>
+                <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

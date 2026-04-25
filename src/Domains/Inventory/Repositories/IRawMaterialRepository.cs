@@ -6,6 +6,8 @@ public interface IRawMaterialRepository
 {
     Task<RawMaterial?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<RawMaterial>> ListAsync(CancellationToken cancellationToken = default);
+
     Task AddAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default);

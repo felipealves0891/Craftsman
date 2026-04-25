@@ -1,0 +1,39 @@
+@model Craftsman.App.Models.BillOfMaterialsInputModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Ficha tecnica";
+    var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
+}
+
+<h1>Ficha tecnica</h1>
+
+<form asp-action="BillOfMaterials" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input asp-for="ProductId" type="hidden" />
+
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Materia-prima</th>
+                <th>Quantidade por unidade</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Items.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <select asp-for="Items[i].RawMaterialId" asp-items="rawMaterials" class="form-select">
+                            <option value="">Selecione</option>
+                        </select>
+                    </td>
+                    <td><input asp-for="Items[i].QuantityPerUnit" class="form-control" /></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Salvar ficha tecnica</button>
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+</form>

@@ -24,6 +24,26 @@ public sealed class RawMaterialRepository : IRawMaterialRepository
         return entity is null ? null : ToModel(entity);
     }
 
+    public async Task<IReadOnlyCollection<RawMaterial>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        var cacheKey = "inventory:raw-materials";
+        if (cache is not null)
+        {
+            return await cache.GetOrCreateAsync(cacheKey, LoadMaterialsAsync, cancellationToken: cancellationToken);
+        }
+
+        return await LoadMaterialsAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyCollection<RawMaterial>> LoadMaterialsAsync(CancellationToken cancellationToken)
+    {
+        var entities = await dbContext.RawMaterials
+            .OrderBy(material => material.Name)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToModel).ToList().AsReadOnly();
+    }
+
     public async Task AddAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default)
     {
         await dbContext.RawMaterials.AddAsync(ToEntity(rawMaterial), cancellationToken);

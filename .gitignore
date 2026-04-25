@@ -482,6 +482,7 @@ $RECYCLE.BIN/
 *.swp
 
 # Dotnet Local
+.dotnet-home
 .dotnet
 .templateengine
 .nuget

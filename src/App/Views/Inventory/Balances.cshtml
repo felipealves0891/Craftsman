@@ -1,0 +1,29 @@
+@model IReadOnlyCollection<Craftsman.App.Models.InventoryBalanceViewModel>
+
+@{
+    ViewData["Title"] = "Saldos";
+}
+
+<h1>Saldos de estoque</h1>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Materia-prima</th>
+            <th>Saldo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var balance in Model)
+        {
+            <tr>
+                <td>@balance.RawMaterialName</td>
+                <td>@balance.Balance @balance.UnitOfMeasure</td>
+                <td class="text-end"><a asp-action="History" asp-route-id="@balance.RawMaterialId">Historico</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-outline-secondary">Voltar</a>

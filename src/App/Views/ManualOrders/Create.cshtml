@@ -1,0 +1,65 @@
+@model Craftsman.App.Models.ManualOrderInputModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Pedido manual";
+    var products = ViewBag.Products as List<SelectListItem> ?? [];
+}
+
+<h1>Pedido manual</h1>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label asp-for="Reference" class="form-label"></label>
+            <input asp-for="Reference" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="CustomerName" class="form-label"></label>
+            <input asp-for="CustomerName" class="form-control" />
+            <span asp-validation-for="CustomerName" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="CustomerEmail" class="form-label"></label>
+            <input asp-for="CustomerEmail" class="form-control" />
+            <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+        </div>
+    </div>
+
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Codigo externo</th>
+                <th>Descricao</th>
+                <th>Quantidade</th>
+                <th>Valor unitario</th>
+                <th>Produto interno</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Items.Count; i++)
+            {
+                <tr>
+                    <td><input asp-for="Items[i].ExternalItemId" class="form-control" /></td>
+                    <td><input asp-for="Items[i].Description" class="form-control" /></td>
+                    <td><input asp-for="Items[i].Quantity" class="form-control" /></td>
+                    <td><input asp-for="Items[i].UnitPriceAmount" class="form-control" /></td>
+                    <td>
+                        <select asp-for="Items[i].ProductId" asp-items="products" class="form-select">
+                            <option value="">Sem vinculo</option>
+                        </select>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Salvar pedido</button>
+    <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
