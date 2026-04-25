@@ -1,0 +1,56 @@
+@using Craftsman.Domain.Shipping.Entities
+@model IReadOnlyCollection<Craftsman.App.Models.ShipmentListItemViewModel>
+
+@{
+    ViewData["Title"] = "Envios";
+}
+
+<h1>Envios</h1>
+
+<p><a asp-action="Create" class="btn btn-primary">Criar envio</a></p>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-auto">
+        <select name="status" class="form-select">
+            <option value="">Todos</option>
+            @foreach (var status in Enum.GetValues<ShipmentStatus>())
+            {
+                <option value="@status" selected="@(ViewBag.Status == status)">@status</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-secondary">Filtrar</button>
+    </div>
+</form>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Pedido</th>
+            <th>Rastreio</th>
+            <th>Status</th>
+            <th>Criado em</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var shipment in Model)
+        {
+            <tr>
+                <td>@shipment.OrderId</td>
+                <td>@shipment.TrackingCode</td>
+                <td>@shipment.Status</td>
+                <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
+                <td>
+                    <form asp-action="UpdateStatus" method="post" class="d-inline">
+                        <input type="hidden" name="id" value="@shipment.Id" />
+                        <button type="submit" name="status" value="@ShipmentStatus.InTransit" class="btn btn-sm btn-outline-primary">Em trânsito</button>
+                        <button type="submit" name="status" value="@ShipmentStatus.DeliveryAttempted" class="btn btn-sm btn-outline-warning">Tentativa</button>
+                        <button type="submit" name="status" value="@ShipmentStatus.Cancelled" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

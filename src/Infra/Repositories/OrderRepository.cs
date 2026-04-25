@@ -1,6 +1,7 @@
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Sales.Repositories;
+using Craftsman.Domain.Services;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,13 @@ namespace Craftsman.Infra.Repositories;
 
 public sealed class OrderRepository : IOrderRepository
 {
+    private readonly IApplicationCache? cache;
     private readonly AppDbContext dbContext;
 
-    public OrderRepository(AppDbContext dbContext)
+    public OrderRepository(AppDbContext dbContext, IApplicationCache? cache = null)
     {
         this.dbContext = dbContext;
+        this.cache = cache;
     }
 
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -32,15 +35,36 @@ public sealed class OrderRepository : IOrderRepository
         return entity is null ? null : ToModel(entity);
     }
 
+    public async Task<IReadOnlyCollection<Order>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        if (cache is not null)
+        {
+            return await cache.GetOrCreateAsync("sales:orders:list", ListCoreAsync, cancellationToken: cancellationToken);
+        }
+
+        return await ListCoreAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Order order, CancellationToken cancellationToken = default)
     {
         await dbContext.Orders.AddAsync(ToEntity(order), cancellationToken);
+        cache?.RemoveByPrefix("sales:orders:");
     }
 
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
     {
         dbContext.Orders.Update(ToEntity(order));
+        cache?.RemoveByPrefix("sales:orders:");
         return Task.CompletedTask;
+    }
+
+    private async Task<IReadOnlyCollection<Order>> ListCoreAsync(CancellationToken cancellationToken)
+    {
+        var entities = await QueryOrders()
+            .OrderByDescending(order => order.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToModel).ToList().AsReadOnly();
     }
 
     private IQueryable<OrderEntity> QueryOrders()

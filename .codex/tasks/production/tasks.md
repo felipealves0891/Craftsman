@@ -26,9 +26,9 @@ Critérios de aceitação:
 - Produção não é planejada sem material suficiente.
 
 ### P-003 - Criar agenda de produção
-- [ ] Criar consulta de tarefas por status e data.
-- [ ] Criar visão Razor para acompanhamento da agenda.
-- [ ] Permitir avanço de status conforme regras definidas.
+- [x] Criar consulta de tarefas por status e data.
+- [x] Criar visão Razor para acompanhamento da agenda.
+- [x] Permitir avanço de status conforme regras definidas.
 
 Critérios de aceitação:
 - A agenda mostra tarefas pendentes, em produção e concluídas.

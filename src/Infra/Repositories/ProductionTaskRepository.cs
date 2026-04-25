@@ -1,5 +1,6 @@
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Repositories;
+using Craftsman.Domain.Services;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -8,11 +9,13 @@ namespace Craftsman.Infra.Repositories;
 
 public sealed class ProductionTaskRepository : IProductionTaskRepository
 {
+    private readonly IApplicationCache? cache;
     private readonly AppDbContext dbContext;
 
-    public ProductionTaskRepository(AppDbContext dbContext)
+    public ProductionTaskRepository(AppDbContext dbContext, IApplicationCache? cache = null)
     {
         this.dbContext = dbContext;
+        this.cache = cache;
     }
 
     public async Task<ProductionTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -21,15 +24,56 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         return entity is null ? null : ToModel(entity);
     }
 
+    public async Task<IReadOnlyCollection<ProductionTask>> ListAsync(
+        ProductionTaskStatus? status = null,
+        DateOnly? plannedDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = $"production:list:{status?.ToString() ?? "all"}:{plannedDate?.ToString("yyyyMMdd") ?? "all"}";
+
+        if (cache is not null)
+        {
+            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(status, plannedDate, token), cancellationToken: cancellationToken);
+        }
+
+        return await ListCoreAsync(status, plannedDate, cancellationToken);
+    }
+
     public async Task AddAsync(ProductionTask productionTask, CancellationToken cancellationToken = default)
     {
         await dbContext.ProductionTasks.AddAsync(ToEntity(productionTask), cancellationToken);
+        cache?.RemoveByPrefix("production:");
     }
 
     public Task UpdateAsync(ProductionTask productionTask, CancellationToken cancellationToken = default)
     {
         dbContext.ProductionTasks.Update(ToEntity(productionTask));
+        cache?.RemoveByPrefix("production:");
         return Task.CompletedTask;
+    }
+
+    private async Task<IReadOnlyCollection<ProductionTask>> ListCoreAsync(
+        ProductionTaskStatus? status,
+        DateOnly? plannedDate,
+        CancellationToken cancellationToken)
+    {
+        var query = dbContext.ProductionTasks.AsQueryable();
+
+        if (status is not null)
+        {
+            query = query.Where(task => task.Status == status.ToString());
+        }
+
+        if (plannedDate is not null)
+        {
+            var start = plannedDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var end = plannedDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            query = query.Where(task => task.PlannedAt >= start && task.PlannedAt < end);
+        }
+
+        var entities = await query.OrderByDescending(task => task.PlannedAt).ToListAsync(cancellationToken);
+
+        return entities.Select(ToModel).ToList().AsReadOnly();
     }
 
     private static ProductionTask ToModel(ProductionTaskEntity entity)

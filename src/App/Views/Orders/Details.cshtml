@@ -1,0 +1,86 @@
+@model Craftsman.App.Models.OrderDetailViewModel
+
+@{
+    ViewData["Title"] = "Pedido";
+}
+
+<h1>Pedido @Model.ExternalOrderId</h1>
+
+<dl class="row">
+    <dt class="col-sm-2">Origem</dt>
+    <dd class="col-sm-10">@Model.Source</dd>
+    <dt class="col-sm-2">Cliente</dt>
+    <dd class="col-sm-10">@Model.CustomerName</dd>
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10">@Model.Status</dd>
+</dl>
+
+<h2>Itens</h2>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Item externo</th>
+            <th>Descrição</th>
+            <th>Quantidade</th>
+            <th>Produto interno</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            <tr>
+                <td>@item.ExternalItemId</td>
+                <td>@item.Description</td>
+                <td>@item.Quantity</td>
+                <td>@item.ProductId</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Produção</h2>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Tarefa</th>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var task in Model.ProductionTasks)
+        {
+            <tr>
+                <td>@task.Id</td>
+                <td>@task.ProductId</td>
+                <td>@task.Quantity</td>
+                <td>@task.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Envios</h2>
+<p>
+    <a asp-controller="Shipments" asp-action="Create" asp-route-orderId="@Model.Id">Criar envio</a>
+</p>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Rastreio</th>
+            <th>Status</th>
+            <th>Criado em</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var shipment in Model.Shipments)
+        {
+            <tr>
+                <td>@shipment.TrackingCode</td>
+                <td>@shipment.Status</td>
+                <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

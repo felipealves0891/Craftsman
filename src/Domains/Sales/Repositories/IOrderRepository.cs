@@ -9,6 +9,8 @@ public interface IOrderRepository
 
     Task<Order?> GetByOriginAsync(OrderOrigin origin, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<Order>> ListAsync(CancellationToken cancellationToken = default);
+
     Task AddAsync(Order order, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Order order, CancellationToken cancellationToken = default);

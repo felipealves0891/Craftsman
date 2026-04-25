@@ -6,9 +6,9 @@ Acompanhar envio e entrega dos pedidos após a produção, mantendo rastreamento
 ## Tarefas
 
 ### SH-001 - Modelar envio
-- [ ] Criar entidade `Shipment`.
-- [ ] Relacionar envio ao pedido.
-- [ ] Definir status, código de rastreio e datas relevantes.
+- [x] Criar entidade `Shipment`.
+- [x] Relacionar envio ao pedido.
+- [x] Definir status, código de rastreio e datas relevantes.
 
 Critérios de aceitação:
 - Um envio possui rastreabilidade até o pedido.
@@ -16,9 +16,9 @@ Critérios de aceitação:
 - Código de rastreio é tratado como dado do envio, não como regra de negócio externa.
 
 ### SH-002 - Definir contrato de rastreamento
-- [ ] Criar contrato `IShippingTracker`.
-- [ ] Implementar serviço de aplicação para atualizar status de envio.
-- [ ] Manter baixo acoplamento com transportadoras ou APIs externas.
+- [x] Criar contrato `IShippingTracker`.
+- [x] Implementar serviço de aplicação para atualizar status de envio.
+- [x] Manter baixo acoplamento com transportadoras ou APIs externas.
 
 Critérios de aceitação:
 - O domínio não chama APIs externas diretamente.
@@ -36,9 +36,9 @@ Critérios de aceitação:
 - Não é possível confirmar entrega para envio inexistente.
 
 ### SH-004 - Criar visão de acompanhamento de envio
-- [ ] Listar envios por status.
-- [ ] Exibir pedido relacionado, rastreio e datas.
-- [ ] Permitir atualização controlada de status.
+- [x] Listar envios por status.
+- [x] Exibir pedido relacionado, rastreio e datas.
+- [x] Permitir atualização controlada de status.
 
 Critérios de aceitação:
 - A interface mostra o estado atual do envio.
@@ -46,9 +46,9 @@ Critérios de aceitação:
 - Atualizações passam por serviço de aplicação.
 
 ### SH-005 - Persistir envios
-- [ ] Criar entidades de persistência.
-- [ ] Criar configurações do EF.
-- [ ] Implementar repositório de envios.
+- [x] Criar entidades de persistência.
+- [x] Criar configurações do EF.
+- [x] Implementar repositório de envios.
 
 Critérios de aceitação:
 - Envios podem ser salvos e consultados por pedido e status.

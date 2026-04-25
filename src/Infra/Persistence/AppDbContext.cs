@@ -28,6 +28,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ProductionTaskEntity> ProductionTasks => Set<ProductionTaskEntity>();
 
+    public DbSet<ShipmentEntity> Shipments => Set<ShipmentEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

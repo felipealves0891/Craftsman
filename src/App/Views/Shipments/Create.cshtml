@@ -1,0 +1,21 @@
+@model Craftsman.App.Models.CreateShipmentInputModel
+
+@{
+    ViewData["Title"] = "Criar envio";
+}
+
+<h1>Criar envio</h1>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label asp-for="OrderId" class="form-label">Pedido</label>
+        <input asp-for="OrderId" class="form-control" />
+        <span asp-validation-for="OrderId" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="TrackingCode" class="form-label">Código de rastreio</label>
+        <input asp-for="TrackingCode" class="form-control" />
+        <span asp-validation-for="TrackingCode" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

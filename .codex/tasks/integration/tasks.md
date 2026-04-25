@@ -26,9 +26,9 @@ Critérios de aceitação:
 - A normalização não executa regras de produção, estoque ou financeiro.
 
 ### IN-003 - Criar pipeline de importação
-- [ ] Orquestrar leitura de fonte, normalização e persistência do pedido.
-- [ ] Registrar falhas de importação.
-- [ ] Emitir evento quando pedido for normalizado.
+- [x] Orquestrar leitura de fonte, normalização e persistência do pedido.
+- [x] Registrar falhas de importação.
+- [x] Emitir evento quando pedido for normalizado.
 
 Critérios de aceitação:
 - O fluxo segue `Importar -> Normalizar -> Produção`.
@@ -36,9 +36,9 @@ Critérios de aceitação:
 - A importação persiste somente pedidos normalizados válidos.
 
 ### IN-004 - Criar primeira integração simulada
-- [ ] Implementar fonte de pedidos em memória ou arquivo local para desenvolvimento.
-- [ ] Cobrir cenários de pedido válido e inválido.
-- [ ] Usar o mesmo contrato esperado para integrações reais.
+- [x] Implementar fonte de pedidos em memória ou arquivo local para desenvolvimento.
+- [x] Cobrir cenários de pedido válido e inválido.
+- [x] Usar o mesmo contrato esperado para integrações reais.
 
 Critérios de aceitação:
 - A integração simulada permite testar o fluxo sem API externa.

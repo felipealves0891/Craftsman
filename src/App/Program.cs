@@ -1,3 +1,4 @@
+using Craftsman.App.Services;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Services;
 using Microsoft.AspNetCore.DataProtection;
@@ -10,6 +11,7 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddCraftsmanApplication();
 builder.Services.AddCraftsmanInfrastructure(builder.Configuration);
 
 var app = builder.Build();

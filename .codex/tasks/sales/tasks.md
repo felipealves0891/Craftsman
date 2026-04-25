@@ -27,9 +27,9 @@ Critérios de aceitação:
 - O evento de pedido normalizado contém os dados necessários para o próximo passo do fluxo.
 
 ### S-003 - Criar serviço de aplicação para consulta e acompanhamento de pedidos
-- [ ] Criar listagem de pedidos.
-- [ ] Criar detalhe do pedido.
-- [ ] Exibir origem, status, itens e etapas relacionadas.
+- [x] Criar listagem de pedidos.
+- [x] Criar detalhe do pedido.
+- [x] Exibir origem, status, itens e etapas relacionadas.
 
 Critérios de aceitação:
 - A tela de acompanhamento usa o modelo interno.

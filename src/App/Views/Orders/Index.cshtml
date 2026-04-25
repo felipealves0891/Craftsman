@@ -1,0 +1,35 @@
+@model IReadOnlyCollection<Craftsman.App.Models.OrderListItemViewModel>
+
+@{
+    ViewData["Title"] = "Pedidos";
+}
+
+<h1>Pedidos</h1>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Origem</th>
+            <th>Pedido externo</th>
+            <th>Cliente</th>
+            <th>Status</th>
+            <th>Itens</th>
+            <th>Criado em</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model)
+        {
+            <tr>
+                <td>@order.Source</td>
+                <td>@order.ExternalOrderId</td>
+                <td>@order.CustomerName</td>
+                <td>@order.Status</td>
+                <td>@order.ItemCount</td>
+                <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
+                <td><a asp-action="Details" asp-route-id="@order.Id">Detalhes</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
