@@ -6,10 +6,10 @@ Receber pedidos de múltiplas fontes, normalizar para um modelo interno único e
 ## Tarefas
 
 ### S-001 - Modelar pedido interno
-- [ ] Criar entidade `Order`.
-- [ ] Criar itens do pedido.
-- [ ] Criar value objects necessários para identificadores, valores e status.
-- [ ] Registrar a origem do pedido apenas como metadado.
+- [x] Criar entidade `Order`.
+- [x] Criar itens do pedido.
+- [x] Criar value objects necessários para identificadores, valores e status.
+- [x] Registrar a origem do pedido apenas como metadado.
 
 Critérios de aceitação:
 - O pedido interno não depende do formato da origem externa.
@@ -17,9 +17,9 @@ Critérios de aceitação:
 - A origem não altera a regra de negócio do pedido.
 
 ### S-002 - Definir ciclo de vida do pedido
-- [ ] Definir status internos do pedido.
-- [ ] Validar transições permitidas.
-- [ ] Emitir evento quando o pedido for normalizado.
+- [x] Definir status internos do pedido.
+- [x] Validar transições permitidas.
+- [x] Emitir evento quando o pedido for normalizado.
 
 Critérios de aceitação:
 - Transições inválidas são bloqueadas.
@@ -37,9 +37,9 @@ Critérios de aceitação:
 - Pedidos de origens diferentes aparecem de forma consistente.
 
 ### S-004 - Persistir pedidos normalizados
-- [ ] Criar entidades de persistência para pedidos.
-- [ ] Criar configuração do EF.
-- [ ] Implementar repositório de pedidos.
+- [x] Criar entidades de persistência para pedidos.
+- [x] Criar configuração do EF.
+- [x] Implementar repositório de pedidos.
 
 Critérios de aceitação:
 - Pedidos podem ser salvos e carregados com seus itens.

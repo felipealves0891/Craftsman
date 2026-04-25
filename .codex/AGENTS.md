@@ -13,6 +13,7 @@ O arquivo PRODUCT.md contém informações sobre o produto, leia e, em caso de d
 3. Implemente com base nas tarefas
 4. Crie testes automatizados, unitarios e de integração
 5. Garanta que todos os critérios de aceitação sejam atendidos
+6. Sempre após de finalizar uma tarefa, marque ela como concluida
 
 ## Testes
 - Priorize a cobertura dos critérios de aceitação

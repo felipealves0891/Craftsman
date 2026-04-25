@@ -6,9 +6,9 @@ Manter produtos internos e mapear itens recebidos de pedidos para produtos usado
 ## Tarefas
 
 ### PC-001 - Modelar produto interno
-- [ ] Criar entidade `Product`.
-- [ ] Definir identificador interno, nome, status e dados necessários para produção.
-- [ ] Criar cadastro básico de produtos.
+- [x] Criar entidade `Product`.
+- [x] Definir identificador interno, nome, status e dados necessários para produção.
+- [x] Criar cadastro básico de produtos.
 
 Critérios de aceitação:
 - Produtos internos são independentes dos nomes ou códigos das origens externas.
@@ -16,9 +16,9 @@ Critérios de aceitação:
 - O produto possui dados mínimos para ser relacionado à ficha técnica.
 
 ### PC-002 - Criar mapeamento entre item externo e produto interno
-- [ ] Criar entidade ou value object para mapeamento de origem.
-- [ ] Permitir vincular código/nome externo a um produto interno.
-- [ ] Validar conflito de mapeamentos.
+- [x] Criar entidade ou value object para mapeamento de origem.
+- [x] Permitir vincular código/nome externo a um produto interno.
+- [x] Validar conflito de mapeamentos.
 
 Critérios de aceitação:
 - Um item de pedido pode ser resolvido para um produto interno.
@@ -26,9 +26,9 @@ Critérios de aceitação:
 - A lógica de mapeamento não usa `if/else` por origem.
 
 ### PC-003 - Modelar ficha técnica do produto
-- [ ] Definir materiais necessários por produto.
-- [ ] Definir quantidades necessárias por unidade produzida.
-- [ ] Expor consulta da ficha técnica para o planejamento de produção.
+- [x] Definir materiais necessários por produto.
+- [x] Definir quantidades necessárias por unidade produzida.
+- [x] Expor consulta da ficha técnica para o planejamento de produção.
 
 Critérios de aceitação:
 - A produção consegue consultar materiais e quantidades por produto.
@@ -36,9 +36,9 @@ Critérios de aceitação:
 - Alterações em ficha técnica não alteram pedidos já registrados.
 
 ### PC-004 - Persistir produtos, mapeamentos e fichas técnicas
-- [ ] Criar entidades de persistência.
-- [ ] Criar configurações do EF.
-- [ ] Implementar repositórios do catálogo.
+- [x] Criar entidades de persistência.
+- [x] Criar configurações do EF.
+- [x] Implementar repositórios do catálogo.
 
 Critérios de aceitação:
 - Produtos, mapeamentos e fichas técnicas podem ser salvos e carregados.
