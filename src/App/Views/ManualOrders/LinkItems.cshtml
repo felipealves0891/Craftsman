@@ -6,46 +6,68 @@
     var products = ViewBag.Products as List<SelectListItem> ?? [];
 }
 
-<h1>Vincular itens do pedido</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Pedido @Model.ExternalOrderId</span>
+        <h1>Vincular produtos internos</h1>
+        <p>@Model.Source - @Model.CustomerName</p>
+    </div>
+    <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Voltar</a>
+</section>
 
 @if (TempData["Error"] is string error)
 {
     <div class="alert alert-danger">@error</div>
 }
 
-<p class="text-muted">@Model.Source - @Model.ExternalOrderId - @Model.CustomerName</p>
-
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Item externo</th>
-            <th>Descricao</th>
-            <th>Quantidade</th>
-            <th>Produto atual</th>
-            <th>Novo produto</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
             <tr>
-                <td>@item.ExternalItemId</td>
-                <td>@item.Description</td>
-                <td>@item.Quantity</td>
-                <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
-                <td>
-                    <form asp-action="LinkItem" method="post" class="d-flex gap-2">
-                        <input type="hidden" name="orderId" value="@Model.Id" />
-                        <input type="hidden" name="itemId" value="@item.Id" />
-                        <select name="productId" class="form-select" asp-items="products"></select>
-                        <button type="submit" class="btn btn-primary">Vincular</button>
-                    </form>
-                </td>
-                <td></td>
+                <th>Item externo</th>
+                <th>Descricao</th>
+                <th>Quantidade</th>
+                <th>Produto atual</th>
+                <th>Novo produto</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.ExternalItemId</td>
+                    <td>@item.Description</td>
+                    <td>@item.Quantity</td>
+                    <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
+                    <td>
+                        <form asp-action="LinkItem" method="post" class="product-link-form">
+                            <input type="hidden" name="orderId" value="@Model.Id" />
+                            <input type="hidden" name="itemId" value="@item.Id" />
+                            <input type="search" class="form-control product-link-filter" placeholder="Filtrar" aria-label="Filtrar produtos internos" />
+                            <select name="productId" class="form-select" asp-items="products"></select>
+                            <button type="submit" class="btn btn-primary">Vincular</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 
-<a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Voltar</a>
+@section Scripts {
+    <script>
+        document.addEventListener('input', (event) => {
+            if (!event.target.classList.contains('product-link-filter')) {
+                return;
+            }
+
+            const form = event.target.closest('.product-link-form');
+            const select = form.querySelector('select');
+            const query = event.target.value.trim().toLowerCase();
+
+            [...select.options].forEach((option) => {
+                option.hidden = query.length > 0 && !option.text.toLowerCase().includes(query);
+            });
+        });
+    </script>
+}

@@ -1,5 +1,12 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var ordersActive = controller is "Import" or "Orders" or "ManualOrders";
+    var catalogActive = controller is "Products" or "Inventory";
+    var executionActive = controller is "Production" or "Shipments";
+    var financeActive = controller is "Finance";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,57 +16,57 @@
     <link rel="stylesheet" href="~/Craftsman.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Craftsman</a>
+    <header class="app-header">
+        <nav class="navbar navbar-expand-lg app-navbar">
+            <div class="container-fluid app-shell">
+                <a class="navbar-brand app-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="app-brand-mark">C</span>
+                    <span>Craftsman</span>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav app-nav ms-lg-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link @(ordersActive ? "active" : null)" asp-area="" asp-controller="Orders" asp-action="Index">Pedidos</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(catalogActive ? "active" : null)" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Catálogo e estoque</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Products" asp-action="Index">Produtos</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Products" asp-action="Mappings">Mapeamentos</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Index">Matérias-primas</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Balances">Saldos</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Movements">Movimentos</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(executionActive ? "active" : null)" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Execução</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Production" asp-action="Index">Produção</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Shipments" asp-action="Index">Envios</a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Import" asp-action="Index">Importação</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Orders" asp-action="Index">Pedidos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="ManualOrders" asp-action="Create">Pedido manual</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Products" asp-action="Index">Produtos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Inventory" asp-action="Index">Estoque</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Production" asp-action="Index">Produção</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Shipments" asp-action="Index">Envios</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Finance" asp-action="Index">Financeiro</a>
+                            <a class="nav-link @(financeActive ? "active" : null)" asp-area="" asp-controller="Finance" asp-action="Index">Financeiro</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <div class="container-fluid app-shell app-content">
+        <main role="main">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Craftsman - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <footer class="app-footer">
+        <div class="container-fluid app-shell">
+            <span>&copy; 2026 - Craftsman</span>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

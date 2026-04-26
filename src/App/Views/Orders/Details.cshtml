@@ -4,86 +4,146 @@
     ViewData["Title"] = "Pedido";
 }
 
-<h1>Pedido @Model.ExternalOrderId</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">@Model.Source</span>
+        <h1>Pedido @Model.ExternalOrderId</h1>
+        <p>@Model.CustomerName - @Model.Status</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
+</section>
 
-<dl class="row">
-    <dt class="col-sm-2">Origem</dt>
-    <dd class="col-sm-10">@Model.Source</dd>
-    <dt class="col-sm-2">Cliente</dt>
-    <dd class="col-sm-10">@Model.CustomerName</dd>
-    <dt class="col-sm-2">Status</dt>
-    <dd class="col-sm-10">@Model.Status</dd>
-</dl>
+<div class="metric-row mb-4">
+    <div class="metric-card metric-card-with-icon">
+        <span class="metric-icon text-center" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7" /></svg>
+        </span>
+        <div>
+            <span>Origem</span>
+            <strong>@Model.Source</strong>
+        </div>
+    </div>
+    <div class="metric-card metric-card-with-icon">
+        <span class="metric-icon text-center" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg>
+        </span>
+        <div>
+            <span>Cliente</span>
+            <strong>@Model.CustomerName</strong>
+        </div>
+    </div>
+    <div class="metric-card metric-card-with-icon">
+        <span class="metric-icon text-center" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6" /></svg>
+        </span>
+        <div>
+            <span>Status</span>
+            <strong>@Model.Status</strong>
+        </div>
+    </div>
+</div>
 
-<h2>Itens</h2>
-<p>
-    <a asp-controller="ManualOrders" asp-action="LinkItems" asp-route-id="@Model.Id">Vincular produtos internos</a>
-</p>
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Item externo</th>
-            <th>Descrição</th>
-            <th>Quantidade</th>
-            <th>Produto interno</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
-            <tr>
-                <td>@item.ExternalItemId</td>
-                <td>@item.Description</td>
-                <td>@item.Quantity</td>
-                <td>@item.ProductId</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<ul class="nav nav-tabs order-tabs" id="order-detail-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items-panel" type="button" role="tab" aria-controls="items-panel" aria-selected="true">
+            Itens
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-panel" type="button" role="tab" aria-controls="production-panel" aria-selected="false">
+            Producao
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="shipments-tab" data-bs-toggle="tab" data-bs-target="#shipments-panel" type="button" role="tab" aria-controls="shipments-panel" aria-selected="false">
+            Envios
+        </button>
+    </li>
+</ul>
 
-<h2>Produção</h2>
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Tarefa</th>
-            <th>Produto</th>
-            <th>Quantidade</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var task in Model.ProductionTasks)
-        {
-            <tr>
-                <td>@task.Id</td>
-                <td>@task.ProductId</td>
-                <td>@task.Quantity</td>
-                <td>@task.Status</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="tab-content order-tab-content">
+    <section class="tab-pane fade show active" id="items-panel" role="tabpanel" aria-labelledby="items-tab" tabindex="0">
+        <div class="section-toolbar">
+            <h2>Itens</h2>
+            <a asp-controller="ManualOrders" asp-action="LinkItems" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Vincular produtos internos</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Item externo</th>
+                        <th>Descricao</th>
+                        <th>Quantidade</th>
+                        <th>Produto interno</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.ExternalItemId</td>
+                            <td>@item.Description</td>
+                            <td>@item.Quantity</td>
+                            <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-<h2>Envios</h2>
-<p>
-    <a asp-controller="Shipments" asp-action="Create" asp-route-orderId="@Model.Id">Criar envio</a>
-</p>
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Rastreio</th>
-            <th>Status</th>
-            <th>Criado em</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var shipment in Model.Shipments)
-        {
-            <tr>
-                <td>@shipment.TrackingCode</td>
-                <td>@shipment.Status</td>
-                <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <section class="tab-pane fade" id="production-panel" role="tabpanel" aria-labelledby="production-tab" tabindex="0">
+        <h2>Producao</h2>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Tarefa</th>
+                        <th>Produto</th>
+                        <th>Quantidade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Model.ProductionTasks)
+                    {
+                        <tr>
+                            <td>@task.Id</td>
+                            <td>@task.ProductId</td>
+                            <td>@task.Quantity</td>
+                            <td>@task.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="tab-pane fade" id="shipments-panel" role="tabpanel" aria-labelledby="shipments-tab" tabindex="0">
+        <div class="section-toolbar">
+            <h2>Envios</h2>
+            <a asp-controller="Shipments" asp-action="Create" asp-route-orderId="@Model.Id" class="btn btn-outline-secondary">Criar envio</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Rastreio</th>
+                        <th>Status</th>
+                        <th>Criado em</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var shipment in Model.Shipments)
+                    {
+                        <tr>
+                            <td>@shipment.TrackingCode</td>
+                            <td>@shipment.Status</td>
+                            <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

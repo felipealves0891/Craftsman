@@ -1,8 +1,45 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Painel";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Operação artesanal conectada</span>
+        <h1>Painel Craftsman</h1>
+        <p>Controle pedidos, catálogo, estoque, produção, envios e financeiro em um fluxo único.</p>
+    </div>
+    <a asp-controller="ManualOrders" asp-action="Create" class="btn btn-primary">Novo pedido manual</a>
+</section>
+
+<section class="quick-grid">
+    <a asp-controller="Orders" asp-action="Index" class="quick-card">
+        <span class="quick-card-kicker">Operação</span>
+        <strong>Importar pedidos</strong>
+        <span>Entrada automatizada com rastreabilidade por origem.</span>
+    </a>
+    <a asp-controller="Orders" asp-action="Index" class="quick-card">
+        <span class="quick-card-kicker">Pedidos</span>
+        <strong>Acompanhar carteira</strong>
+        <span>Veja status, itens e vínculos com produção e envio.</span>
+    </a>
+    <a asp-controller="Products" asp-action="Index" class="quick-card">
+        <span class="quick-card-kicker">Catálogo</span>
+        <strong>Produtos e fichas técnicas</strong>
+        <span>Mantenha produtos internos e consumo de materiais.</span>
+    </a>
+    <a asp-controller="Inventory" asp-action="Balances" class="quick-card">
+        <span class="quick-card-kicker">Estoque</span>
+        <strong>Consultar saldos</strong>
+        <span>Audite movimentos e disponibilidade de matérias-primas.</span>
+    </a>
+    <a asp-controller="Production" asp-action="Index" class="quick-card">
+        <span class="quick-card-kicker">Execução</span>
+        <strong>Agenda de produção</strong>
+        <span>Planeje produção com base no pedido e no estoque.</span>
+    </a>
+    <a asp-controller="Finance" asp-action="Index" class="quick-card">
+        <span class="quick-card-kicker">Financeiro</span>
+        <strong>Margem pós-entrega</strong>
+        <span>Audite receita, custos reais e resultado por pedido.</span>
+    </a>
+</section>

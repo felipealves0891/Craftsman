@@ -1,11 +1,55 @@
-@model IReadOnlyCollection<Craftsman.App.Models.OrderListItemViewModel>
+@model Craftsman.App.Models.OrdersIndexViewModel
 
 @{
     ViewData["Title"] = "Pedidos";
 }
 
-<h1>Pedidos</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Operação</span>
+        <h1>Pedidos</h1>
+        <p>Importe pedidos externos, acompanhe a carteira e crie pedidos manuais quando necessário.</p>
+    </div>
+    <div class="page-actions">
+        <form asp-action="Import" method="post">
+            <button type="submit" class="btn btn-outline-secondary">Importar pedidos</button>
+        </form>
+        <a asp-controller="ManualOrders" asp-action="Create" class="btn btn-primary">Novo pedido</a>
+    </div>
+</section>
 
+@if (Model.LastImport is not null)
+{
+    <div class="metric-row mb-4">
+        <div class="metric-card">
+            <span>Importados</span>
+            <strong>@Model.LastImport.ImportedCount</strong>
+        </div>
+        <div class="metric-card">
+            <span>Ignorados</span>
+            <strong>@Model.LastImport.SkippedCount</strong>
+        </div>
+        <div class="metric-card">
+            <span>Falhas</span>
+            <strong>@Model.LastImport.Failures.Count</strong>
+        </div>
+    </div>
+
+    @if (Model.LastImport.Failures.Count > 0)
+    {
+        <div class="alert alert-danger">
+            <strong>Falhas na importação</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var failure in Model.LastImport.Failures)
+                {
+                    <li>@failure</li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+<div class="table-responsive">
 <table class="table table-striped align-middle">
     <thead>
         <tr>
@@ -19,7 +63,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var order in Model)
+        @foreach (var order in Model.Orders)
         {
             <tr>
                 <td>@order.Source</td>
@@ -33,3 +77,4 @@
         }
     </tbody>
 </table>
+</div>

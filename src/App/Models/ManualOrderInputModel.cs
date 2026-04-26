@@ -17,8 +17,6 @@ public sealed class ManualOrderInputModel
 
     public List<ManualOrderItemInputModel> Items { get; set; } =
     [
-        new(),
-        new(),
         new()
     ];
 }

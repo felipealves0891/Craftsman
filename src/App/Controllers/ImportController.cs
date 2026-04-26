@@ -1,33 +1,19 @@
-using Craftsman.App.Models;
-using Craftsman.Domain.Integration.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Craftsman.App.Controllers;
 
 public sealed class ImportController : Controller
 {
-    private readonly IOrderImportPipeline orderImportPipeline;
-
-    public ImportController(IOrderImportPipeline orderImportPipeline)
-    {
-        this.orderImportPipeline = orderImportPipeline;
-    }
-
     [HttpGet]
     public IActionResult Index()
     {
-        return View(new ImportResultViewModel(0, 0, []));
+        return RedirectToAction("Index", "Orders");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Run(CancellationToken cancellationToken)
+    public IActionResult Run()
     {
-        var result = await orderImportPipeline.ImportAsync(cancellationToken);
-
-        return View("Index", new ImportResultViewModel(
-            result.ImportedCount,
-            result.SkippedCount,
-            result.Failures.Select(failure => $"{failure.Source}/{failure.ExternalOrderId}: {failure.Reason}").ToList().AsReadOnly()));
+        return RedirectToAction("Index", "Orders");
     }
 }
