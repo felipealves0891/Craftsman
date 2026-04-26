@@ -45,17 +45,17 @@
 
 <ul class="nav nav-tabs order-tabs" id="order-detail-tabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items-panel" type="button" role="tab" aria-controls="items-panel" aria-selected="true">
+        <button class="nav-link active" id="items-tab" data-toggle="tab" data-target="#items-panel" type="button" role="tab" aria-controls="items-panel" aria-selected="true">
             Itens
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-panel" type="button" role="tab" aria-controls="production-panel" aria-selected="false">
-            Producao
+        <button class="nav-link" id="production-tab" data-toggle="tab" data-target="#production-panel" type="button" role="tab" aria-controls="production-panel" aria-selected="false">
+            Produção
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="shipments-tab" data-bs-toggle="tab" data-bs-target="#shipments-panel" type="button" role="tab" aria-controls="shipments-panel" aria-selected="false">
+        <button class="nav-link" id="shipments-tab" data-toggle="tab" data-target="#shipments-panel" type="button" role="tab" aria-controls="shipments-panel" aria-selected="false">
             Envios
         </button>
     </li>
@@ -72,7 +72,7 @@
                 <thead>
                     <tr>
                         <th>Item externo</th>
-                        <th>Descricao</th>
+                        <th>Descrição</th>
                         <th>Quantidade</th>
                         <th>Produto interno</th>
                     </tr>
@@ -84,7 +84,7 @@
                             <td>@item.ExternalItemId</td>
                             <td>@item.Description</td>
                             <td>@item.Quantity</td>
-                            <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
+                            <td>@(item.ProductId?.ToString() ?? "Sem vínculo")</td>
                         </tr>
                     }
                 </tbody>
@@ -93,7 +93,7 @@
     </section>
 
     <section class="tab-pane fade" id="production-panel" role="tabpanel" aria-labelledby="production-tab" tabindex="0">
-        <h2>Producao</h2>
+        <h2>Produção</h2>
         <div class="table-responsive">
             <table class="table table-sm">
                 <thead>

@@ -2,20 +2,27 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["Title"] = "Ficha tecnica";
+    ViewData["Title"] = "Ficha técnica";
     var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
 }
 
-<h1>Ficha tecnica</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Produtos</span>
+        <h1>Ficha técnica</h1>
+        <p>Defina as matérias-primas e quantidades consumidas por unidade produzida.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar para produtos</a>
+</section>
 
-<form asp-action="BillOfMaterials" method="post">
+<form asp-action="BillOfMaterials" method="post" class="form-panel">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input asp-for="ProductId" type="hidden" />
 
     <table class="table align-middle">
         <thead>
             <tr>
-                <th>Materia-prima</th>
+                <th>Matéria-prima</th>
                 <th>Quantidade por unidade</th>
             </tr>
         </thead>
@@ -34,6 +41,6 @@
         </tbody>
     </table>
 
-    <button type="submit" class="btn btn-primary">Salvar ficha tecnica</button>
+    <button type="submit" class="btn btn-primary">Salvar ficha técnica</button>
     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
 </form>

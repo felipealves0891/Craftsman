@@ -15,6 +15,10 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<ProductEntit
         builder.Property(product => product.Id).HasColumnName("id");
         builder.Property(product => product.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
         builder.Property(product => product.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
+        builder.Property(product => product.ProductionDurationDays)
+            .HasColumnName("production_duration_days")
+            .HasDefaultValue(1)
+            .IsRequired();
 
         builder.HasMany(product => product.BillOfMaterials)
             .WithOne(item => item.Product)

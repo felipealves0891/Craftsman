@@ -7,65 +7,92 @@
     var movements = ViewBag.Movements as IReadOnlyCollection<Craftsman.App.Models.StockMovementViewModel> ?? [];
 }
 
-<h1>Movimentos de estoque</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Estoque</span>
+        <h1>Movimentos de estoque</h1>
+        <p>Registre entradas, saídas e ajustes com custo e referência operacional.</p>
+    </div>
+    <a asp-action="Balances" class="btn btn-outline-secondary">Ver saldos</a>
+</section>
 
-<form asp-action="Movements" method="post" class="row g-3 mb-4">
+<form asp-action="Movements" method="post" class="form-panel mb-4">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    <div class="col-md-3">
-        <label asp-for="RawMaterialId" class="form-label"></label>
-        <select asp-for="RawMaterialId" asp-items="rawMaterials" class="form-select"></select>
-    </div>
-    <div class="col-md-2">
-        <label asp-for="Type" class="form-label"></label>
-        <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select"></select>
-    </div>
-    <div class="col-md-2">
-        <label asp-for="Quantity" class="form-label"></label>
-        <input asp-for="Quantity" class="form-control" />
-    </div>
-    <div class="col-md-2">
-        <label asp-for="UnitCostAmount" class="form-label"></label>
-        <input asp-for="UnitCostAmount" class="form-control" />
-    </div>
-    <div class="col-md-3">
-        <label asp-for="Reason" class="form-label"></label>
-        <input asp-for="Reason" class="form-control" />
-    </div>
-    <div class="col-md-4">
-        <label asp-for="BusinessReference" class="form-label"></label>
-        <input asp-for="BusinessReference" class="form-control" />
-    </div>
-    <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Registrar</button>
+    <div class="row">
+        <div class="col-md-3 form-group">
+            <label asp-for="RawMaterialId" class="form-label"></label>
+            <select asp-for="RawMaterialId" asp-items="rawMaterials" class="form-select"></select>
+        </div>
+        <div class="col-md-2 form-group">
+            <label asp-for="Type" class="form-label"></label>
+            <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select"></select>
+        </div>
+        <div class="col-md-2 form-group">
+            <label asp-for="Quantity" class="form-label"></label>
+            <input asp-for="Quantity" class="form-control" />
+        </div>
+        <div class="col-md-2 form-group">
+            <label asp-for="UnitCostAmount" class="form-label"></label>
+            <input asp-for="UnitCostAmount" class="form-control" />
+        </div>
+        <div class="col-md-3 form-group">
+            <label asp-for="Reason" class="form-label"></label>
+            <input asp-for="Reason" class="form-control" />
+        </div>
+        <div class="col-md-4 form-group">
+            <label asp-for="BusinessReference" class="form-label"></label>
+            <input asp-for="BusinessReference" class="form-control" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end form-group">
+            <button type="submit" class="btn btn-primary w-100">Registrar</button>
+        </div>
     </div>
 </form>
 
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Materia-prima</th>
-            <th>Tipo</th>
-            <th>Quantidade</th>
-            <th>Custo unitario</th>
-            <th>Total</th>
-            <th>Motivo</th>
-            <th>Referencia</th>
-            <th>Data</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var movement in movements)
-        {
-            <tr>
-                <td>@movement.RawMaterialName</td>
-                <td>@movement.Type</td>
-                <td>@movement.Quantity</td>
-                <td>@movement.UnitCostAmount.ToString("C")</td>
-                <td>@movement.TotalCostAmount.ToString("C")</td>
-                <td>@movement.Reason</td>
-                <td>@movement.BusinessReference</td>
-                <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Matéria-prima</th>
+                    <th>Tipo</th>
+                    <th>Quantidade</th>
+                    <th>Custo unitário</th>
+                    <th>Total</th>
+                    <th>Motivo</th>
+                    <th>Referência</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!movements.Any())
+                {
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <strong>Nenhum movimento registrado</strong>
+                                <span>Registre o primeiro movimento usando o formulário acima.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var movement in movements)
+                    {
+                        <tr>
+                            <td><strong>@movement.RawMaterialName</strong></td>
+                            <td>@movement.Type</td>
+                            <td>@movement.Quantity</td>
+                            <td>@movement.UnitCostAmount.ToString("C")</td>
+                            <td><strong>@movement.TotalCostAmount.ToString("C")</strong></td>
+                            <td>@movement.Reason</td>
+                            <td>@movement.BusinessReference</td>
+                            <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

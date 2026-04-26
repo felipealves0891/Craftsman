@@ -48,7 +48,14 @@ public sealed class StockMovement
             throw new ArgumentException("Raw material id is required.", nameof(rawMaterialId));
         }
 
-        if (quantity <= 0)
+        if (type == StockMovementType.Adjustment)
+        {
+            if (quantity == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(quantity), "Adjustment quantity cannot be zero.");
+            }
+        }
+        else if (quantity <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
         }

@@ -73,6 +73,16 @@ public sealed class InventoryAppService
         _ = await rawMaterialRepository.GetByIdAsync(input.RawMaterialId, cancellationToken)
             ?? throw new InvalidOperationException("Materia-prima nao encontrada.");
 
+        if (input.Type != StockMovementType.Adjustment && input.Quantity <= 0)
+        {
+            throw new InvalidOperationException("Quantidade deve ser maior que zero.");
+        }
+
+        if (input.Type == StockMovementType.Adjustment && input.Quantity == 0)
+        {
+            throw new InvalidOperationException("Ajuste de estoque nao pode ter quantidade zero.");
+        }
+
         if (input.Type == StockMovementType.Outbound)
         {
             var currentBalance = await stockMovementRepository.GetBalanceAsync(input.RawMaterialId, cancellationToken);

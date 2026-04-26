@@ -29,6 +29,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
     {
         var movements = await dbContext.StockMovements
             .Where(movement => movement.RawMaterialId == rawMaterialId)
+            .Where(movement => movement.Quantity != 0)
             .OrderBy(movement => movement.OccurredAt)
             .ToListAsync(cancellationToken);
 
@@ -45,6 +46,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
     public async Task<IReadOnlyCollection<StockMovement>> ListAsync(CancellationToken cancellationToken = default)
     {
         var movements = await dbContext.StockMovements
+            .Where(movement => movement.Quantity != 0)
             .OrderBy(movement => movement.OccurredAt)
             .ToListAsync(cancellationToken);
 
@@ -55,25 +57,31 @@ public sealed class StockMovementRepository : IStockMovementRepository
     {
         var inboundMovements = await dbContext.StockMovements
             .Where(movement => movement.RawMaterialId == rawMaterialId && movement.Type == StockMovementType.Inbound.ToString())
+            .Where(movement => movement.Quantity != 0)
             .ToListAsync(cancellationToken);
 
-        var totalQuantity = inboundMovements.Sum(movement => movement.Quantity);
+        var totalQuantity = inboundMovements.Sum(movement => Math.Abs(movement.Quantity));
 
         if (totalQuantity == 0)
         {
             return 0;
         }
 
-        return inboundMovements.Sum(movement => movement.Quantity * movement.UnitCostAmount) / totalQuantity;
+        return inboundMovements.Sum(movement => Math.Abs(movement.Quantity) * movement.UnitCostAmount) / totalQuantity;
     }
 
     private static StockMovement ToModel(StockMovementEntity entity)
     {
+        var type = Enum.Parse<StockMovementType>(entity.Type);
+        var quantity = type == StockMovementType.Adjustment
+            ? entity.Quantity
+            : Math.Abs(entity.Quantity);
+
         return new StockMovement(
             entity.Id,
             entity.RawMaterialId,
-            Enum.Parse<StockMovementType>(entity.Type),
-            entity.Quantity,
+            type,
+            quantity,
             entity.Reason,
             entity.BusinessReference,
             entity.OccurredAt,

@@ -6,6 +6,7 @@ public sealed record ProductionTaskListItemViewModel(
     Guid OrderItemId,
     Guid ProductId,
     int Quantity,
+    int ProductionDurationDays,
     string Status,
     DateTimeOffset PlannedAt,
     DateTimeOffset? StartedAt,

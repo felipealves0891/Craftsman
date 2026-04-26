@@ -1,77 +1,195 @@
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    var dashboardActive = controller == "Home";
     var ordersActive = controller is "Import" or "Orders" or "ManualOrders";
     var catalogActive = controller is "Products" or "Inventory";
     var executionActive = controller is "Production" or "Shipments";
-    var financeActive = controller is "Finance";
+    var financeActive = controller == "Finance";
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>@ViewData["Title"] - Craftsman</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/css/sb-admin-2/sb-admin-2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Craftsman.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
-    <header class="app-header">
-        <nav class="navbar navbar-expand-lg app-navbar">
-            <div class="container-fluid app-shell">
-                <a class="navbar-brand app-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <span class="app-brand-mark">C</span>
-                    <span>Craftsman</span>
+
+<body id="page-top">
+    <div id="wrapper">
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" asp-area="" asp-controller="Home"
+                   asp-action="Index">
+                @* <div class="sidebar-brand-icon rotate-n-15">
+                    <i class="fas fa-hammer"></i>
+                </div> *@
+                <img src="~/img/logo.png" alt="Craftsman" style="max-width: 40px; max-height: 40px;" />
+                <div class="sidebar-brand-text mx-3">Craftsman</div>
+            </a>
+
+            <hr class="sidebar-divider my-0" />
+
+            <li class="nav-item @(dashboardActive ? "active" : null)">
+                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Painel</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse">
-                    <ul class="navbar-nav app-nav ms-lg-4">
-                        <li class="nav-item">
-                            <a class="nav-link @(ordersActive ? "active" : null)" asp-area="" asp-controller="Orders" asp-action="Index">Pedidos</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle @(catalogActive ? "active" : null)" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Catálogo e estoque</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Products" asp-action="Index">Produtos</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Products" asp-action="Mappings">Mapeamentos</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Index">Matérias-primas</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Balances">Saldos</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Movements">Movimentos</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle @(executionActive ? "active" : null)" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Execução</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Production" asp-action="Index">Produção</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Shipments" asp-action="Index">Envios</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link @(financeActive ? "active" : null)" asp-area="" asp-controller="Finance" asp-action="Index">Financeiro</a>
+            </li>
+
+            <hr class="sidebar-divider" />
+            <div class="sidebar-heading">Operação</div>
+
+            <li class="nav-item @(ordersActive ? "active" : null)">
+                <a class="nav-link @(ordersActive ? null : "collapsed")" href="#" data-toggle="collapse"
+                       data-target="#collapseOrders" aria-expanded="@(ordersActive.ToString().ToLowerInvariant())"
+                       aria-controls="collapseOrders">
+                    <i class="fas fa-fw fa-shopping-cart"></i>
+                    <span>Pedidos</span>
+                </a>
+                <div id="collapseOrders" class="collapse @(ordersActive ? "show" : null)"
+                     aria-labelledby="headingOrders" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Vendas</h6>
+                        <a class="collapse-item @(controller == "Orders" ? "active" : null)" asp-area=""
+                           asp-controller="Orders" asp-action="Index">Carteira</a>
+                        <a class="collapse-item @(controller == "ManualOrders" && action == "Create" ? "active" : null)"
+                           asp-area="" asp-controller="ManualOrders" asp-action="Create">Pedido manual</a>
+                        <a class="collapse-item @(controller == "Import" ? "active" : null)" asp-area=""
+                           asp-controller="Import" asp-action="Index">Importação</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item @(catalogActive ? "active" : null)">
+                <a class="nav-link @(catalogActive ? null : "collapsed")" href="#" data-toggle="collapse"
+                       data-target="#collapseCatalog" aria-expanded="@(catalogActive.ToString().ToLowerInvariant())"
+                       aria-controls="collapseCatalog">
+                    <i class="fas fa-fw fa-boxes"></i>
+                    <span>Catálogo</span>
+                </a>
+                <div id="collapseCatalog" class="collapse @(catalogActive ? "show" : null)"
+                     aria-labelledby="headingCatalog" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Produtos e estoque</h6>
+                        <a class="collapse-item @(controller == "Products" && action == "Index" ? "active" : null)"
+                           asp-area="" asp-controller="Products" asp-action="Index">Produtos</a>
+                        <a class="collapse-item @(controller == "Products" && action == "Mappings" ? "active" : null)"
+                           asp-area="" asp-controller="Products" asp-action="Mappings">Mapeamentos</a>
+                        <a class="collapse-item @(controller == "Inventory" && action == "Index" ? "active" : null)"
+                           asp-area="" asp-controller="Inventory" asp-action="Index">Matérias-primas</a>
+                        <a class="collapse-item @(controller == "Inventory" && action == "Balances" ? "active" : null)"
+                           asp-area="" asp-controller="Inventory" asp-action="Balances">Saldos</a>
+                        <a class="collapse-item @(controller == "Inventory" && action == "Movements" ? "active" : null)"
+                           asp-area="" asp-controller="Inventory" asp-action="Movements">Movimentos</a>
+                    </div>
+                </div>
+            </li>
+
+            <hr class="sidebar-divider" />
+            <div class="sidebar-heading">Execução</div>
+
+            <li class="nav-item @(executionActive ? "active" : null)">
+                <a class="nav-link @(executionActive ? null : "collapsed")" href="#" data-toggle="collapse"
+                       data-target="#collapseExecution" aria-expanded="@(executionActive.ToString().ToLowerInvariant())"
+                       aria-controls="collapseExecution">
+                    <i class="fas fa-fw fa-industry"></i>
+                    <span>Fluxo</span>
+                </a>
+                <div id="collapseExecution" class="collapse @(executionActive ? "show" : null)"
+                     aria-labelledby="headingExecution" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Produção e envio</h6>
+                        <a class="collapse-item @(controller == "Production" ? "active" : null)" asp-area=""
+                           asp-controller="Production" asp-action="Index">Produção</a>
+                        <a class="collapse-item @(controller == "Shipments" ? "active" : null)" asp-area=""
+                           asp-controller="Shipments" asp-action="Index">Envios</a>
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item @(financeActive ? "active" : null)">
+                <a class="nav-link" asp-area="" asp-controller="Finance" asp-action="Index">
+                    <i class="fas fa-fw fa-dollar-sign"></i>
+                    <span>Financeiro</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider d-none d-md-block" />
+
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+        </ul>
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+                    <div class="d-none d-sm-inline-block text-gray-600 small">
+                        Gestão integrada de pedidos, produção, envios e margem
+                    </div>
+
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Operador</span>
+                                <i class="fas fa-user-circle fa-lg text-gray-400"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                 aria-labelledby="userDropdown">
+                                <a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="fas fa-tachometer-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Painel
+                                </a>
+                                <a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Privacy">
+                                    <i class="fas fa-shield-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Privacidade
+                                </a>
+                            </div>
                         </li>
                     </ul>
+                </nav>
+
+                <div class="container-fluid">
+                    <main role="main">
+                        @RenderBody()
+                    </main>
                 </div>
             </div>
-        </nav>
-    </header>
 
-    <div class="container-fluid app-shell app-content">
-        <main role="main">
-            @RenderBody()
-        </main>
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>&copy; 2026 - Craftsman</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
     </div>
 
-    <footer class="app-footer">
-        <div class="container-fluid app-shell">
-            <span>&copy; 2026 - Craftsman</span>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <script src="~/vendor/jquery/jquery.min.js"></script>
+    <script src="~/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="~/js/sb-admin-2.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

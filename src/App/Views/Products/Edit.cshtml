@@ -4,26 +4,42 @@
     ViewData["Title"] = Model.Id.HasValue ? "Editar produto" : "Novo produto";
 }
 
-<h1>@ViewData["Title"]</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Catálogo</span>
+        <h1>@ViewData["Title"]</h1>
+        <p>Defina as informações comerciais e o tempo necessário para concluir a produção.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar para produtos</a>
+</section>
 
-<form asp-action="Edit" method="post">
+<form asp-action="Edit" method="post" class="form-panel narrow-form">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input asp-for="Id" type="hidden" />
 
-    <div class="mb-3">
+    <div class="form-group">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
-    <div class="mb-3">
+    <div class="form-group">
         <label asp-for="Status" class="form-label"></label>
         <select asp-for="Status" asp-items="Html.GetEnumSelectList<Craftsman.Domain.ProductCatalog.Entities.ProductStatus>()" class="form-select"></select>
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Salvar</button>
-    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    <div class="form-group">
+        <label asp-for="ProductionDurationDays" class="form-label"></label>
+        <input asp-for="ProductionDurationDays" class="form-control" min="1" max="365" />
+        <small class="form-text text-muted">Use 1 para tarefas de um dia. Uma tarefa planejada para dia 20 com duração de 3 dias ocupará os dias 18, 19 e 20.</small>
+        <span asp-validation-for="ProductionDurationDays" class="text-danger"></span>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
 </form>
 
 @section Scripts {

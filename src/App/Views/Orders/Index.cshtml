@@ -2,6 +2,17 @@
 
 @{
     ViewData["Title"] = "Pedidos";
+
+    string StatusLabel(object status) => status.ToString() switch
+    {
+        "Normalized" => "Normalizado",
+        "ReadyForProduction" => "Pronto para produção",
+        "InProduction" => "Em produção",
+        "Shipped" => "Enviado",
+        "Delivered" => "Entregue",
+        "Cancelled" => "Cancelado",
+        _ => status.ToString() ?? "-"
+    };
 }
 
 <section class="page-heading">
@@ -49,32 +60,48 @@
     }
 }
 
-<div class="table-responsive">
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Origem</th>
-            <th>Pedido externo</th>
-            <th>Cliente</th>
-            <th>Status</th>
-            <th>Itens</th>
-            <th>Criado em</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var order in Model.Orders)
-        {
-            <tr>
-                <td>@order.Source</td>
-                <td>@order.ExternalOrderId</td>
-                <td>@order.CustomerName</td>
-                <td>@order.Status</td>
-                <td>@order.ItemCount</td>
-                <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
-                <td><a asp-action="Details" asp-route-id="@order.Id">Detalhes</a></td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Origem</th>
+                    <th>Pedido externo</th>
+                    <th>Cliente</th>
+                    <th>Status</th>
+                    <th>Itens</th>
+                    <th>Criado em</th>
+                    <th class="text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Orders.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <strong>Nenhum pedido na carteira</strong>
+                                <span>Importe pedidos ou crie um pedido manual para começar.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>@order.Source</td>
+                            <td><strong>@order.ExternalOrderId</strong></td>
+                            <td>@order.CustomerName</td>
+                            <td><span class="status-badge status-@order.Status.ToString().ToLowerInvariant()">@StatusLabel(order.Status)</span></td>
+                            <td>@order.ItemCount</td>
+                            <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
+                            <td class="text-right"><a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">Detalhes</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

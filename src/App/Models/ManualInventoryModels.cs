@@ -47,7 +47,6 @@ public sealed class StockMovementInputModel
     [Display(Name = "Tipo")]
     public StockMovementType Type { get; set; } = StockMovementType.Inbound;
 
-    [Range(0.0001, double.MaxValue)]
     [Display(Name = "Quantidade")]
     public decimal Quantity { get; set; }
 

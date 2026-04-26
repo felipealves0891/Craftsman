@@ -1,59 +1,178 @@
 @using Craftsman.Domain.Production.Entities
+@using System.Globalization
 @model IReadOnlyCollection<Craftsman.App.Models.ProductionTaskListItemViewModel>
 
 @{
     ViewData["Title"] = "Agenda de produção";
+    var culture = CultureInfo.GetCultureInfo("pt-BR");
+    var tasks = Model.OrderBy(task => task.PlannedAt.ToLocalTime()).ToList();
+    DateOnly? selectedDate = ViewBag.PlannedDate is DateOnly plannedDate ? plannedDate : null;
+    var referenceDate = selectedDate?.ToDateTime(TimeOnly.MinValue)
+        ?? tasks.FirstOrDefault()?.PlannedAt.ToLocalTime().Date
+        ?? DateTime.Today;
+    var monthStart = new DateTime(referenceDate.Year, referenceDate.Month, 1);
+    var monthTitle = culture.TextInfo.ToTitleCase(monthStart.ToString("MMMM yyyy", culture));
+    var daysInMonth = DateTime.DaysInMonth(monthStart.Year, monthStart.Month);
+    var leadingBlankDays = ((int)monthStart.DayOfWeek + 6) % 7;
+    var tasksByDay = tasks
+        .SelectMany(task =>
+        {
+            var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
+            var durationDays = Math.Max(task.ProductionDurationDays, 1);
+            var startDate = endDate.AddDays(-(durationDays - 1));
+
+            return Enumerable.Range(0, durationDays)
+                .Select(offset => new
+                {
+                    Date = startDate.AddDays(offset),
+                    Task = task,
+                    IsStart = offset == 0,
+                    IsEnd = offset == durationDays - 1
+                });
+        })
+        .GroupBy(item => item.Date)
+        .ToDictionary(group => group.Key, group => group.ToList());
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var visibleTaskCount = tasksByDay
+        .Where(group => group.Key.Year == monthStart.Year && group.Key.Month == monthStart.Month)
+        .SelectMany(group => group.Value.Select(item => item.Task.Id))
+        .Distinct()
+        .Count();
+
+    string StatusLabel(ProductionTaskStatus status) => status switch
+    {
+        ProductionTaskStatus.Planned => "Planejada",
+        ProductionTaskStatus.InProduction => "Em produção",
+        ProductionTaskStatus.Completed => "Concluída",
+        ProductionTaskStatus.Cancelled => "Cancelada",
+        _ => status.ToString()
+    };
+
+    string StatusLabelText(string status) => status switch
+    {
+        nameof(ProductionTaskStatus.Planned) => "Planejada",
+        nameof(ProductionTaskStatus.InProduction) => "Em produção",
+        nameof(ProductionTaskStatus.Completed) => "Concluída",
+        nameof(ProductionTaskStatus.Cancelled) => "Cancelada",
+        _ => status
+    };
 }
 
-<h1>Agenda de produção</h1>
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Execução</span>
+        <h1>Agenda de produção</h1>
+        <p>Filtre tarefas planejadas e avance cada pedido conforme o trabalho evolui.</p>
+    </div>
+</section>
 
-<form method="get" class="row g-2 mb-4">
-    <div class="col-auto">
-        <select name="status" class="form-select">
+<form method="get" class="filter-panel">
+    <div class="form-group">
+        <label for="status" class="form-label">Status</label>
+        <select id="status" name="status" class="form-select">
             <option value="">Todos</option>
             @foreach (var status in Enum.GetValues<ProductionTaskStatus>())
             {
-                <option value="@status" selected="@(ViewBag.Status == status)">@status</option>
+                <option value="@status" selected="@(ViewBag.Status == status)">@StatusLabel(status)</option>
             }
         </select>
     </div>
-    <div class="col-auto">
-        <input type="date" name="plannedDate" value="@ViewBag.PlannedDate" class="form-control" />
+    <div class="form-group">
+        <label for="plannedDate" class="form-label">Data planejada</label>
+        <input id="plannedDate" type="date" name="plannedDate" value="@ViewBag.PlannedDate" class="form-control" />
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-secondary">Filtrar</button>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
     </div>
 </form>
 
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Pedido</th>
-            <th>Produto</th>
-            <th>Quantidade</th>
-            <th>Status</th>
-            <th>Planejado em</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var task in Model)
-        {
-            <tr>
-                <td>@task.OrderId</td>
-                <td>@task.ProductId</td>
-                <td>@task.Quantity</td>
-                <td>@task.Status</td>
-                <td>@task.PlannedAt.ToLocalTime().ToString("g")</td>
-                <td>
-                    <form asp-action="Advance" method="post" class="d-inline">
-                        <input type="hidden" name="id" value="@task.Id" />
-                        <button type="submit" name="action" value="start" class="btn btn-sm btn-outline-primary">Iniciar</button>
-                        <button type="submit" name="action" value="complete" class="btn btn-sm btn-outline-success">Concluir</button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-sm btn-outline-danger">Cancelar</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<section class="production-calendar">
+    <div class="calendar-toolbar">
+        <div>
+            <span class="eyebrow">Calendário</span>
+            <h2>@monthTitle</h2>
+        </div>
+        <div class="calendar-summary">
+            <strong>@visibleTaskCount</strong>
+            <span>tarefas no mês</span>
+        </div>
+    </div>
+
+    @if (!tasks.Any())
+    {
+        <div class="empty-state">
+            <strong>Nenhuma tarefa encontrada</strong>
+            <span>Ajuste os filtros ou aguarde novos pedidos prontos para produção.</span>
+        </div>
+    }
+    else
+    {
+        <div class="calendar-weekdays" aria-hidden="true">
+            <span>Seg</span>
+            <span>Ter</span>
+            <span>Qua</span>
+            <span>Qui</span>
+            <span>Sex</span>
+            <span>Sáb</span>
+            <span>Dom</span>
+        </div>
+
+        <div class="calendar-grid">
+            @for (var i = 0; i < leadingBlankDays; i++)
+            {
+                <div class="calendar-day calendar-day-muted"></div>
+            }
+
+            @for (var day = 1; day <= daysInMonth; day++)
+            {
+                var currentDate = DateOnly.FromDateTime(new DateTime(monthStart.Year, monthStart.Month, day));
+                var hasTasks = tasksByDay.TryGetValue(currentDate, out var dayTasks);
+                var dayTaskCount = dayTasks?.Count ?? 0;
+                var dayClass = currentDate == today ? "calendar-day today" : "calendar-day";
+
+                <article class="@dayClass">
+                    <header class="calendar-day-header">
+                        <strong>@day</strong>
+                        @if (dayTaskCount > 0)
+                        {
+                            <span>@dayTaskCount tarefa(s)</span>
+                        }
+                    </header>
+
+                    <div class="calendar-day-tasks">
+                        @if (hasTasks && dayTasks is not null)
+                        {
+                            foreach (var item in dayTasks)
+                            {
+                                var task = item.Task;
+                                var rangeLabel = task.ProductionDurationDays <= 1
+                                    ? "1 dia"
+                                    : item.IsStart
+                                        ? $"Início - {task.ProductionDurationDays} dias"
+                                        : item.IsEnd
+                                            ? "Entrega planejada"
+                                            : "Em produção";
+
+                                <div class="calendar-task status-border-@task.Status.ToLowerInvariant()">
+                                    <div class="calendar-task-main">
+                                        <span class="status-badge status-@task.Status.ToLowerInvariant()">@StatusLabelText(task.Status)</span>
+                                        <span class="calendar-task-range">@rangeLabel</span>
+                                        <strong>Pedido @task.OrderId</strong>
+                                        <span>Produto @task.ProductId</span>
+                                        <span>@task.Quantity unidade(s) - prazo @task.PlannedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                    </div>
+                                    <form asp-action="Advance" method="post" class="calendar-task-actions">
+                                        <input type="hidden" name="id" value="@task.Id" />
+                                        <button type="submit" name="action" value="start" class="btn btn-sm btn-outline-primary">Iniciar</button>
+                                        <button type="submit" name="action" value="complete" class="btn btn-sm btn-outline-success">Concluir</button>
+                                        <button type="submit" name="action" value="cancel" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                    </form>
+                                </div>
+                            }
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

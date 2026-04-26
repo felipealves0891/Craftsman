@@ -32,4 +32,17 @@ public sealed class ProductTests
             new BillOfMaterialsItem(rawMaterialId, 2)
         ]));
     }
+
+    [Fact]
+    public void Product_production_duration_must_be_at_least_one_day()
+    {
+        var product = new Product(Guid.NewGuid(), "Caneca");
+
+        Assert.Equal(1, product.ProductionDurationDays);
+
+        product.SetProductionDuration(3);
+
+        Assert.Equal(3, product.ProductionDurationDays);
+        Assert.Throws<ArgumentOutOfRangeException>(() => product.SetProductionDuration(0));
+    }
 }

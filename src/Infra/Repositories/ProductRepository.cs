@@ -68,6 +68,7 @@ public sealed class ProductRepository : IProductRepository
         {
             entity.Name = product.Name;
             entity.Status = product.Status.ToString();
+            entity.ProductionDurationDays = product.ProductionDurationDays;
             entity.BillOfMaterials.Clear();
             foreach (var item in product.BillOfMaterials)
             {
@@ -90,7 +91,12 @@ public sealed class ProductRepository : IProductRepository
             item.RawMaterialId,
             item.QuantityPerUnit));
 
-        return new Product(entity.Id, entity.Name, Enum.Parse<ProductStatus>(entity.Status), billOfMaterials);
+        return new Product(
+            entity.Id,
+            entity.Name,
+            Enum.Parse<ProductStatus>(entity.Status),
+            entity.ProductionDurationDays,
+            billOfMaterials);
     }
 
     private static ProductEntity ToEntity(Product product)
@@ -100,6 +106,7 @@ public sealed class ProductRepository : IProductRepository
             Id = product.Id,
             Name = product.Name,
             Status = product.Status.ToString(),
+            ProductionDurationDays = product.ProductionDurationDays,
             BillOfMaterials = product.BillOfMaterials.Select(item => new BillOfMaterialsItemEntity
             {
                 Id = Guid.NewGuid(),

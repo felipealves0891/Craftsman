@@ -1,4 +1,5 @@
 using Craftsman.App.Models;
+using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Shipping.Repositories;
@@ -8,15 +9,18 @@ namespace Craftsman.App.Services;
 public sealed class OrderQueryService
 {
     private readonly IOrderRepository orderRepository;
+    private readonly IProductRepository productRepository;
     private readonly IProductionTaskRepository productionTaskRepository;
     private readonly IShipmentRepository shipmentRepository;
 
     public OrderQueryService(
         IOrderRepository orderRepository,
+        IProductRepository productRepository,
         IProductionTaskRepository productionTaskRepository,
         IShipmentRepository shipmentRepository)
     {
         this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
         this.productionTaskRepository = productionTaskRepository;
         this.shipmentRepository = shipmentRepository;
     }
@@ -45,6 +49,8 @@ public sealed class OrderQueryService
         }
 
         var productionTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
+        var products = await productRepository.ListAsync(cancellationToken);
+        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationDays);
         var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
 
         return new OrderDetailViewModel(
@@ -63,7 +69,11 @@ public sealed class OrderQueryService
                 item.UnitPrice.Amount,
                 item.UnitPrice.Currency,
                 item.ProductId)).ToList().AsReadOnly(),
-            productionTasks.Where(task => task.OrderId == order.Id).Select(ProductionScheduleService.ToViewModel).ToList().AsReadOnly(),
+            productionTasks
+                .Where(task => task.OrderId == order.Id)
+                .Select(task => ProductionScheduleService.ToViewModel(task, durationsByProduct.GetValueOrDefault(task.ProductId, 1)))
+                .ToList()
+                .AsReadOnly(),
             shipments.Where(shipment => shipment.OrderId == order.Id).Select(ShippingAppService.ToViewModel).ToList().AsReadOnly());
     }
 }

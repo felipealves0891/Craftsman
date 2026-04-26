@@ -4,36 +4,61 @@
     ViewData["Title"] = "Produtos";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Produtos</h1>
+<section class="page-heading">
     <div>
+        <span class="eyebrow">Catálogo</span>
+        <h1>Produtos</h1>
+        <p>Organize produtos internos, mapeamentos externos e fichas técnicas de produção.</p>
+    </div>
+    <div class="page-actions">
         <a asp-action="Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
         <a asp-action="Create" class="btn btn-primary">Novo produto</a>
     </div>
-</div>
+</section>
 
-<table class="table table-striped align-middle">
-    <thead>
-        <tr>
-            <th>Nome</th>
-            <th>Status</th>
-            <th>Ficha tecnica</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var product in Model)
-        {
-            <tr>
-                <td>@product.Name</td>
-                <td>@product.Status</td>
-                <td>@product.BillOfMaterialsItems item(ns)</td>
-                <td class="text-end">
-                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id">Ficha tecnica</a>
-                    <span class="mx-1">|</span>
-                    <a asp-action="Edit" asp-route-id="@product.Id">Editar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Status</th>
+                    <th>Produção</th>
+                    <th>Ficha técnica</th>
+                    <th class="text-right">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <strong>Nenhum produto cadastrado</strong>
+                                <span>Crie um produto para montar ficha técnica e vincular itens importados.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var product in Model)
+                    {
+                        <tr>
+                            <td><strong>@product.Name</strong></td>
+                            <td><span class="status-badge status-@product.Status.ToString().ToLowerInvariant()">@product.Status</span></td>
+                            <td>@product.ProductionDurationDays dia(s)</td>
+                            <td>@product.BillOfMaterialsItems item(ns)</td>
+                            <td class="text-right">
+                                <div class="table-actions">
+                                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Ficha técnica</a>
+                                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

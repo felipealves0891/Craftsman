@@ -20,12 +20,13 @@
     <div class="alert alert-danger">@error</div>
 }
 
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
+<div class="table-panel">
+    <div class="table-responsive">
+    <table class="table table-hover align-middle">
         <thead>
             <tr>
                 <th>Item externo</th>
-                <th>Descricao</th>
+                <th>Descrição</th>
                 <th>Quantidade</th>
                 <th>Produto atual</th>
                 <th>Novo produto</th>
@@ -38,7 +39,7 @@
                     <td>@item.ExternalItemId</td>
                     <td>@item.Description</td>
                     <td>@item.Quantity</td>
-                    <td>@(item.ProductId?.ToString() ?? "Sem vinculo")</td>
+                    <td>@(item.ProductId?.ToString() ?? "Sem vínculo")</td>
                     <td>
                         <form asp-action="LinkItem" method="post" class="product-link-form">
                             <input type="hidden" name="orderId" value="@Model.Id" />
@@ -52,6 +53,7 @@
             }
         </tbody>
     </table>
+    </div>
 </div>
 
 @section Scripts {

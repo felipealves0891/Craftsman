@@ -8,6 +8,8 @@ public sealed class ProductEntity : IPersistenceEntity<Guid>
 
     public string Status { get; set; } = string.Empty;
 
+    public int ProductionDurationDays { get; set; } = 1;
+
     public List<BillOfMaterialsItemEntity> BillOfMaterials { get; set; } = [];
 
     public List<ProductMappingEntity> Mappings { get; set; } = [];

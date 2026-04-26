@@ -4,7 +4,7 @@ namespace Craftsman.App.Models;
 
 public sealed class ManualOrderInputModel
 {
-    [Display(Name = "Referencia manual")]
+    [Display(Name = "Referência manual")]
     public string? Reference { get; set; }
 
     [Required]
@@ -23,10 +23,10 @@ public sealed class ManualOrderInputModel
 
 public sealed class ManualOrderItemInputModel
 {
-    [Display(Name = "Codigo externo")]
+    [Display(Name = "Código externo")]
     public string? ExternalItemId { get; set; }
 
-    [Display(Name = "Descricao")]
+    [Display(Name = "Descrição")]
     public string Description { get; set; } = string.Empty;
 
     [Range(0, int.MaxValue)]
@@ -34,7 +34,7 @@ public sealed class ManualOrderItemInputModel
     public int Quantity { get; set; }
 
     [Range(0, double.MaxValue)]
-    [Display(Name = "Valor unitario")]
+    [Display(Name = "Valor unitário")]
     public decimal UnitPriceAmount { get; set; }
 
     [Display(Name = "Produto interno")]

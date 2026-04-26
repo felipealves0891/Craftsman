@@ -10,6 +10,8 @@ public sealed class Product
 
     public ProductStatus Status { get; private set; }
 
+    public int ProductionDurationDays { get; private set; }
+
     public IReadOnlyCollection<BillOfMaterialsItem> BillOfMaterials => billOfMaterials.AsReadOnly();
 
     public bool CanBePlannedForProduction => Status == ProductStatus.Active && billOfMaterials.Count > 0;
@@ -18,6 +20,7 @@ public sealed class Product
         Guid id,
         string name,
         ProductStatus status = ProductStatus.Active,
+        int productionDurationDays = 1,
         IEnumerable<BillOfMaterialsItem>? billOfMaterials = null)
     {
         if (id == Guid.Empty)
@@ -33,6 +36,7 @@ public sealed class Product
         Id = id;
         Name = name.Trim();
         Status = status;
+        SetProductionDuration(productionDurationDays);
         this.billOfMaterials = billOfMaterials?.ToList() ?? [];
     }
 
@@ -54,6 +58,16 @@ public sealed class Product
     public void Deactivate()
     {
         Status = ProductStatus.Inactive;
+    }
+
+    public void SetProductionDuration(int days)
+    {
+        if (days <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(days), "Production duration must be at least one day.");
+        }
+
+        ProductionDurationDays = days;
     }
 
     public void ReplaceBillOfMaterials(IEnumerable<BillOfMaterialsItem> items)

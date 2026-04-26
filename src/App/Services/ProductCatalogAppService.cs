@@ -38,6 +38,7 @@ public sealed class ProductCatalogAppService
                 product.Id,
                 product.Name,
                 product.Status.ToString(),
+                product.ProductionDurationDays,
                 product.BillOfMaterials.Count))
             .ToList()
             .AsReadOnly();
@@ -49,14 +50,20 @@ public sealed class ProductCatalogAppService
 
         return product is null
             ? null
-            : new ProductInputModel { Id = product.Id, Name = product.Name, Status = product.Status };
+            : new ProductInputModel
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Status = product.Status,
+                ProductionDurationDays = product.ProductionDurationDays
+            };
     }
 
     public async Task<Guid> SaveProductAsync(ProductInputModel input, CancellationToken cancellationToken = default)
     {
         if (input.Id is null || input.Id == Guid.Empty)
         {
-            var product = new Product(Guid.NewGuid(), input.Name, input.Status);
+            var product = new Product(Guid.NewGuid(), input.Name, input.Status, input.ProductionDurationDays);
             await productRepository.AddAsync(product, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -67,6 +74,7 @@ public sealed class ProductCatalogAppService
             ?? throw new InvalidOperationException("Produto nao encontrado.");
 
         existing.Rename(input.Name);
+        existing.SetProductionDuration(input.ProductionDurationDays);
         if (input.Status == ProductStatus.Active)
         {
             existing.Activate();
