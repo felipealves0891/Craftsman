@@ -1,5 +1,6 @@
 using Craftsman.Domain.ProductCatalog.Entities;
 using Craftsman.Domain.ProductCatalog.Services;
+using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Infra.Persistence;
@@ -91,6 +92,31 @@ public sealed class PersistenceRepositoryTests
         Assert.Equal(StockMovementType.Adjustment, movement.Type);
         Assert.Equal(-2, movement.Quantity);
         Assert.Equal(-2, await repository.GetBalanceAsync(rawMaterialId));
+    }
+
+    [Fact]
+    public async Task Production_task_repository_updates_loaded_task_without_tracking_conflict()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new ProductionTaskRepository(dbContext);
+        var task = new ProductionTask(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+
+        await repository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+
+        var loaded = await repository.GetByIdAsync(task.Id);
+        Assert.NotNull(loaded);
+
+        loaded.Start();
+        await repository.UpdateAsync(loaded);
+        await dbContext.SaveChangesAsync();
+
+        dbContext.ChangeTracker.Clear();
+        var persisted = await repository.GetByIdAsync(task.Id);
+
+        Assert.NotNull(persisted);
+        Assert.Equal(ProductionTaskStatus.InProduction, persisted.Status);
+        Assert.NotNull(persisted.StartedAt);
     }
 
     private static AppDbContext CreateDbContext()

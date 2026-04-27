@@ -40,7 +40,7 @@ public sealed class ProductionPlanner : IProductionPlanner
 
             if (!availability.IsAvailable)
             {
-                throw new InvalidOperationException("Production cannot be planned with insufficient material.");
+                throw new InvalidOperationException($"Production cannot be planned with insufficient material: {string.Join(", ", availability.MissingMaterials)}.");
             }
 
             var productionTask = new ProductionTask(Guid.NewGuid(), order.Id, item.Id, product.Id, item.Quantity);

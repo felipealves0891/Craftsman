@@ -22,3 +22,6 @@ O arquivo PRODUCT.md contém informações sobre o produto, leia e, em caso de d
 ## Restrições
 - Não invente requisitos que não estejam descritos
 - Não altere o comportamento sem atualizar a especificação
+
+## Observações
+- Quando for fazer o build, use a variavel de ambiente DOTNET_CLI_HOME=D:\Source\Repos\Dotnet\Craftsman\.dotnet-home\.dotnet

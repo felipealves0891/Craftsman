@@ -45,11 +45,22 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         cache?.RemoveByPrefix("production:");
     }
 
-    public Task UpdateAsync(ProductionTask productionTask, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(ProductionTask productionTask, CancellationToken cancellationToken = default)
     {
-        dbContext.ProductionTasks.Update(ToEntity(productionTask));
+        var entity = await dbContext.ProductionTasks.FirstOrDefaultAsync(
+            existing => existing.Id == productionTask.Id,
+            cancellationToken);
+
+        if (entity is null)
+        {
+            dbContext.ProductionTasks.Update(ToEntity(productionTask));
+        }
+        else
+        {
+            MapToEntity(productionTask, entity);
+        }
+
         cache?.RemoveByPrefix("production:");
-        return Task.CompletedTask;
     }
 
     private async Task<IReadOnlyCollection<ProductionTask>> ListCoreAsync(
@@ -93,17 +104,21 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
 
     private static ProductionTaskEntity ToEntity(ProductionTask productionTask)
     {
-        return new ProductionTaskEntity
-        {
-            Id = productionTask.Id,
-            OrderId = productionTask.OrderId,
-            OrderItemId = productionTask.OrderItemId,
-            ProductId = productionTask.ProductId,
-            Quantity = productionTask.Quantity,
-            Status = productionTask.Status.ToString(),
-            PlannedAt = productionTask.PlannedAt,
-            StartedAt = productionTask.StartedAt,
-            CompletedAt = productionTask.CompletedAt
-        };
+        var entity = new ProductionTaskEntity();
+        MapToEntity(productionTask, entity);
+        return entity;
+    }
+
+    private static void MapToEntity(ProductionTask productionTask, ProductionTaskEntity entity)
+    {
+        entity.Id = productionTask.Id;
+        entity.OrderId = productionTask.OrderId;
+        entity.OrderItemId = productionTask.OrderItemId;
+        entity.ProductId = productionTask.ProductId;
+        entity.Quantity = productionTask.Quantity;
+        entity.Status = productionTask.Status.ToString();
+        entity.PlannedAt = productionTask.PlannedAt;
+        entity.StartedAt = productionTask.StartedAt;
+        entity.CompletedAt = productionTask.CompletedAt;
     }
 }

@@ -3,12 +3,14 @@ using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Craftsman.Domain.Production.Services;
 
 public sealed class OrderProductionPlanningService
 {
     private readonly IDomainEventPublisher domainEventPublisher;
+    private readonly ILogger<OrderProductionPlanningService> logger;
     private readonly IOrderRepository orderRepository;
     private readonly IProductionPlanner productionPlanner;
     private readonly IProductionTaskRepository productionTaskRepository;
@@ -19,13 +21,17 @@ public sealed class OrderProductionPlanningService
         IProductionPlanner productionPlanner,
         IProductionTaskRepository productionTaskRepository,
         IUnitOfWork unitOfWork,
-        IDomainEventPublisher domainEventPublisher)
+        IDomainEventPublisher domainEventPublisher,
+        ILogger<OrderProductionPlanningService> logger)
     {
         this.orderRepository = orderRepository;
         this.productionPlanner = productionPlanner;
         this.productionTaskRepository = productionTaskRepository;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
+        this.logger = logger;
+
+        this.logger = logger;
     }
 
     public async Task<bool> TryPlanAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -33,12 +39,14 @@ public sealed class OrderProductionPlanningService
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
         if (order is null || order.Items.Any(item => item.ProductId is null))
         {
+            logger.LogWarning("Order<{0}> not found or has items without product ID.", orderId);
             return false;
         }
 
         var existingTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
         if (existingTasks.Any(task => task.OrderId == orderId))
         {
+            logger.LogWarning("Order<{0}> already has production tasks.", orderId);
             return false;
         }
 
@@ -47,8 +55,9 @@ public sealed class OrderProductionPlanningService
         {
             productionTasks = await productionPlanner.PlanAsync(order, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            logger.LogWarning("Failed to plan production for order<{0}> by reason: {1}", orderId, ex.Message);
             return false;
         }
 

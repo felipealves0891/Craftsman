@@ -3,6 +3,7 @@ using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Repositories;
+using Craftsman.Domain.Sales.Repositories;
 
 namespace Craftsman.App.Services;
 
@@ -10,15 +11,18 @@ public sealed class ProductionScheduleService
 {
     private readonly IProductionTaskRepository productionTaskRepository;
     private readonly IProductRepository productRepository;
+    private readonly IOrderRepository orderRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public ProductionScheduleService(
         IProductionTaskRepository productionTaskRepository,
         IProductRepository productRepository,
+        IOrderRepository orderRepository,
         IUnitOfWork unitOfWork)
     {
         this.productionTaskRepository = productionTaskRepository;
         this.productRepository = productRepository;
+        this.orderRepository = orderRepository;
         this.unitOfWork = unitOfWork;
     }
 
@@ -29,10 +33,23 @@ public sealed class ProductionScheduleService
     {
         var tasks = await productionTaskRepository.ListAsync(status, plannedDate: null, cancellationToken);
         var products = await productRepository.ListAsync(cancellationToken);
+        var orders = await orderRepository.ListAsync(cancellationToken);
         var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationDays);
+        var ordersById = orders.ToDictionary(order => order.Id);
 
         var viewModels = tasks
-            .Select(task => ToViewModel(task, durationsByProduct.GetValueOrDefault(task.ProductId, 1)))
+            .Select(task =>
+            {
+                ordersById.TryGetValue(task.OrderId, out var order);
+                var orderItem = order?.Items.FirstOrDefault(item => item.Id == task.OrderItemId);
+
+                return ToViewModel(
+                    task,
+                    durationsByProduct.GetValueOrDefault(task.ProductId, 1),
+                    order?.Customer.Name ?? "Cliente nao informado",
+                    orderItem?.Description ?? "Item sem descricao",
+                    order?.Origin.ExternalOrderId ?? task.OrderId.ToString()[..8]);
+            })
             .ToList();
 
         if (plannedDate is not null)
@@ -75,7 +92,12 @@ public sealed class ProductionScheduleService
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public static ProductionTaskListItemViewModel ToViewModel(ProductionTask task, int productionDurationDays = 1)
+    public static ProductionTaskListItemViewModel ToViewModel(
+        ProductionTask task,
+        int productionDurationDays = 1,
+        string customerName = "",
+        string itemDescription = "",
+        string externalOrderId = "")
     {
         return new ProductionTaskListItemViewModel(
             task.Id,
@@ -87,6 +109,9 @@ public sealed class ProductionScheduleService
             task.Status.ToString(),
             task.PlannedAt,
             task.StartedAt,
-            task.CompletedAt);
+            task.CompletedAt,
+            customerName,
+            itemDescription,
+            externalOrderId);
     }
 }
