@@ -1,4 +1,5 @@
 using Craftsman.Domain.Events;
+using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Sales.Repositories;
@@ -11,18 +12,21 @@ public sealed class OrderImportPipeline : IOrderImportPipeline
     private readonly IOrderNormalizer orderNormalizer;
     private readonly IOrderRepository orderRepository;
     private readonly IReadOnlyCollection<IOrderSource> orderSources;
+    private readonly IProductMappingRepository productMappingRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public OrderImportPipeline(
         IEnumerable<IOrderSource> orderSources,
         IOrderNormalizer orderNormalizer,
         IOrderRepository orderRepository,
+        IProductMappingRepository productMappingRepository,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher)
     {
         this.orderSources = orderSources.ToList().AsReadOnly();
         this.orderNormalizer = orderNormalizer;
         this.orderRepository = orderRepository;
+        this.productMappingRepository = productMappingRepository;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
     }
@@ -61,7 +65,9 @@ public sealed class OrderImportPipeline : IOrderImportPipeline
                     }
 
                     var order = orderNormalizer.Normalize(rawOrder);
+                    await ApplyProductMappingsAsync(order, cancellationToken);
                     await orderRepository.AddAsync(order, cancellationToken);
+                    await unitOfWork.SaveChangesAsync(cancellationToken);
 
                     foreach (var domainEvent in order.DomainEvents)
                     {
@@ -78,11 +84,22 @@ public sealed class OrderImportPipeline : IOrderImportPipeline
             }
         }
 
-        if (importedCount > 0)
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
         return new OrderImportResult(importedCount, skippedCount, failures.AsReadOnly());
+    }
+
+    private async Task ApplyProductMappingsAsync(Sales.Entities.Order order, CancellationToken cancellationToken)
+    {
+        foreach (var item in order.Items)
+        {
+            var mapping = await productMappingRepository.GetByExternalItemAsync(
+                order.Origin.Source,
+                item.ExternalItemId,
+                cancellationToken);
+
+            if (mapping is not null)
+            {
+                item.AssignProduct(mapping.ProductId);
+            }
+        }
     }
 }

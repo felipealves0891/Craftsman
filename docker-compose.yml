@@ -22,7 +22,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "D:/Volumes/Craftsman/postgres_data:/var/lib/postgresql/data"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U craftsman -d craftsman"]
       interval: 10s
@@ -38,11 +38,7 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - "D:/Volumes/Craftsman/postgres_admin:/var/lib/pgadmin"
     depends_on:
       postgres:
         condition: service_healthy
-
-volumes:
-  postgres_data:
-  pgadmin_data:

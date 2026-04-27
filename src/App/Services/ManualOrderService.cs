@@ -1,6 +1,7 @@
 using Craftsman.App.Models;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.ProductCatalog.Repositories;
+using Craftsman.Domain.Production.Services;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
@@ -13,17 +14,20 @@ public sealed class ManualOrderService
     private const string ManualSource = "Manual";
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly IOrderRepository orderRepository;
+    private readonly OrderProductionPlanningService productionPlanningService;
     private readonly IProductRepository productRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public ManualOrderService(
         IOrderRepository orderRepository,
         IProductRepository productRepository,
+        OrderProductionPlanningService productionPlanningService,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher)
     {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.productionPlanningService = productionPlanningService;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
     }
@@ -72,6 +76,8 @@ public sealed class ManualOrderService
             items);
 
         await orderRepository.AddAsync(order, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
         foreach (var domainEvent in order.DomainEvents)
         {
             await domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
@@ -79,6 +85,7 @@ public sealed class ManualOrderService
 
         order.ClearDomainEvents();
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await productionPlanningService.TryPlanAsync(order.Id, cancellationToken);
 
         return order.Id;
     }
@@ -107,5 +114,6 @@ public sealed class ManualOrderService
         item.AssignProduct(productId);
         await orderRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        await productionPlanningService.TryPlanAsync(orderId, cancellationToken);
     }
 }

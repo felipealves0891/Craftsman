@@ -10,8 +10,26 @@
         <h1>Pedido @Model.ExternalOrderId</h1>
         <p>@Model.CustomerName - @Model.Status</p>
     </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
+    <div class="page-actions">
+        <a asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
+        @if (!Model.ProductionTasks.Any())
+        {
+            <form asp-action="SendToProduction" asp-route-id="@Model.Id" method="post">
+                <button type="submit" class="btn btn-primary">Enviar para produção</button>
+            </form>
+        }
+    </div>
 </section>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
 
 <div class="metric-row mb-4">
     <div class="metric-card metric-card-with-icon">

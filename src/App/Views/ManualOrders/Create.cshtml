@@ -32,7 +32,7 @@
             <div class="row">
                 <div class="col-md-4 form-group">
                 <label asp-for="Reference" class="form-label"></label>
-                    <input asp-for="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" />
+                <input asp-for="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Guid.NewGuid().ToString().Substring(0, 8)" disabled />
             </div>
                 <div class="col-md-4 form-group">
                 <label asp-for="CustomerName" class="form-label"></label>

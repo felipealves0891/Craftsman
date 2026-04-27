@@ -1,6 +1,8 @@
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Integration.Models;
 using Craftsman.Domain.Integration.Services;
+using Craftsman.Domain.ProductCatalog.Entities;
+using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
@@ -19,6 +21,7 @@ public sealed class OrderImportPipelineTests
             [new InMemoryOrderSource()],
             new OrderNormalizer(),
             orderRepository,
+            new FakeProductMappingRepository(),
             new FakeUnitOfWork(),
             new FakeDomainEventPublisher());
 
@@ -44,6 +47,7 @@ public sealed class OrderImportPipelineTests
             [new InMemoryOrderSource()],
             new OrderNormalizer(),
             orderRepository,
+            new FakeProductMappingRepository(),
             new FakeUnitOfWork(),
             new FakeDomainEventPublisher());
 
@@ -83,6 +87,24 @@ public sealed class OrderImportPipelineTests
         public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeProductMappingRepository : IProductMappingRepository
+    {
+        public Task AddAsync(ProductMapping mapping, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ProductMapping?> GetByExternalItemAsync(string source, string externalItemId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<ProductMapping?>(null);
+        }
+
+        public Task<IReadOnlyCollection<ProductMapping>> ListAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyCollection<ProductMapping>>(Array.Empty<ProductMapping>());
         }
     }
 

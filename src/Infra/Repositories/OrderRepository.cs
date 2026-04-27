@@ -51,11 +51,61 @@ public sealed class OrderRepository : IOrderRepository
         cache?.RemoveByPrefix("sales:orders:");
     }
 
-    public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
     {
-        dbContext.Orders.Update(ToEntity(order));
+        var entity = await QueryOrders().FirstOrDefaultAsync(existing => existing.Id == order.Id, cancellationToken);
+        if (entity is null)
+        {
+            dbContext.Orders.Update(ToEntity(order));
+        }
+        else
+        {
+            entity.Source = order.Origin.Source;
+            entity.ExternalOrderId = order.Origin.ExternalOrderId;
+            entity.CustomerName = order.Customer.Name;
+            entity.CustomerEmail = order.Customer.Email;
+            entity.Status = order.Status.ToString();
+            entity.CreatedAt = order.CreatedAt;
+
+            var orderItemsById = order.Items.ToDictionary(item => item.Id);
+            var removedItems = entity.Items
+                .Where(item => !orderItemsById.ContainsKey(item.Id))
+                .ToList();
+
+            foreach (var removedItem in removedItems)
+            {
+                entity.Items.Remove(removedItem);
+            }
+
+            foreach (var item in order.Items)
+            {
+                var existingItem = entity.Items.FirstOrDefault(entityItem => entityItem.Id == item.Id);
+                if (existingItem is null)
+                {
+                    entity.Items.Add(new OrderItemEntity
+                    {
+                        Id = item.Id,
+                        OrderId = order.Id,
+                        ExternalItemId = item.ExternalItemId,
+                        Description = item.Description,
+                        Quantity = item.Quantity,
+                        UnitPriceAmount = item.UnitPrice.Amount,
+                        UnitPriceCurrency = item.UnitPrice.Currency,
+                        ProductId = item.ProductId
+                    });
+                    continue;
+                }
+
+                existingItem.ExternalItemId = item.ExternalItemId;
+                existingItem.Description = item.Description;
+                existingItem.Quantity = item.Quantity;
+                existingItem.UnitPriceAmount = item.UnitPrice.Amount;
+                existingItem.UnitPriceCurrency = item.UnitPrice.Currency;
+                existingItem.ProductId = item.ProductId;
+            }
+        }
+
         cache?.RemoveByPrefix("sales:orders:");
-        return Task.CompletedTask;
     }
 
     private async Task<IReadOnlyCollection<Order>> ListCoreAsync(CancellationToken cancellationToken)

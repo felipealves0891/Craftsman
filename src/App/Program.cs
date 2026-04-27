@@ -22,9 +22,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     using var scope = app.Services.CreateScope();
-    using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>(); 
-    dbContext.Database.EnsureCreated();
-    dbContext.Database.Migrate();
+    await using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await DevelopmentDataSeeder.SeedAsync(dbContext);
 }
 else
 {

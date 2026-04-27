@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFinancialSettlementRepository, FinancialSettlementRepository>();
         services.AddScoped<InventoryService>();
         services.AddScoped<IProductionPlanner, ProductionPlanner>();
+        services.AddScoped<OrderProductionPlanningService>();
         services.AddScoped<ISettlementCalculator, SettlementCalculator>();
         services.AddScoped<IOrderNormalizer, OrderNormalizer>();
         services.AddScoped<IOrderImportPipeline, OrderImportPipeline>();
@@ -52,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ProductMappingService>();
         services.AddScoped<IDomainEventPublisher, InMemoryDomainEventPublisher>();
         services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, DomainEventPersistenceHandler<OrderNormalizedEvent>>();
+        services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, OrderNormalizedProductionPlannerHandler>();
         services.AddScoped<IDomainEventHandler<ProductionPlannedEvent>, DomainEventPersistenceHandler<ProductionPlannedEvent>>();
         services.AddScoped<IDomainEventHandler<ShipmentCreatedEvent>, DomainEventPersistenceHandler<ShipmentCreatedEvent>>();
         services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DomainEventPersistenceHandler<DeliveryConfirmedEvent>>();
