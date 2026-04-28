@@ -56,11 +56,11 @@ Critérios de aceitação:
 - A origem continua sendo metadado, não parte da regra de negócio central.
 
 ### IN-006 - Estudar integração com Elo7
-- [ ] Levantar documentação oficial ou canal técnico disponível para integração com Elo7.
-- [ ] Identificar formas de autenticação e autorização.
-- [ ] Mapear dados disponíveis para pedidos, clientes, itens, pagamento e envio.
-- [ ] Identificar limites de API, webhooks, paginação e políticas de uso.
-- [ ] Documentar lacunas, riscos e requisitos para uma integração real.
+- [x] Levantar documentação oficial ou canal técnico disponível para integração com Elo7.
+- [x] Identificar formas de autenticação e autorização.
+- [x] Mapear dados disponíveis para pedidos, clientes, itens, pagamento e envio.
+- [x] Identificar limites de API, webhooks, paginação e políticas de uso.
+- [x] Documentar lacunas, riscos e requisitos para uma integração real.
 
 Critérios de aceitação:
 - Existe um resumo técnico da viabilidade da integração com Elo7.
@@ -69,11 +69,11 @@ Critérios de aceitação:
 - O estudo indica se a integração deve ser ativa, manual, semi-automatizada ou inviável no primeiro momento.
 
 ### IN-007 - Estudar integração com Shopee
-- [ ] Levantar documentação oficial da Shopee Open Platform.
-- [ ] Identificar fluxo de autenticação, autorização e renovação de tokens.
-- [ ] Mapear APIs de pedidos, itens, pagamentos, cancelamentos e logística.
-- [ ] Identificar webhooks, limites de API, ambientes de teste e requisitos de homologação.
-- [ ] Documentar riscos de dependência, versionamento e manutenção.
+- [x] Levantar documentação oficial da Shopee Open Platform.
+- [x] Identificar fluxo de autenticação, autorização e renovação de tokens.
+- [x] Mapear APIs de pedidos, itens, pagamentos, cancelamentos e logística.
+- [x] Identificar webhooks, limites de API, ambientes de teste e requisitos de homologação.
+- [x] Documentar riscos de dependência, versionamento e manutenção.
 
 Critérios de aceitação:
 - Existe um resumo técnico da viabilidade da integração com Shopee.
@@ -82,11 +82,11 @@ Critérios de aceitação:
 - O estudo define quais endpoints são necessários para o primeiro fluxo de importação.
 
 ### IN-008 - Estudar integração com Correios
-- [ ] Levantar documentação oficial dos Correios para postagem, rastreamento e cálculo de frete.
-- [ ] Identificar requisitos de contrato, credenciais e ambientes disponíveis.
-- [ ] Mapear dados necessários para criação ou acompanhamento de envio.
-- [ ] Identificar limites, formatos de etiqueta, rastreio e eventos de entrega.
-- [ ] Documentar riscos operacionais e dependências de contrato comercial.
+- [x] Levantar documentação oficial dos Correios para postagem, rastreamento e cálculo de frete.
+- [x] Identificar requisitos de contrato, credenciais e ambientes disponíveis.
+- [x] Mapear dados necessários para criação ou acompanhamento de envio.
+- [x] Identificar limites, formatos de etiqueta, rastreio e eventos de entrega.
+- [x] Documentar riscos operacionais e dependências de contrato comercial.
 
 Critérios de aceitação:
 - Existe um resumo técnico da viabilidade da integração com Correios.
@@ -95,11 +95,11 @@ Critérios de aceitação:
 - O estudo define se o primeiro escopo deve cobrir cálculo de frete, postagem, rastreio ou apenas rastreio.
 
 ### IN-009 - Estudar integração com Loggi
-- [ ] Levantar documentação oficial ou canal técnico disponível para integração com Loggi.
-- [ ] Identificar requisitos de autenticação, contrato e disponibilidade regional.
-- [ ] Mapear APIs de cotação, criação de entrega, rastreamento e confirmação.
-- [ ] Identificar eventos de entrega, webhooks, limites e políticas de uso.
-- [ ] Documentar riscos operacionais, cobertura e dependências comerciais.
+- [x] Levantar documentação oficial ou canal técnico disponível para integração com Loggi.
+- [x] Identificar requisitos de autenticação, contrato e disponibilidade regional.
+- [x] Mapear APIs de cotação, criação de entrega, rastreamento e confirmação.
+- [x] Identificar eventos de entrega, webhooks, limites e políticas de uso.
+- [x] Documentar riscos operacionais, cobertura e dependências comerciais.
 
 Critérios de aceitação:
 - Existe um resumo técnico da viabilidade da integração com Loggi.
