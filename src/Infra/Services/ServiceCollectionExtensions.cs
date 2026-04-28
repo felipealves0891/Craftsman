@@ -13,11 +13,14 @@ using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Repositories;
 using Craftsman.Domain.Shipping.Services;
+using Craftsman.Infra.Integrations.Shopee;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Services;
 
@@ -31,7 +34,12 @@ public static class ServiceCollectionExtensions
             ?? throw new InvalidOperationException("Connection string 'CraftsmanDb' was not configured.");
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddDataProtection();
         services.AddMemoryCache();
+        services.AddOptions<ShopeeOptions>()
+            .Bind(configuration.GetSection(ShopeeOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<ShopeeOptions>, ShopeeOptionsValidator>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -48,6 +56,22 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrderNormalizer, OrderNormalizer>();
         services.AddScoped<IOrderImportPipeline, OrderImportPipeline>();
         services.AddScoped<IOrderSource, InMemoryOrderSource>();
+        services.AddScoped<IShopeeSigner, ShopeeSigner>();
+        services.AddScoped<IShopeeShopTokenRepository, ShopeeShopTokenRepository>();
+        services.AddScoped<IShopeeTokenService, ShopeeTokenService>();
+        services.AddHttpClient<IShopeeClient, ShopeeClient>((serviceProvider, client) =>
+        {
+            var shopeeOptions = serviceProvider.GetRequiredService<IOptions<ShopeeOptions>>().Value;
+            client.BaseAddress = new Uri(shopeeOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(shopeeOptions.RequestTimeoutSeconds);
+        });
+
+        var shopeeOptions = configuration.GetSection(ShopeeOptions.SectionName).Get<ShopeeOptions>() ?? new ShopeeOptions();
+        if (shopeeOptions.Enabled)
+        {
+            services.AddScoped<IOrderSource, ShopeeOrderSource>();
+        }
+
         services.AddScoped<IShippingTracker, StaticShippingTracker>();
         services.AddScoped<ShippingService>();
         services.AddScoped<ProductMappingService>();

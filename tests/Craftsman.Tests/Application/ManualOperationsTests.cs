@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Craftsman.Tests.Application;
 
@@ -39,7 +40,8 @@ public sealed class ManualOperationsTests
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
                 productionTaskRepository,
                 unitOfWork,
-                new RecordingDomainEventPublisher()),
+                new RecordingDomainEventPublisher(),
+                NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
             new RecordingDomainEventPublisher());
 
@@ -94,7 +96,8 @@ public sealed class ManualOperationsTests
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
                 productionTaskRepository,
                 unitOfWork,
-                publisher),
+                publisher,
+                NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
             publisher);
 
@@ -163,7 +166,8 @@ public sealed class ManualOperationsTests
             new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
             productionTaskRepository,
             unitOfWork,
-            publisher);
+            publisher,
+            NullLogger<OrderProductionPlanningService>.Instance);
         var controller = new OrdersController(
             new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
             new EmptyOrderImportPipeline(),

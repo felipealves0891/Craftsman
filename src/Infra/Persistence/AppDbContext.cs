@@ -32,6 +32,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<FinancialSettlementEntity> FinancialSettlements => Set<FinancialSettlementEntity>();
 
+    public DbSet<ShopeeShopEntity> ShopeeShops => Set<ShopeeShopEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

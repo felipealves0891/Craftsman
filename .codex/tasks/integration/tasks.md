@@ -106,3 +106,20 @@ Critérios de aceitação:
 - Eventos de rastreamento relevantes foram mapeados para o modelo interno de envio.
 - Requisitos de credenciais, contrato e cobertura estão documentados.
 - O estudo define quais recursos da Loggi são candidatos ao primeiro escopo de integração.
+
+### IN-010 - Implementar importacao de pedidos Shopee
+- [ ] Criar configuracao `ShopeeOptions` validada no startup.
+- [ ] Persistir lojas Shopee autorizadas com tokens protegidos por Data Protection.
+- [ ] Implementar assinatura HMAC-SHA256, cliente HTTP Shopee e fluxo de renovacao de tokens.
+- [ ] Implementar `ShopeeOrderSource` usando `get_order_list` e `get_order_detail`.
+- [ ] Registrar a fonte no DI apenas quando `Shopee:Enabled = true`, preservando a fonte em memoria.
+- [ ] Criar migracao EF Core para lojas/tokens Shopee.
+- [ ] Criar testes automatizados cobrindo mapeamento, tokens, paginacao, deduplicacao e persistencia protegida.
+
+Critérios de aceitacao:
+- Pedidos Shopee validos sao importados pelo pipeline existente sem `if/else` por origem.
+- O mesmo `order_sn` nao e importado duas vezes.
+- Tokens sao armazenados por `shop_id` e nao ficam em texto puro.
+- Access token expirado e renovado antes da chamada de pedidos; refresh invalido exige reautorizacao.
+- Falhas da Shopee sao registradas em `OrderImportResult.Failures` sem bloquear outras origens.
+- O dominio de vendas, producao, estoque, financeiro e envio nao conhece DTOs ou regras da API Shopee.
