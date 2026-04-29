@@ -108,13 +108,13 @@ Critérios de aceitação:
 - O estudo define quais recursos da Loggi são candidatos ao primeiro escopo de integração.
 
 ### IN-010 - Implementar importacao de pedidos Shopee
-- [ ] Criar configuracao `ShopeeOptions` validada no startup.
-- [ ] Persistir lojas Shopee autorizadas com tokens protegidos por Data Protection.
-- [ ] Implementar assinatura HMAC-SHA256, cliente HTTP Shopee e fluxo de renovacao de tokens.
-- [ ] Implementar `ShopeeOrderSource` usando `get_order_list` e `get_order_detail`.
-- [ ] Registrar a fonte no DI apenas quando `Shopee:Enabled = true`, preservando a fonte em memoria.
-- [ ] Criar migracao EF Core para lojas/tokens Shopee.
-- [ ] Criar testes automatizados cobrindo mapeamento, tokens, paginacao, deduplicacao e persistencia protegida.
+- [X] Criar configuracao `ShopeeOptions` validada no startup.
+- [X] Persistir lojas Shopee autorizadas com tokens protegidos por Data Protection.
+- [X] Implementar assinatura HMAC-SHA256, cliente HTTP Shopee e fluxo de renovacao de tokens.
+- [X] Implementar `ShopeeOrderSource` usando `get_order_list` e `get_order_detail`.
+- [X] Registrar a fonte no DI apenas quando `Shopee:Enabled = true`, preservando a fonte em memoria.
+- [X] Criar migracao EF Core para lojas/tokens Shopee.
+- [X] Criar testes automatizados cobrindo mapeamento, tokens, paginacao, deduplicacao e persistencia protegida.
 
 Critérios de aceitacao:
 - Pedidos Shopee validos sao importados pelo pipeline existente sem `if/else` por origem.
@@ -123,3 +123,18 @@ Critérios de aceitacao:
 - Access token expirado e renovado antes da chamada de pedidos; refresh invalido exige reautorizacao.
 - Falhas da Shopee sao registradas em `OrderImportResult.Failures` sem bloquear outras origens.
 - O dominio de vendas, producao, estoque, financeiro e envio nao conhece DTOs ou regras da API Shopee.
+
+### IN-011 - Implementar rastreio Correios
+- [x] Criar configuracao `CorreiosOptions` validada no startup.
+- [x] Implementar obtencao de token Correios com Basic Auth, contrato e cartao de postagem opcionais.
+- [x] Implementar cliente HTTP de rastreio Correios isolado em infraestrutura.
+- [x] Implementar `CorreiosShippingTracker` atras de `IShippingTracker`.
+- [x] Registrar a integracao no DI apenas quando `Correios:Enabled = true`, preservando `StaticShippingTracker` quando desabilitada.
+- [x] Criar testes automatizados cobrindo token, chamada de rastreio e mapeamento para `ShipmentStatus`.
+
+Critérios de aceitacao:
+- O dominio de envio nao conhece DTOs ou regras da API Correios.
+- O primeiro escopo cobre apenas rastreio, sem frete, prazo, pre-postagem ou etiqueta.
+- Eventos de rastreio sao convertidos para `Created`, `InTransit`, `DeliveryAttempted` ou `Delivered`.
+- Eventos negativos externos nao cancelam automaticamente o envio interno.
+- Credenciais Correios ficam em configuracao e nao sao registradas em logs.

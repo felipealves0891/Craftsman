@@ -1,5 +1,5 @@
 # AGENTS.md
-O arquivo PRODUCT.md contém informações sobre o produto, leia e, em caso de dúvidas, pode me perguntar
+O arquivo .codex/PRODUCT.md contém informações sobre o produto, leia e, em caso de dúvidas, pode me perguntar
 
 ## Regras Gerais
 - Sempre leia os arquivos em /specs antes de implementar

@@ -13,6 +13,7 @@ using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Repositories;
 using Craftsman.Domain.Shipping.Services;
+using Craftsman.Infra.Integrations.Correios;
 using Craftsman.Infra.Integrations.Shopee;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
@@ -40,6 +41,10 @@ public static class ServiceCollectionExtensions
             .Bind(configuration.GetSection(ShopeeOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<ShopeeOptions>, ShopeeOptionsValidator>();
+        services.AddOptions<CorreiosOptions>()
+            .Bind(configuration.GetSection(CorreiosOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CorreiosOptions>, CorreiosOptionsValidator>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -72,7 +77,29 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IOrderSource, ShopeeOrderSource>();
         }
 
-        services.AddScoped<IShippingTracker, StaticShippingTracker>();
+        services.AddHttpClient<ICorreiosTokenService, CorreiosTokenService>((serviceProvider, client) =>
+        {
+            var correiosOptions = serviceProvider.GetRequiredService<IOptions<CorreiosOptions>>().Value;
+            client.BaseAddress = new Uri(correiosOptions.TokenBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(correiosOptions.RequestTimeoutSeconds);
+        });
+        services.AddHttpClient<ICorreiosTrackingClient, CorreiosTrackingClient>((serviceProvider, client) =>
+        {
+            var correiosOptions = serviceProvider.GetRequiredService<IOptions<CorreiosOptions>>().Value;
+            client.BaseAddress = new Uri(correiosOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(correiosOptions.RequestTimeoutSeconds);
+        });
+
+        var correiosOptions = configuration.GetSection(CorreiosOptions.SectionName).Get<CorreiosOptions>() ?? new CorreiosOptions();
+        if (correiosOptions.Enabled)
+        {
+            services.AddScoped<IShippingTracker, CorreiosShippingTracker>();
+        }
+        else
+        {
+            services.AddScoped<IShippingTracker, StaticShippingTracker>();
+        }
+
         services.AddScoped<ShippingService>();
         services.AddScoped<ProductMappingService>();
         services.AddScoped<IDomainEventPublisher, InMemoryDomainEventPublisher>();

@@ -348,3 +348,7 @@ Esta documentação foi escrita com base em:
 - Implementação atual em `src/App`, `src/Domains` e `src/Infra`
 
 As referências de `.codex/` descrevem o produto-alvo, os bounded contexts, critérios de aceitação e fases de entrega. A documentação acima considera também o comportamento que já está implementado no código.
+
+## Integração Shopee
+
+No momento (28/04/2026) não foi possivel realizar a integração pois o cadastro da shopee precisa ter uma aplicação no publica, e ainda não temos
