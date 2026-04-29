@@ -14,6 +14,7 @@ using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Repositories;
 using Craftsman.Domain.Shipping.Services;
 using Craftsman.Infra.Integrations.Correios;
+using Craftsman.Infra.Integrations.Loggi;
 using Craftsman.Infra.Integrations.Shopee;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
@@ -45,6 +46,10 @@ public static class ServiceCollectionExtensions
             .Bind(configuration.GetSection(CorreiosOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<CorreiosOptions>, CorreiosOptionsValidator>();
+        services.AddOptions<LoggiOptions>()
+            .Bind(configuration.GetSection(LoggiOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<LoggiOptions>, LoggiOptionsValidator>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -89,9 +94,26 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = new Uri(correiosOptions.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(correiosOptions.RequestTimeoutSeconds);
         });
+        services.AddHttpClient<ILoggiTokenService, LoggiTokenService>((serviceProvider, client) =>
+        {
+            var loggiOptions = serviceProvider.GetRequiredService<IOptions<LoggiOptions>>().Value;
+            client.BaseAddress = new Uri(loggiOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(loggiOptions.RequestTimeoutSeconds);
+        });
+        services.AddHttpClient<ILoggiTrackingClient, LoggiTrackingClient>((serviceProvider, client) =>
+        {
+            var loggiOptions = serviceProvider.GetRequiredService<IOptions<LoggiOptions>>().Value;
+            client.BaseAddress = new Uri(loggiOptions.BaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(loggiOptions.RequestTimeoutSeconds);
+        });
 
         var correiosOptions = configuration.GetSection(CorreiosOptions.SectionName).Get<CorreiosOptions>() ?? new CorreiosOptions();
-        if (correiosOptions.Enabled)
+        var loggiOptions = configuration.GetSection(LoggiOptions.SectionName).Get<LoggiOptions>() ?? new LoggiOptions();
+        if (loggiOptions.Enabled)
+        {
+            services.AddScoped<IShippingTracker, LoggiShippingTracker>();
+        }
+        else if (correiosOptions.Enabled)
         {
             services.AddScoped<IShippingTracker, CorreiosShippingTracker>();
         }

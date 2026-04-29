@@ -116,7 +116,7 @@ Critérios de aceitação:
 - [X] Criar migracao EF Core para lojas/tokens Shopee.
 - [X] Criar testes automatizados cobrindo mapeamento, tokens, paginacao, deduplicacao e persistencia protegida.
 
-Critérios de aceitacao:
+Criterios de aceitacao:
 - Pedidos Shopee validos sao importados pelo pipeline existente sem `if/else` por origem.
 - O mesmo `order_sn` nao e importado duas vezes.
 - Tokens sao armazenados por `shop_id` e nao ficam em texto puro.
@@ -138,3 +138,18 @@ Critérios de aceitacao:
 - Eventos de rastreio sao convertidos para `Created`, `InTransit`, `DeliveryAttempted` ou `Delivered`.
 - Eventos negativos externos nao cancelam automaticamente o envio interno.
 - Credenciais Correios ficam em configuracao e nao sao registradas em logs.
+
+### IN-012 - Implementar rastreio Loggi
+- [x] Criar configuracao `LoggiOptions` validada no startup.
+- [x] Implementar obtencao de token Loggi por OAuth V2.
+- [x] Implementar cliente HTTP de rastreio Loggi isolado em infraestrutura.
+- [x] Implementar `LoggiShippingTracker` atras de `IShippingTracker`.
+- [x] Registrar a integracao no DI apenas quando `Loggi:Enabled = true`, preservando `StaticShippingTracker` quando transportadoras estiverem desabilitadas.
+- [x] Criar testes automatizados cobrindo token, chamada de rastreio, mapeamento para `ShipmentStatus`, erros HTTP e registro no DI.
+
+Critérios de aceitacao:
+- O dominio de envio nao conhece DTOs ou regras da API Loggi.
+- O primeiro escopo cobre apenas rastreio, sem cotacao, criacao de envio, etiqueta, Loggi Pontos ou cancelamento.
+- Eventos de rastreio sao convertidos para `Created`, `InTransit`, `DeliveryAttempted` ou `Delivered`.
+- Eventos negativos externos nao cancelam automaticamente o envio interno.
+- Credenciais Loggi ficam em configuracao e nao sao registradas em logs.
