@@ -1,5 +1,6 @@
 services:
   app:
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,13 +9,14 @@ services:
       ConnectionStrings__CraftsmanDb: Host=postgres;Port=5432;Database=craftsman;Username=craftsman;Password=craftsman_dev_password
       Cache__Enabled: "true"
     ports:
-      - "8080:8080"
+      - "80:8080"
     depends_on:
       postgres:
         condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
+    restart: always
     environment:
       POSTGRES_DB: craftsman
       POSTGRES_USER: craftsman

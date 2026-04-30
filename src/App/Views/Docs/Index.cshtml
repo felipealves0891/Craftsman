@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Documentacao";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">Documenta&ccedil;&atilde;o</h1>
+        <p class="mb-0 text-gray-600">Fluxo operacional do pedido ate a revisao financeira.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Comece por aqui</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    O Craftsman organiza a operacao a partir do pedido. Cada pedido entra por importacao ou cadastro manual,
+                    seus itens sao vinculados ao catalogo interno, a ficha tecnica define consumo de materia-prima e tempo,
+                    o estoque confirma viabilidade, a producao executa as tarefas, o envio acompanha a entrega e o financeiro
+                    revisa custo, receita e margem depois da conclusao.
+                </p>
+                <p class="mb-0">
+                    A ordem abaixo evita retrabalho: primeiro garanta que o pedido e os produtos estejam claros, depois valide
+                    ficha tecnica e estoque antes de movimentar producao, envio e financeiro.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Fluxo principal</h2>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li class="mb-3">
+                        <strong>Importar ou criar pedido.</strong>
+                        Use a <a asp-controller="Import" asp-action="Index">importa&ccedil;&atilde;o de pedidos</a>
+                        para trazer vendas externas, ou cadastre um
+                        <a asp-controller="ManualOrders" asp-action="Create">pedido manual</a> quando a venda nasceu fora das integracoes.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Mapear itens para produtos internos.</strong>
+                        Revise a <a asp-controller="Orders" asp-action="Index">carteira de pedidos</a>, cadastre ou ajuste
+                        <a asp-controller="Products" asp-action="Index">produtos</a> e mantenha
+                        <a asp-controller="Products" asp-action="Mappings">mapeamentos</a> para que itens externos apontem para o produto correto.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Configurar ficha tecnica.</strong>
+                        No cadastro do produto, a ficha tecnica informa quais materias-primas entram na producao e permite que o planejamento
+                        calcule consumo e duracao antes de enviar o pedido para a agenda.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Garantir estoque.</strong>
+                        Acompanhe <a asp-controller="Inventory" asp-action="Index">materias-primas</a>,
+                        <a asp-controller="Inventory" asp-action="Balances">saldos</a> e
+                        <a asp-controller="Inventory" asp-action="Movements">movimentos de estoque</a> antes de iniciar tarefas planejadas.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Enviar para producao.</strong>
+                        Com produto, ficha tecnica e estoque prontos, envie o pedido para a
+                        <a asp-controller="Production" asp-action="Index">agenda de produ&ccedil;&atilde;o</a> e acompanhe inicio, conclusao ou cancelamento das tarefas.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Acompanhar envio.</strong>
+                        Depois da producao, registre e atualize
+                        <a asp-controller="Shipments" asp-action="Index">envios</a> para refletir transporte, tentativa de entrega e entrega concluida.
+                    </li>
+                    <li>
+                        <strong>Revisar financeiro.</strong>
+                        Quando a entrega e confirmada, use o
+                        <a asp-controller="Finance" asp-action="Index">financeiro</a> para conferir receita, custos apurados e margem.
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Checklist inicial de operacao</h2>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Pedidos importados ou cadastrados sem duplicidade.</li>
+                    <li>Itens vinculados aos produtos internos corretos.</li>
+                    <li>Produtos com ficha tecnica e tempo de producao definidos.</li>
+                    <li>Materias-primas cadastradas com saldo suficiente.</li>
+                    <li>Tarefas planejadas acompanhadas na agenda de producao.</li>
+                    <li>Envios atualizados ate a entrega.</li>
+                    <li>Financeiro revisado com custo real e margem.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Atalhos</h2>
+            </div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" asp-controller="Import" asp-action="Index">Pedidos/importa&ccedil;&atilde;o</a>
+                <a class="list-group-item list-group-item-action" asp-controller="ManualOrders" asp-action="Create">Pedido manual</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Products" asp-action="Index">Produtos</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Products" asp-action="Mappings">Mapeamentos</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Inventory" asp-action="Index">Mat&eacute;rias-primas/estoque</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Production" asp-action="Index">Produ&ccedil;&atilde;o</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Shipments" asp-action="Index">Envios</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Finance" asp-action="Index">Financeiro</a>
+            </div>
+        </div>
+    </div>
+</div>

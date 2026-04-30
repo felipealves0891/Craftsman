@@ -7,7 +7,9 @@
     var catalogActive = controller is "Products" or "Inventory";
     var executionActive = controller is "Production" or "Shipments";
     var financeActive = controller == "Finance";
+    var docsActive = controller == "Docs";
     var adminActive = controller == "Users";
+    var canRead = User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Operador") || User.IsInRole("Consulta"));
     var rolePrincipal = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Operador") ? "Operador" : User.IsInRole("Consulta") ? "Consulta" : string.Empty;
     var displayUser = User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Visitante";
 }
@@ -125,6 +127,16 @@
                     <span>Financeiro</span>
                 </a>
             </li>
+
+            @if (canRead)
+            {
+                <li class="nav-item @(docsActive ? "active" : null)">
+                    <a class="nav-link" asp-area="" asp-controller="Docs" asp-action="Index">
+                        <i class="fas fa-fw fa-book-open"></i>
+                        <span>Documenta&ccedil;&atilde;o</span>
+                    </a>
+                </li>
+            }
 
             @if (User.IsInRole("Admin"))
             {
