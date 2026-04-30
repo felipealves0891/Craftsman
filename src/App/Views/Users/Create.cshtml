@@ -1,0 +1,38 @@
+@model Craftsman.App.Models.CreateUserInputModel
+@{
+    ViewData["Title"] = "Novo usuario";
+}
+
+<div class="row">
+    <div class="col-xl-6 col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 text-gray-900 mb-4">Novo usuario</h1>
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <div class="form-group">
+                        <label asp-for="Email">E-mail</label>
+                        <input asp-for="Email" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Password">Senha</label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Role">Role</label>
+                        <select asp-for="Role" asp-items="ViewBag.Roles" class="form-control"></select>
+                        <span asp-validation-for="Role" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <a class="btn btn-secondary" asp-action="Index">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

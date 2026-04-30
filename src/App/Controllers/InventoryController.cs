@@ -1,10 +1,13 @@
 using Craftsman.App.Models;
 using Craftsman.App.Services;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class InventoryController : Controller
 {
     private readonly InventoryAppService inventoryAppService;
@@ -32,6 +35,7 @@ public sealed class InventoryController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditMaterial(RawMaterialInputModel input, CancellationToken cancellationToken)
     {
@@ -60,6 +64,7 @@ public sealed class InventoryController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Movements(StockMovementInputModel input, CancellationToken cancellationToken)
     {

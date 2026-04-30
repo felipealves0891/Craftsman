@@ -1,7 +1,10 @@
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class ImportController : Controller
 {
     [HttpGet]
@@ -11,6 +14,7 @@ public sealed class ImportController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public IActionResult Run()
     {

@@ -1,8 +1,11 @@
 using Craftsman.App.Services;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class FinanceController : Controller
 {
     private readonly FinanceAppService financeAppService;

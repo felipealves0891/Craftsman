@@ -28,5 +28,16 @@ public sealed class PersistedDomainEventConfiguration : IEntityTypeConfiguration
         builder.Property(domainEvent => domainEvent.OccurredAt)
             .HasColumnName("occurred_at")
             .IsRequired();
+
+        builder.Property(domainEvent => domainEvent.UserId)
+            .HasColumnName("user_id");
+
+        builder.Property(domainEvent => domainEvent.UserName)
+            .HasColumnName("user_name")
+            .HasMaxLength(256);
+
+        builder.Property(domainEvent => domainEvent.CorrelationId)
+            .HasColumnName("correlation_id")
+            .HasMaxLength(100);
     }
 }

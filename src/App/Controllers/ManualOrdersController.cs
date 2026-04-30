@@ -1,10 +1,13 @@
 using Craftsman.App.Models;
 using Craftsman.App.Services;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class ManualOrdersController : Controller
 {
     private readonly ManualOrderService manualOrderService;
@@ -23,6 +26,7 @@ public sealed class ManualOrdersController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ManualOrderInputModel input, CancellationToken cancellationToken)
     {
@@ -58,6 +62,7 @@ public sealed class ManualOrdersController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LinkItem(Guid orderId, Guid itemId, Guid productId, CancellationToken cancellationToken)
     {

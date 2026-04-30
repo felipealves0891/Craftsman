@@ -1,16 +1,21 @@
 using Craftsman.App.Services;
 using Craftsman.Domain.Production.Entities;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class ProductionController : Controller
 {
     private readonly ProductionScheduleService productionScheduleService;
+    private readonly IAuditService auditService;
 
-    public ProductionController(ProductionScheduleService productionScheduleService)
+    public ProductionController(ProductionScheduleService productionScheduleService, IAuditService auditService)
     {
         this.productionScheduleService = productionScheduleService;
+        this.auditService = auditService;
     }
 
     public async Task<IActionResult> Index(ProductionTaskStatus? status, DateOnly? plannedDate, CancellationToken cancellationToken)
@@ -23,10 +28,17 @@ public sealed class ProductionController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Advance(Guid id, string action, CancellationToken cancellationToken)
     {
         await productionScheduleService.AdvanceAsync(id, action, cancellationToken);
+        await auditService.RecordAsync(
+            AuditAction.ProductionAdvanced,
+            "ProductionTask",
+            id.ToString(),
+            after: new { Action = action },
+            cancellationToken: cancellationToken);
         return RedirectToAction(nameof(Index));
     }
 }

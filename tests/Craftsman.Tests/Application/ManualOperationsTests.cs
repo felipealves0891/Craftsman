@@ -12,6 +12,7 @@ using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -171,7 +172,8 @@ public sealed class ManualOperationsTests
         var controller = new OrdersController(
             new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
             new EmptyOrderImportPipeline(),
-            planningService)
+            planningService,
+            new NoOpAuditService())
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
         };
@@ -291,6 +293,20 @@ public sealed class ManualOperationsTests
         public Task<OrderImportResult> ImportAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult(new OrderImportResult(0, 0, []));
+        }
+    }
+
+    private sealed class NoOpAuditService : IAuditService
+    {
+        public Task RecordAsync(
+            string action,
+            string entityName,
+            string? entityId = null,
+            object? before = null,
+            object? after = null,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
         }
     }
 

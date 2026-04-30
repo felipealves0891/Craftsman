@@ -1,10 +1,13 @@
 using Craftsman.App.Models;
 using Craftsman.App.Services;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class ProductsController : Controller
 {
     private readonly ProductCatalogAppService productCatalogAppService;
@@ -32,6 +35,7 @@ public sealed class ProductsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(ProductInputModel input, CancellationToken cancellationToken)
     {
@@ -65,6 +69,7 @@ public sealed class ProductsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> BillOfMaterials(BillOfMaterialsInputModel input, CancellationToken cancellationToken)
     {
@@ -95,6 +100,7 @@ public sealed class ProductsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Mappings(ProductMappingInputModel input, CancellationToken cancellationToken)
     {

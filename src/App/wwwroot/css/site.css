@@ -28,6 +28,60 @@ main {
   min-height: calc(100vh - 12rem);
 }
 
+.anonymous-page {
+  background:
+    linear-gradient(135deg, rgba(27, 38, 59, .96), rgba(27, 38, 59, .82)),
+    var(--craftsman-auxiliary);
+  min-height: 100vh;
+}
+
+.anonymous-shell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.login-panel {
+  max-width: 430px;
+  width: 100%;
+}
+
+.login-brand {
+  align-items: center;
+  color: #fff;
+  display: flex;
+  font-size: 1.25rem;
+  font-weight: 800;
+  gap: .75rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.login-brand img {
+  height: 40px;
+  width: 80px;
+}
+
+.login-card {
+  background: var(--craftsman-surface);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: .5rem;
+  box-shadow: 0 1.25rem 3rem rgba(0, 0, 0, .24);
+  padding: 1.75rem;
+}
+
+.login-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.login-card-header h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 0;
+}
+
 .container-fluid {
   max-width: 1440px;
 }

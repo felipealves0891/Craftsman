@@ -1,17 +1,22 @@
 using Craftsman.App.Models;
 using Craftsman.App.Services;
 using Craftsman.Domain.Shipping.Entities;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Craftsman.App.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public sealed class ShipmentsController : Controller
 {
     private readonly ShippingAppService shippingAppService;
+    private readonly IAuditService auditService;
 
-    public ShipmentsController(ShippingAppService shippingAppService)
+    public ShipmentsController(ShippingAppService shippingAppService, IAuditService auditService)
     {
         this.shippingAppService = shippingAppService;
+        this.auditService = auditService;
     }
 
     public async Task<IActionResult> Index(ShipmentStatus? status, CancellationToken cancellationToken)
@@ -28,6 +33,7 @@ public sealed class ShipmentsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateShipmentInputModel input, CancellationToken cancellationToken)
     {
@@ -41,10 +47,17 @@ public sealed class ShipmentsController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(Guid id, ShipmentStatus status, CancellationToken cancellationToken)
     {
         await shippingAppService.UpdateStatusAsync(id, status, cancellationToken);
+        await auditService.RecordAsync(
+            AuditAction.ShipmentStatusUpdated,
+            "Shipment",
+            id.ToString(),
+            after: new { Status = status.ToString() },
+            cancellationToken: cancellationToken);
         return RedirectToAction(nameof(Index));
     }
 }

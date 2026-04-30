@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using Craftsman.Infra.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Craftsman.Models;
 
 namespace Craftsman.Controllers;
 
+[Authorize(Policy = ApplicationPolicies.Read)]
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;

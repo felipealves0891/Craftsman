@@ -7,6 +7,9 @@
     var catalogActive = controller is "Products" or "Inventory";
     var executionActive = controller is "Production" or "Shipments";
     var financeActive = controller == "Finance";
+    var adminActive = controller == "Users";
+    var rolePrincipal = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Operador") ? "Operador" : User.IsInRole("Consulta") ? "Consulta" : string.Empty;
+    var displayUser = User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Visitante";
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -123,6 +126,18 @@
                 </a>
             </li>
 
+            @if (User.IsInRole("Admin"))
+            {
+                <hr class="sidebar-divider" />
+                <div class="sidebar-heading">Admin</div>
+                <li class="nav-item @(adminActive ? "active" : null)">
+                    <a class="nav-link" asp-area="" asp-controller="Users" asp-action="Index">
+                        <i class="fas fa-fw fa-users-cog"></i>
+                        <span>Usuarios</span>
+                    </a>
+                </li>
+            }
+
             <hr class="sidebar-divider d-none d-md-block" />
 
             <div class="text-center d-none d-md-inline">
@@ -145,7 +160,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Operador</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">@displayUser @(string.IsNullOrWhiteSpace(rolePrincipal) ? null : $"({rolePrincipal})")</span>
                                 <i class="fas fa-user-circle fa-lg text-gray-400"></i>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
@@ -158,6 +173,16 @@
                                     <i class="fas fa-shield-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Privacidade
                                 </a>
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <div class="dropdown-divider"></div>
+                                    <form asp-controller="Account" asp-action="Logout" method="post">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                            Sair
+                                        </button>
+                                    </form>
+                                }
                             </div>
                         </li>
                     </ul>

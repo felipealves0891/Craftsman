@@ -18,10 +18,12 @@ using Craftsman.Infra.Integrations.Loggi;
 using Craftsman.Infra.Integrations.Shopee;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Services;
@@ -38,6 +40,8 @@ public static class ServiceCollectionExtensions
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddDataProtection();
         services.AddMemoryCache();
+        services.TryAddScoped<ICurrentUserContext>(_ => new StaticCurrentUserContext(CurrentUserInfo.Anonymous()));
+        services.AddScoped<IAuditService, AuditService>();
         services.AddOptions<ShopeeOptions>()
             .Bind(configuration.GetSection(ShopeeOptions.SectionName))
             .ValidateOnStart();

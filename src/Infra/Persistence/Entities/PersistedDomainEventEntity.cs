@@ -9,4 +9,10 @@ public sealed class PersistedDomainEventEntity : IPersistenceEntity<Guid>
     public string Payload { get; set; } = string.Empty;
 
     public DateTimeOffset OccurredAt { get; set; }
+
+    public int? UserId { get; set; }
+
+    public string? UserName { get; set; }
+
+    public string? CorrelationId { get; set; }
 }

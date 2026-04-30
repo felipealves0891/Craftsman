@@ -1,0 +1,36 @@
+@model IReadOnlyCollection<Craftsman.App.Models.UserListItemViewModel>
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Usuarios</h1>
+    <a class="btn btn-primary" asp-action="Create">
+        <i class="fas fa-user-plus mr-1"></i>
+        Novo usuario
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+                <thead>
+                    <tr>
+                        <th>E-mail</th>
+                        <th>Roles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.Email</td>
+                            <td>@string.Join(", ", user.Roles)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
