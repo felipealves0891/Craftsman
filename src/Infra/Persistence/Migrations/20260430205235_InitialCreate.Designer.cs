@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Craftsman.Infra.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260430033838_InitialCreate")]
+    [Migration("20260430205235_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -327,6 +327,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("barcode");
 
                     b.Property<string>("Name")
                         .IsRequired()

@@ -220,6 +220,42 @@ public sealed class ManualOperationsTests
     }
 
     [Fact]
+    public async Task Product_catalog_service_saves_updates_and_clears_barcode()
+    {
+        await using var dbContext = CreateDbContext();
+        var productRepository = new ProductRepository(dbContext);
+        var mappingRepository = new ProductMappingRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var service = new ProductCatalogAppService(
+            productRepository,
+            mappingRepository,
+            rawMaterialRepository,
+            new ProductMappingService(mappingRepository),
+            new UnitOfWork(dbContext));
+
+        var productId = await service.SaveProductAsync(new ProductInputModel
+        {
+            Name = "Bolsa",
+            Barcode = " 7891000315507 "
+        });
+
+        var created = await service.GetProductInputAsync(productId);
+        Assert.Equal("7891000315507", created?.Barcode);
+
+        await service.SaveProductAsync(new ProductInputModel
+        {
+            Id = productId,
+            Name = "Bolsa",
+            Status = ProductStatus.Active,
+            ProductionDurationDays = 1,
+            Barcode = " "
+        });
+
+        var updated = await service.GetProductInputAsync(productId);
+        Assert.Null(updated?.Barcode);
+    }
+
+    [Fact]
     public async Task Inventory_service_blocks_manual_outbound_that_would_make_balance_negative()
     {
         await using var dbContext = CreateDbContext();

@@ -59,10 +59,10 @@ Critérios de aceitação:
 - Alterações de produto invalidam consultas cacheadas relacionadas.
 
 ### PC-006 - Criar manutenção manual de ficha técnica
-- [ ] Criar tela para informar matérias-primas e quantidades por produto.
-- [ ] Permitir substituir ficha técnica completa de um produto.
-- [ ] Validar materiais duplicados e quantidades inválidas.
-- [ ] Preservar pedidos já registrados quando ficha técnica mudar.
+- [x] Criar tela para informar matérias-primas e quantidades por produto.
+- [x] Permitir substituir ficha técnica completa de um produto.
+- [x] Validar materiais duplicados e quantidades inválidas.
+- [x] Preservar pedidos já registrados quando ficha técnica mudar.
 
 Critérios de aceitação:
 - Ficha técnica manual é consultada pelo mesmo planejador de produção.
@@ -71,13 +71,23 @@ Critérios de aceitação:
 - Alterações invalidam cache de catálogo relacionado.
 
 ### PC-007 - Criar manutenção manual de mapeamentos externos
-- [ ] Criar tela para mapear origem e código externo a produto interno.
-- [ ] Permitir criar mapeamentos para origens externas e para origem manual quando necessário.
-- [ ] Bloquear conflitos de origem/código externo.
-- [ ] Persistir mapeamentos pelo repositório do catálogo.
+- [x] Criar tela para mapear origem e código externo a produto interno.
+- [x] Permitir criar mapeamentos para origens externas e para origem manual quando necessário.
+- [x] Bloquear conflitos de origem/código externo.
+- [x] Persistir mapeamentos pelo repositório do catálogo.
 
 Critérios de aceitação:
 - Mapeamento manual usa a mesma regra de conflito do domínio.
 - O sistema não usa `if/else` por origem para resolver produto.
 - Mapeamentos ficam disponíveis para importação e planejamento.
 - Alterações invalidam cache de catálogo relacionado.
+
+### PC-008 - Criar manutenção manual de mapeamentos externos
+- [x] Criar leitor de codigo de barras para cadastro do produto
+- [x] Deve funcionar via camera do celular
+- [x] Deve salvar o codigo de barras junto com o produto
+- [x] Adicionar tratamento de erro, e informe o usuario, com detalhes do erro
+
+Critérios de aceitação:
+- O Usuario pode ler o codigo de barras pelo celular.
+- O sistema deve salvar o codigo de barras como propriedade do produto.

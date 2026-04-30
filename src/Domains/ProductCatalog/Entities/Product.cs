@@ -12,6 +12,8 @@ public sealed class Product
 
     public int ProductionDurationDays { get; private set; }
 
+    public string? Barcode { get; private set; }
+
     public IReadOnlyCollection<BillOfMaterialsItem> BillOfMaterials => billOfMaterials.AsReadOnly();
 
     public bool CanBePlannedForProduction => Status == ProductStatus.Active && billOfMaterials.Count > 0;
@@ -21,6 +23,7 @@ public sealed class Product
         string name,
         ProductStatus status = ProductStatus.Active,
         int productionDurationDays = 1,
+        string? barcode = null,
         IEnumerable<BillOfMaterialsItem>? billOfMaterials = null)
     {
         if (id == Guid.Empty)
@@ -37,6 +40,7 @@ public sealed class Product
         Name = name.Trim();
         Status = status;
         SetProductionDuration(productionDurationDays);
+        SetBarcode(barcode);
         this.billOfMaterials = billOfMaterials?.ToList() ?? [];
     }
 
@@ -68,6 +72,11 @@ public sealed class Product
         }
 
         ProductionDurationDays = days;
+    }
+
+    public void SetBarcode(string? barcode)
+    {
+        Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
     }
 
     public void ReplaceBillOfMaterials(IEnumerable<BillOfMaterialsItem> items)

@@ -59,6 +59,22 @@ public sealed class PersistenceRepositoryTests
     }
 
     [Fact]
+    public async Task Product_repository_saves_and_loads_barcode()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new ProductRepository(dbContext);
+        var product = new Product(Guid.NewGuid(), "Produto", barcode: "7891000315507");
+
+        await repository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var loaded = await repository.GetByIdAsync(product.Id);
+
+        Assert.NotNull(loaded);
+        Assert.Equal("7891000315507", loaded.Barcode);
+    }
+
+    [Fact]
     public async Task Stock_movement_repository_loads_signed_adjustments_and_ignores_zero_quantity_rows()
     {
         await using var dbContext = CreateDbContext();

@@ -3,7 +3,7 @@ using Craftsman.Domain.ProductCatalog.Entities;
 
 namespace Craftsman.App.Models;
 
-public sealed record ProductListItemViewModel(Guid Id, string Name, string Status, int ProductionDurationDays, int BillOfMaterialsItems);
+public sealed record ProductListItemViewModel(Guid Id, string Name, string Status, int ProductionDurationDays, int BillOfMaterialsItems, string? Barcode);
 
 public sealed record ProductOptionViewModel(Guid Id, string Name);
 
@@ -28,6 +28,10 @@ public sealed class ProductInputModel
     [Range(1, 365)]
     [Display(Name = "Tempo de produção (dias)")]
     public int ProductionDurationDays { get; set; } = 1;
+
+    [StringLength(128)]
+    [Display(Name = "Codigo de barras")]
+    public string? Barcode { get; set; }
 }
 
 public sealed class BillOfMaterialsInputModel

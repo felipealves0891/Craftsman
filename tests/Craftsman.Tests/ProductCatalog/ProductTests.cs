@@ -45,4 +45,16 @@ public sealed class ProductTests
         Assert.Equal(3, product.ProductionDurationDays);
         Assert.Throws<ArgumentOutOfRangeException>(() => product.SetProductionDuration(0));
     }
+
+    [Fact]
+    public void Product_normalizes_optional_barcode()
+    {
+        var product = new Product(Guid.NewGuid(), "Caneca", barcode: " 7891000315507 ");
+
+        Assert.Equal("7891000315507", product.Barcode);
+
+        product.SetBarcode(" ");
+
+        Assert.Null(product.Barcode);
+    }
 }

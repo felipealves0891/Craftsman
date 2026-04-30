@@ -36,6 +36,26 @@
         <span asp-validation-for="ProductionDurationDays" class="text-danger"></span>
     </div>
 
+    <div class="form-group barcode-scanner" data-barcode-scanner>
+        <label asp-for="Barcode" class="form-label"></label>
+        <div class="input-group">
+            <input asp-for="Barcode" class="form-control" autocomplete="off" inputmode="numeric" data-barcode-input />
+            <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary" data-barcode-start>
+                    <i class="fas fa-camera"></i>
+                    Ler pela camera
+                </button>
+            </div>
+        </div>
+        <small class="form-text text-muted" data-barcode-status>Informe manualmente ou leia pela camera do celular.</small>
+        <span asp-validation-for="Barcode" class="text-danger"></span>
+
+        <div class="barcode-preview mt-3 d-none" data-barcode-preview>
+            <div id="barcode-reader" class="w-100 rounded border" data-barcode-reader></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-barcode-stop>Cancelar leitura</button>
+        </div>
+    </div>
+
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salvar</button>
         <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
@@ -44,4 +64,6 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="~/js/product-barcode-scanner.js" asp-append-version="true"></script>
 }

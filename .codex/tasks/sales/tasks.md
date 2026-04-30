@@ -47,11 +47,11 @@ Critérios de aceitação:
 - Consultas de pedidos não expõem entidades do EF para a aplicação.
 
 ### S-005 - Criar entrada manual de pedidos
-- [ ] Criar serviço de aplicação para cadastrar pedido manual.
-- [ ] Criar tela Razor para informar cliente, itens, quantidades e valores.
-- [ ] Registrar origem do pedido como `Manual`.
-- [ ] Emitir o mesmo evento de pedido normalizado usado por pedidos importados.
-- [ ] Persistir o pedido manual usando o mesmo repositório de pedidos.
+- [X] Criar serviço de aplicação para cadastrar pedido manual.
+- [X] Criar tela Razor para informar cliente, itens, quantidades e valores.
+- [X] Registrar origem do pedido como `Manual`.
+- [X] Emitir o mesmo evento de pedido normalizado usado por pedidos importados.
+- [X] Persistir o pedido manual usando o mesmo repositório de pedidos.
 
 Critérios de aceitação:
 - Pedido manual gera o mesmo modelo interno de `Order` usado por integrações externas.
@@ -61,10 +61,10 @@ Critérios de aceitação:
 - Pedido manual pode seguir para mapeamento, produção, envio e financeiro sem fluxo especial.
 
 ### S-006 - Permitir vínculo manual de itens do pedido a produtos internos
-- [ ] Exibir itens de pedido sem produto interno vinculado.
-- [ ] Permitir selecionar produto interno para cada item.
-- [ ] Atualizar o item do pedido preservando rastreabilidade do item externo/manual.
-- [ ] Impedir planejamento de produção para itens sem produto interno.
+- [X] Exibir itens de pedido sem produto interno vinculado.
+- [X] Permitir selecionar produto interno para cada item.
+- [X] Atualizar o item do pedido preservando rastreabilidade do item externo/manual.
+- [X] Impedir planejamento de produção para itens sem produto interno.
 
 Critérios de aceitação:
 - Item de pedido manual ou importado pode ser vinculado a um produto interno.

@@ -10,6 +10,8 @@ public sealed class ProductEntity : IPersistenceEntity<Guid>
 
     public int ProductionDurationDays { get; set; } = 1;
 
+    public string? Barcode { get; set; }
+
     public List<BillOfMaterialsItemEntity> BillOfMaterials { get; set; } = [];
 
     public List<ProductMappingEntity> Mappings { get; set; } = [];

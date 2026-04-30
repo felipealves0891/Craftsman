@@ -19,6 +19,8 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<ProductEntit
             .HasColumnName("production_duration_days")
             .HasDefaultValue(1)
             .IsRequired();
+            
+        builder.Property(product => product.Barcode).HasColumnName("barcode").HasMaxLength(128);
 
         builder.HasMany(product => product.BillOfMaterials)
             .WithOne(item => item.Product)

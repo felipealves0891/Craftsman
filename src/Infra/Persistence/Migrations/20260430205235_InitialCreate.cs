@@ -155,7 +155,8 @@ namespace Craftsman.Infra.Persistence.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    production_duration_days = table.Column<int>(type: "integer", nullable: false, defaultValue: 1)
+                    production_duration_days = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    barcode = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true)
                 },
                 constraints: table =>
                 {

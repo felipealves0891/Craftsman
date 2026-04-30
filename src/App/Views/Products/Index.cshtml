@@ -22,6 +22,7 @@
             <thead>
                 <tr>
                     <th>Nome</th>
+                    <th>Codigo de barras</th>
                     <th>Status</th>
                     <th>Produção</th>
                     <th>Ficha técnica</th>
@@ -32,7 +33,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="5">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <strong>Nenhum produto cadastrado</strong>
                                 <span>Crie um produto para montar ficha técnica e vincular itens importados.</span>
@@ -46,6 +47,7 @@
                     {
                         <tr>
                             <td><strong>@product.Name</strong></td>
+                            <td>@(string.IsNullOrWhiteSpace(product.Barcode) ? "-" : product.Barcode)</td>
                             <td><span class="status-badge status-@product.Status.ToString().ToLowerInvariant()">@product.Status</span></td>
                             <td>@product.ProductionDurationDays dia(s)</td>
                             <td>@product.BillOfMaterialsItems item(ns)</td>

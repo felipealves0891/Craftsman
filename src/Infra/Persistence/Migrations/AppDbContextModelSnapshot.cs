@@ -325,6 +325,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Barcode")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("barcode");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
