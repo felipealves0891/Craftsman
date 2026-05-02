@@ -18,7 +18,7 @@
         .SelectMany(task =>
         {
             var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
-            var durationDays = Math.Max(task.ProductionDurationDays, 1);
+            var durationDays = Math.Max(1, (int)Math.Ceiling(Math.Max(task.ProductionDurationHours, 1) / 24m));
             var startDate = endDate.AddDays(-(durationDays - 1));
 
             return Enumerable.Range(0, durationDays)
@@ -145,10 +145,11 @@
                             foreach (var item in dayTasks)
                             {
                                 var task = item.Task;
-                                var rangeLabel = task.ProductionDurationDays <= 1
-                                    ? "1 dia"
+                                var durationDays = Math.Max(1, (int)Math.Ceiling(Math.Max(task.ProductionDurationHours, 1) / 24m));
+                                var rangeLabel = durationDays <= 1
+                                    ? $"{task.ProductionDurationHours} hora(s)"
                                     : item.IsStart
-                                        ? $"Início - {task.ProductionDurationDays} dias"
+                                        ? $"Inicio - {durationDays} dias"
                                         : item.IsEnd
                                             ? "Entrega planejada"
                                             : "Em produção";

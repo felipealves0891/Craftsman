@@ -141,21 +141,24 @@ public static class DevelopmentDataSeeder
                 Id = Guid.Parse("a8845f12-c9f4-46d6-8d8d-15f0714f7101"),
                 Name = "Caneca artesanal azul",
                 Status = ProductStatus.Active.ToString(),
-                ProductionDurationDays = 3
+                ProductionDurationHours = 72,
+                HourlyRate = 25m
             },
             new ProductEntity
             {
                 Id = Guid.Parse("a8845f12-c9f4-46d6-8d8d-15f0714f7102"),
                 Name = "Ecobag algodao cru",
                 Status = ProductStatus.Active.ToString(),
-                ProductionDurationDays = 2
+                ProductionDurationHours = 48,
+                HourlyRate = 20m
             },
             new ProductEntity
             {
                 Id = Guid.Parse("a8845f12-c9f4-46d6-8d8d-15f0714f7103"),
                 Name = "Kit presente atelie",
                 Status = ProductStatus.Active.ToString(),
-                ProductionDurationDays = 4
+                ProductionDurationHours = 96,
+                HourlyRate = 30m
             }
         };
 

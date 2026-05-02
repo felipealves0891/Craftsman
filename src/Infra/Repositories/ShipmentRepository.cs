@@ -42,11 +42,19 @@ public sealed class ShipmentRepository : IShipmentRepository
         cache?.RemoveByPrefix("shipping:");
     }
 
-    public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
     {
-        dbContext.Shipments.Update(ToEntity(shipment));
+        var entity = await dbContext.Shipments.FirstOrDefaultAsync(
+            existing => existing.Id == shipment.Id,
+            cancellationToken);
+
+        if (entity is null)
+        {
+            throw new InvalidOperationException($"Shipment '{shipment.Id}' was not found.");
+        }
+
+        MapToEntity(shipment, entity);
         cache?.RemoveByPrefix("shipping:");
-        return Task.CompletedTask;
     }
 
     private async Task<IReadOnlyCollection<Shipment>> ListCoreAsync(ShipmentStatus? status, CancellationToken cancellationToken)
@@ -78,15 +86,19 @@ public sealed class ShipmentRepository : IShipmentRepository
 
     private static ShipmentEntity ToEntity(Shipment shipment)
     {
-        return new ShipmentEntity
-        {
-            Id = shipment.Id,
-            OrderId = shipment.OrderId,
-            TrackingCode = shipment.TrackingCode,
-            Status = shipment.Status.ToString(),
-            CreatedAt = shipment.CreatedAt,
-            ShippedAt = shipment.ShippedAt,
-            DeliveredAt = shipment.DeliveredAt
-        };
+        var entity = new ShipmentEntity();
+        MapToEntity(shipment, entity);
+        return entity;
+    }
+
+    private static void MapToEntity(Shipment shipment, ShipmentEntity entity)
+    {
+        entity.Id = shipment.Id;
+        entity.OrderId = shipment.OrderId;
+        entity.TrackingCode = shipment.TrackingCode;
+        entity.Status = shipment.Status.ToString();
+        entity.CreatedAt = shipment.CreatedAt;
+        entity.ShippedAt = shipment.ShippedAt;
+        entity.DeliveredAt = shipment.DeliveredAt;
     }
 }

@@ -34,7 +34,7 @@ public sealed class ProductionScheduleService
         var tasks = await productionTaskRepository.ListAsync(status, plannedDate: null, cancellationToken);
         var products = await productRepository.ListAsync(cancellationToken);
         var orders = await orderRepository.ListAsync(cancellationToken);
-        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationDays);
+        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationHours);
         var ordersById = orders.ToDictionary(order => order.Id);
 
         var viewModels = tasks
@@ -58,7 +58,7 @@ public sealed class ProductionScheduleService
                 .Where(task =>
                 {
                     var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
-                    var startDate = endDate.AddDays(-(Math.Max(task.ProductionDurationDays, 1) - 1));
+                    var startDate = endDate.AddDays(-(ProductionDurationCalendarDays(task.ProductionDurationHours) - 1));
 
                     return plannedDate.Value >= startDate && plannedDate.Value <= endDate;
                 })
@@ -94,7 +94,7 @@ public sealed class ProductionScheduleService
 
     public static ProductionTaskListItemViewModel ToViewModel(
         ProductionTask task,
-        int productionDurationDays = 1,
+        int productionDurationHours = 1,
         string orderReference = "",
         string itemDescription = "",
         string externalOrderId = "")
@@ -105,7 +105,7 @@ public sealed class ProductionScheduleService
             task.OrderItemId,
             task.ProductId,
             task.Quantity,
-            productionDurationDays,
+            productionDurationHours,
             task.Status.ToString(),
             task.PlannedAt,
             task.StartedAt,
@@ -113,5 +113,10 @@ public sealed class ProductionScheduleService
             orderReference,
             itemDescription,
             externalOrderId);
+    }
+
+    private static int ProductionDurationCalendarDays(int productionDurationHours)
+    {
+        return Math.Max(1, (int)Math.Ceiling(Math.Max(productionDurationHours, 1) / 24m));
     }
 }

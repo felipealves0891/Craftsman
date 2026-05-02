@@ -30,13 +30,18 @@ public abstract class EfRepository<TModel, TEntity, TId> : IRepository<TModel, T
         await dbContext.Set<TEntity>().AddAsync(entity, cancellationToken);
     }
 
-    public Task UpdateAsync(TModel model, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(TModel model, CancellationToken cancellationToken = default)
     {
         var entity = ToEntity(model);
+        var existing = await dbContext.Set<TEntity>()
+            .FirstOrDefaultAsync(item => item.Id!.Equals(entity.Id), cancellationToken);
 
-        dbContext.Set<TEntity>().Update(entity);
+        if (existing is null)
+        {
+            throw new InvalidOperationException($"{typeof(TEntity).Name} with id '{entity.Id}' was not found.");
+        }
 
-        return Task.CompletedTask;
+        dbContext.Entry(existing).CurrentValues.SetValues(entity);
     }
 
     protected abstract TModel ToModel(TEntity entity);

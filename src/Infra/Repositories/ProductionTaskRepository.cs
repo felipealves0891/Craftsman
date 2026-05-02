@@ -53,7 +53,7 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
 
         if (entity is null)
         {
-            dbContext.ProductionTasks.Update(ToEntity(productionTask));
+            throw new InvalidOperationException($"Production task '{productionTask.Id}' was not found.");
         }
         else
         {

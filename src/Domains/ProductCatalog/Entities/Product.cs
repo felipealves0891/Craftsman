@@ -10,9 +10,9 @@ public sealed class Product
 
     public ProductStatus Status { get; private set; }
 
-    public int ProductionDurationDays { get; private set; }
+    public int ProductionDurationHours { get; private set; }
 
-    public string? Barcode { get; private set; }
+    public decimal HourlyRate { get; private set; }
 
     public IReadOnlyCollection<BillOfMaterialsItem> BillOfMaterials => billOfMaterials.AsReadOnly();
 
@@ -22,8 +22,8 @@ public sealed class Product
         Guid id,
         string name,
         ProductStatus status = ProductStatus.Active,
-        int productionDurationDays = 1,
-        string? barcode = null,
+        int productionDurationHours = 1,
+        decimal hourlyRate = 0,
         IEnumerable<BillOfMaterialsItem>? billOfMaterials = null)
     {
         if (id == Guid.Empty)
@@ -39,8 +39,8 @@ public sealed class Product
         Id = id;
         Name = name.Trim();
         Status = status;
-        SetProductionDuration(productionDurationDays);
-        SetBarcode(barcode);
+        SetProductionDurationHours(productionDurationHours);
+        SetHourlyRate(hourlyRate);
         this.billOfMaterials = billOfMaterials?.ToList() ?? [];
     }
 
@@ -64,19 +64,24 @@ public sealed class Product
         Status = ProductStatus.Inactive;
     }
 
-    public void SetProductionDuration(int days)
+    public void SetProductionDurationHours(int hours)
     {
-        if (days <= 0)
+        if (hours <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(days), "Production duration must be at least one day.");
+            throw new ArgumentOutOfRangeException(nameof(hours), "Production duration must be at least one hour.");
         }
 
-        ProductionDurationDays = days;
+        ProductionDurationHours = hours;
     }
 
-    public void SetBarcode(string? barcode)
+    public void SetHourlyRate(decimal hourlyRate)
     {
-        Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim();
+        if (hourlyRate < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(hourlyRate), "Hourly rate cannot be negative.");
+        }
+
+        HourlyRate = hourlyRate;
     }
 
     public void ReplaceBillOfMaterials(IEnumerable<BillOfMaterialsItem> items)

@@ -34,27 +34,28 @@ public sealed class ProductTests
     }
 
     [Fact]
-    public void Product_production_duration_must_be_at_least_one_day()
+    public void Product_production_duration_must_be_at_least_one_hour()
     {
         var product = new Product(Guid.NewGuid(), "Caneca");
 
-        Assert.Equal(1, product.ProductionDurationDays);
+        Assert.Equal(1, product.ProductionDurationHours);
 
-        product.SetProductionDuration(3);
+        product.SetProductionDurationHours(3);
 
-        Assert.Equal(3, product.ProductionDurationDays);
-        Assert.Throws<ArgumentOutOfRangeException>(() => product.SetProductionDuration(0));
+        Assert.Equal(3, product.ProductionDurationHours);
+        Assert.Throws<ArgumentOutOfRangeException>(() => product.SetProductionDurationHours(0));
     }
 
     [Fact]
-    public void Product_normalizes_optional_barcode()
+    public void Product_hourly_rate_cannot_be_negative()
     {
-        var product = new Product(Guid.NewGuid(), "Caneca", barcode: " 7891000315507 ");
+        var product = new Product(Guid.NewGuid(), "Caneca", hourlyRate: 25.50m);
 
-        Assert.Equal("7891000315507", product.Barcode);
+        Assert.Equal(25.50m, product.HourlyRate);
 
-        product.SetBarcode(" ");
+        product.SetHourlyRate(30);
 
-        Assert.Null(product.Barcode);
+        Assert.Equal(30, product.HourlyRate);
+        Assert.Throws<ArgumentOutOfRangeException>(() => product.SetHourlyRate(-0.01m));
     }
 }

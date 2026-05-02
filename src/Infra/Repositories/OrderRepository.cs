@@ -56,7 +56,7 @@ public sealed class OrderRepository : IOrderRepository
         var entity = await QueryOrders().FirstOrDefaultAsync(existing => existing.Id == order.Id, cancellationToken);
         if (entity is null)
         {
-            dbContext.Orders.Update(ToEntity(order));
+            throw new InvalidOperationException($"Order '{order.Id}' was not found.");
         }
         else
         {

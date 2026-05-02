@@ -62,14 +62,14 @@ public sealed class ProductRepository : IProductRepository
 
         if (entity is null)
         {
-            dbContext.Products.Update(ToEntity(product));
+            throw new InvalidOperationException($"Product '{product.Id}' was not found.");
         }
         else
         {
             entity.Name = product.Name;
             entity.Status = product.Status.ToString();
-            entity.ProductionDurationDays = product.ProductionDurationDays;
-            entity.Barcode = product.Barcode;
+            entity.ProductionDurationHours = product.ProductionDurationHours;
+            entity.HourlyRate = product.HourlyRate;
             entity.BillOfMaterials.Clear();
             foreach (var item in product.BillOfMaterials)
             {
@@ -96,8 +96,8 @@ public sealed class ProductRepository : IProductRepository
             entity.Id,
             entity.Name,
             Enum.Parse<ProductStatus>(entity.Status),
-            entity.ProductionDurationDays,
-            entity.Barcode,
+            entity.ProductionDurationHours,
+            entity.HourlyRate,
             billOfMaterials);
     }
 
@@ -108,8 +108,8 @@ public sealed class ProductRepository : IProductRepository
             Id = product.Id,
             Name = product.Name,
             Status = product.Status.ToString(),
-            ProductionDurationDays = product.ProductionDurationDays,
-            Barcode = product.Barcode,
+            ProductionDurationHours = product.ProductionDurationHours,
+            HourlyRate = product.HourlyRate,
             BillOfMaterials = product.BillOfMaterials.Select(item => new BillOfMaterialsItemEntity
             {
                 Id = Guid.NewGuid(),

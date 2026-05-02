@@ -268,7 +268,7 @@ public sealed class ManualOperationsTests
     }
 
     [Fact]
-    public async Task Product_catalog_service_saves_updates_and_clears_barcode()
+    public async Task Product_catalog_service_saves_updates_production_hours_and_hourly_rate()
     {
         await using var dbContext = CreateDbContext();
         var productRepository = new ProductRepository(dbContext);
@@ -284,23 +284,26 @@ public sealed class ManualOperationsTests
         var productId = await service.SaveProductAsync(new ProductInputModel
         {
             Name = "Bolsa",
-            Barcode = " 7891000315507 "
+            ProductionDurationHours = 6,
+            HourlyRate = 25.50m
         });
 
         var created = await service.GetProductInputAsync(productId);
-        Assert.Equal("7891000315507", created?.Barcode);
+        Assert.Equal(6, created?.ProductionDurationHours);
+        Assert.Equal(25.50m, created?.HourlyRate);
 
         await service.SaveProductAsync(new ProductInputModel
         {
             Id = productId,
             Name = "Bolsa",
             Status = ProductStatus.Active,
-            ProductionDurationDays = 1,
-            Barcode = " "
+            ProductionDurationHours = 8,
+            HourlyRate = 30m
         });
 
         var updated = await service.GetProductInputAsync(productId);
-        Assert.Null(updated?.Barcode);
+        Assert.Equal(8, updated?.ProductionDurationHours);
+        Assert.Equal(30m, updated?.HourlyRate);
     }
 
     [Fact]

@@ -50,11 +50,19 @@ public sealed class RawMaterialRepository : IRawMaterialRepository
         cache?.RemoveByPrefix("inventory:");
     }
 
-    public Task UpdateAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default)
     {
-        dbContext.RawMaterials.Update(ToEntity(rawMaterial));
+        var entity = await dbContext.RawMaterials.FirstOrDefaultAsync(
+            existing => existing.Id == rawMaterial.Id,
+            cancellationToken);
+
+        if (entity is null)
+        {
+            throw new InvalidOperationException($"Raw material '{rawMaterial.Id}' was not found.");
+        }
+
+        MapToEntity(rawMaterial, entity);
         cache?.RemoveByPrefix("inventory:");
-        return Task.CompletedTask;
     }
 
     private static RawMaterial ToModel(RawMaterialEntity entity)
@@ -64,12 +72,16 @@ public sealed class RawMaterialRepository : IRawMaterialRepository
 
     private static RawMaterialEntity ToEntity(RawMaterial rawMaterial)
     {
-        return new RawMaterialEntity
-        {
-            Id = rawMaterial.Id,
-            Name = rawMaterial.Name,
-            UnitOfMeasure = rawMaterial.UnitOfMeasure,
-            Status = rawMaterial.Status.ToString()
-        };
+        var entity = new RawMaterialEntity();
+        MapToEntity(rawMaterial, entity);
+        return entity;
+    }
+
+    private static void MapToEntity(RawMaterial rawMaterial, RawMaterialEntity entity)
+    {
+        entity.Id = rawMaterial.Id;
+        entity.Name = rawMaterial.Name;
+        entity.UnitOfMeasure = rawMaterial.UnitOfMeasure;
+        entity.Status = rawMaterial.Status.ToString();
     }
 }

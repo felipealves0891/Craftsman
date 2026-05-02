@@ -67,7 +67,7 @@ public sealed class AuthAuditTests
             Id = Guid.NewGuid(),
             Name = "Produto",
             Status = "Active",
-            ProductionDurationDays = 1
+            ProductionDurationHours = 1
         };
 
         await dbContext.Products.AddAsync(product);

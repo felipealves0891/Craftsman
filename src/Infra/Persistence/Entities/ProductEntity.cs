@@ -8,9 +8,9 @@ public sealed class ProductEntity : IPersistenceEntity<Guid>
 
     public string Status { get; set; } = string.Empty;
 
-    public int ProductionDurationDays { get; set; } = 1;
+    public int ProductionDurationHours { get; set; } = 1;
 
-    public string? Barcode { get; set; }
+    public decimal HourlyRate { get; set; }
 
     public List<BillOfMaterialsItemEntity> BillOfMaterials { get; set; } = [];
 

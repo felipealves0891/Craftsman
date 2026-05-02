@@ -38,9 +38,9 @@ public sealed class ProductCatalogAppService
                 product.Id,
                 product.Name,
                 product.Status.ToString(),
-                product.ProductionDurationDays,
-                product.BillOfMaterials.Count,
-                product.Barcode))
+                product.ProductionDurationHours,
+                product.HourlyRate,
+                product.BillOfMaterials.Count))
             .ToList()
             .AsReadOnly();
     }
@@ -56,8 +56,8 @@ public sealed class ProductCatalogAppService
                 Id = product.Id,
                 Name = product.Name,
                 Status = product.Status,
-                ProductionDurationDays = product.ProductionDurationDays,
-                Barcode = product.Barcode
+                ProductionDurationHours = product.ProductionDurationHours,
+                HourlyRate = product.HourlyRate
             };
     }
 
@@ -65,7 +65,7 @@ public sealed class ProductCatalogAppService
     {
         if (input.Id is null || input.Id == Guid.Empty)
         {
-            var product = new Product(Guid.NewGuid(), input.Name, input.Status, input.ProductionDurationDays, input.Barcode);
+            var product = new Product(Guid.NewGuid(), input.Name, input.Status, input.ProductionDurationHours, input.HourlyRate);
             await productRepository.AddAsync(product, cancellationToken);
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -76,8 +76,8 @@ public sealed class ProductCatalogAppService
             ?? throw new InvalidOperationException("Produto nao encontrado.");
 
         existing.Rename(input.Name);
-        existing.SetProductionDuration(input.ProductionDurationDays);
-        existing.SetBarcode(input.Barcode);
+        existing.SetProductionDurationHours(input.ProductionDurationHours);
+        existing.SetHourlyRate(input.HourlyRate);
         if (input.Status == ProductStatus.Active)
         {
             existing.Activate();

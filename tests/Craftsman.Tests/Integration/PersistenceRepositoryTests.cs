@@ -41,7 +41,8 @@ public sealed class PersistenceRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var product = new Product(Guid.NewGuid(), "Produto", billOfMaterials: [new BillOfMaterialsItem(Guid.NewGuid(), 2)]);
-        product.SetProductionDuration(3);
+        product.SetProductionDurationHours(3);
+        product.SetHourlyRate(25.50m);
         var productRepository = new ProductRepository(dbContext);
         var mappingRepository = new ProductMappingRepository(dbContext);
         var mappingService = new ProductMappingService(mappingRepository);
@@ -51,7 +52,8 @@ public sealed class PersistenceRepositoryTests
 
         var loadedProduct = await productRepository.GetByIdAsync(product.Id);
         Assert.NotNull(loadedProduct);
-        Assert.Equal(3, loadedProduct.ProductionDurationDays);
+        Assert.Equal(3, loadedProduct.ProductionDurationHours);
+        Assert.Equal(25.50m, loadedProduct.HourlyRate);
 
         await mappingService.CreateMappingAsync("Elo7", "EXT-1", product.Id);
         await dbContext.SaveChangesAsync();
@@ -60,11 +62,11 @@ public sealed class PersistenceRepositoryTests
     }
 
     [Fact]
-    public async Task Product_repository_saves_and_loads_barcode()
+    public async Task Product_repository_saves_and_loads_production_hours_and_hourly_rate()
     {
         await using var dbContext = CreateDbContext();
         var repository = new ProductRepository(dbContext);
-        var product = new Product(Guid.NewGuid(), "Produto", barcode: "7891000315507");
+        var product = new Product(Guid.NewGuid(), "Produto", productionDurationHours: 12, hourlyRate: 45m);
 
         await repository.AddAsync(product);
         await dbContext.SaveChangesAsync();
@@ -72,7 +74,8 @@ public sealed class PersistenceRepositoryTests
         var loaded = await repository.GetByIdAsync(product.Id);
 
         Assert.NotNull(loaded);
-        Assert.Equal("7891000315507", loaded.Barcode);
+        Assert.Equal(12, loaded.ProductionDurationHours);
+        Assert.Equal(45m, loaded.HourlyRate);
     }
 
     [Fact]

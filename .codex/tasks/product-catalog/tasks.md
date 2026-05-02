@@ -46,11 +46,11 @@ Critérios de aceitação:
 - Consultas de catálogo podem ser cacheadas e invalidadas quando houver alteração.
 
 ### PC-005 - Criar cadastro manual de produtos
-- [ ] Criar serviço de aplicação para cadastrar e editar produtos.
-- [ ] Criar telas Razor para listar, criar, editar, ativar e inativar produtos.
-- [ ] Validar nome, status e dados mínimos para produção.
-- [ ] Persistir alterações pelo repositório do catálogo.
-- [ ] Invalidar cache de catálogo quando produto mudar.
+- [x] Criar serviço de aplicação para cadastrar e editar produtos.
+- [x] Criar telas Razor para listar, criar, editar, ativar e inativar produtos.
+- [x] Validar nome, status e dados mínimos para produção.
+- [x] Persistir alterações pelo repositório do catálogo.
+- [x] Invalidar cache de catálogo quando produto mudar.
 
 Critérios de aceitação:
 - Produto cadastrado manualmente usa a mesma entidade `Product` do domínio.
@@ -91,3 +91,24 @@ Critérios de aceitação:
 Critérios de aceitação:
 - O Usuario pode ler o codigo de barras pelo celular.
 - O sistema deve salvar o codigo de barras como propriedade do produto.
+
+### PC-009 - Ajustes
+- [x] Remover `Barcode` do produto no dominio, aplicacao, persistencia, telas e testes.
+- [x] Remover leitor de codigo de barras e dependencias de scanner da interface de produtos.
+- [x] Alterar duracao de producao do produto de dias para horas.
+- [x] Permitir informar o valor cobrado por hora no cadastro e edicao do produto.
+- [x] Persistir horas de producao e valor por hora pelo repositorio do catalogo.
+- [x] Criar migration para remover coluna de codigo de barras e adicionar os novos campos.
+- [x] Atualizar consultas, view models e telas de listagem/cadastro/edicao de produtos.
+- [x] Atualizar testes unitarios, de aplicacao, de persistencia e de Razor views afetados.
+
+Critérios de aceitação:
+- O produto nao possui mais campo, tela, script, teste ou persistencia de codigo de barras.
+- O usuario consegue cadastrar e editar a quantidade de horas que o produto leva para ser produzido.
+- Horas de producao sao obrigatorias e devem ser maiores que zero.
+- O usuario consegue cadastrar e editar o valor cobrado por hora do produto.
+- Valor cobrado por hora e obrigatorio e nao pode ser negativo.
+- Listagem e edicao de produtos exibem horas de producao e valor por hora, sem referencias a codigo de barras.
+- O dominio continua independente de entidades de persistencia.
+- Alteracoes de produto continuam invalidando consultas cacheadas relacionadas.
+- Build e testes automatizados devem passar com `DOTNET_CLI_HOME=D:\Source\Repos\Dotnet\Craftsman\.dotnet-home\.dotnet`.

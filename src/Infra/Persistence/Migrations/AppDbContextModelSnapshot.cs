@@ -343,10 +343,12 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Barcode")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("barcode");
+                    b.Property<decimal>("HourlyRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("hourly_rate");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -354,11 +356,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
-                    b.Property<int>("ProductionDurationDays")
+                    b.Property<int>("ProductionDurationHours")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1)
-                        .HasColumnName("production_duration_days");
+                        .HasColumnName("production_duration_hours");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -50,7 +50,7 @@ public sealed class OrderQueryService
 
         var productionTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
         var products = await productRepository.ListAsync(cancellationToken);
-        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationDays);
+        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationHours);
         var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
 
         return new OrderDetailViewModel(

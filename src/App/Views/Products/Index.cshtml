@@ -6,9 +6,9 @@
 
 <section class="page-heading">
     <div>
-        <span class="eyebrow">Catálogo</span>
+        <span class="eyebrow">Catalogo</span>
         <h1>Produtos</h1>
-        <p>Organize produtos internos, mapeamentos externos e fichas técnicas de produção.</p>
+        <p>Organize produtos internos, mapeamentos externos e fichas tecnicas de producao.</p>
     </div>
     <div class="page-actions">
         <a asp-action="Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
@@ -22,11 +22,11 @@
             <thead>
                 <tr>
                     <th>Nome</th>
-                    <th>Codigo de barras</th>
                     <th>Status</th>
-                    <th>Produção</th>
-                    <th>Ficha técnica</th>
-                    <th class="text-right">Ações</th>
+                    <th>Producao</th>
+                    <th>Valor por hora</th>
+                    <th>Ficha tecnica</th>
+                    <th class="text-right">Acoes</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,7 +36,7 @@
                         <td colspan="6">
                             <div class="empty-state">
                                 <strong>Nenhum produto cadastrado</strong>
-                                <span>Crie um produto para montar ficha técnica e vincular itens importados.</span>
+                                <span>Crie um produto para montar ficha tecnica e vincular itens importados.</span>
                             </div>
                         </td>
                     </tr>
@@ -47,13 +47,13 @@
                     {
                         <tr>
                             <td><strong>@product.Name</strong></td>
-                            <td>@(string.IsNullOrWhiteSpace(product.Barcode) ? "-" : product.Barcode)</td>
                             <td><span class="status-badge status-@product.Status.ToString().ToLowerInvariant()">@product.Status</span></td>
-                            <td>@product.ProductionDurationDays dia(s)</td>
+                            <td>@product.ProductionDurationHours hora(s)</td>
+                            <td>@product.HourlyRate.ToString("C")</td>
                             <td>@product.BillOfMaterialsItems item(ns)</td>
                             <td class="text-right">
                                 <div class="table-actions">
-                                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Ficha técnica</a>
+                                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Ficha tecnica</a>
                                     <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-primary">Editar</a>
                                 </div>
                             </td>

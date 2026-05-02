@@ -3,7 +3,13 @@ using Craftsman.Domain.ProductCatalog.Entities;
 
 namespace Craftsman.App.Models;
 
-public sealed record ProductListItemViewModel(Guid Id, string Name, string Status, int ProductionDurationDays, int BillOfMaterialsItems, string? Barcode);
+public sealed record ProductListItemViewModel(
+    Guid Id,
+    string Name,
+    string Status,
+    int ProductionDurationHours,
+    decimal HourlyRate,
+    int BillOfMaterialsItems);
 
 public sealed record ProductOptionViewModel(Guid Id, string Name);
 
@@ -25,13 +31,13 @@ public sealed class ProductInputModel
     [Required]
     public ProductStatus Status { get; set; } = ProductStatus.Active;
 
-    [Range(1, 365)]
-    [Display(Name = "Tempo de produção (dias)")]
-    public int ProductionDurationDays { get; set; } = 1;
+    [Range(1, int.MaxValue)]
+    [Display(Name = "Tempo de producao (horas)")]
+    public int ProductionDurationHours { get; set; } = 1;
 
-    [StringLength(128)]
-    [Display(Name = "Codigo de barras")]
-    public string? Barcode { get; set; }
+    [Range(0, double.MaxValue)]
+    [Display(Name = "Valor por hora")]
+    public decimal HourlyRate { get; set; }
 }
 
 public sealed class BillOfMaterialsInputModel
