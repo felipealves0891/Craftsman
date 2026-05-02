@@ -21,7 +21,7 @@ public sealed class SettlementCalculatorTests
         var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
         var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 2)]);
         var orderItem = new OrderItem(Guid.NewGuid(), "EXT-1", "Bolsa externa", 2, new Money(50, "BRL"), product.Id);
-        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), new CustomerInfo("Ana", null), [orderItem], OrderStatus.Delivered);
+        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), [orderItem], OrderStatus.Delivered);
         var orderRepository = new OrderRepository(dbContext);
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);

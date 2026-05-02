@@ -4,16 +4,37 @@
 @{
     ViewData["Title"] = "Novo pedido";
     var products = ViewBag.Products as List<SelectListItem> ?? [];
+    var orderSources = ViewBag.OrderSources as List<SelectListItem> ?? [];
 }
 
 <section class="page-heading">
     <div>
-        <span class="eyebrow">Pedido manual</span>
+        <span class="eyebrow">Novo Pedido</span>
         <h1>Novo pedido</h1>
-        <p>Informe os dados do cliente e adicione quantos itens forem necessários.</p>
+        <p>Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.</p>
     </div>
     <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
 </section>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<form asp-action="CreateSource" method="post" class="form-panel row g-3 mb-4">
+    <div class="col-md-9">
+        <label for="Name" class="form-label">Nova origem</label>
+        <input id="Name" name="Name" class="form-control" placeholder="Ex.: WhatsApp" />
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-outline-primary w-100">Adicionar origem</button>
+    </div>
+</form>
 
 <form asp-action="Create" method="post" id="manual-order-form">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -21,95 +42,97 @@
     <div class="manual-order-layout">
         <div class="manual-order-main">
             <section class="form-panel manual-order-section">
-            <div class="section-title">
-                <span class="section-step">1</span>
-                <div>
-                    <h2>Dados do pedido</h2>
-                    <p>Identifique o cliente e a referência usada internamente.</p>
+                <div class="section-title">
+                    <span class="section-step">1</span>
+                    <div>
+                        <h2>Dados do pedido</h2>
+                        <p>Identifique a origem e a referencia usada internamente.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="row">
-                <div class="col-md-4 form-group">
-                <label asp-for="Reference" class="form-label"></label>
-                <input asp-for="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Guid.NewGuid().ToString().Substring(0, 8)" />
-            </div>
-                <div class="col-md-4 form-group">
-                <label asp-for="CustomerName" class="form-label"></label>
-                    <input asp-for="CustomerName" class="form-control" placeholder="Nome do cliente" />
-                <span asp-validation-for="CustomerName" class="text-danger"></span>
-            </div>
-                <div class="col-md-4 form-group">
-                <label asp-for="CustomerEmail" class="form-label"></label>
-                    <input asp-for="CustomerEmail" class="form-control" placeholder="cliente@email.com" />
-                <span asp-validation-for="CustomerEmail" class="text-danger"></span>
-            </div>
-            </div>
-        </section>
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label asp-for="Source" class="form-label"></label>
+                        <select asp-for="Source" asp-items="orderSources" class="form-select">
+                            <option value="">Selecione</option>
+                        </select>
+                        <span asp-validation-for="Source" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label asp-for="Reference" class="form-label"></label>
+                        <input asp-for="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Guid.NewGuid().ToString()[..8]" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label asp-for="ShippingDate" class="form-label"></label>
+                        <input asp-for="ShippingDate" type="date" class="form-control" />
+                        <span asp-validation-for="ShippingDate" class="text-danger"></span>
+                    </div>
+                </div>
+            </section>
 
             <section class="form-panel manual-order-section">
-            <div class="section-toolbar manual-items-toolbar">
-                <div class="section-title">
-                    <span class="section-step">2</span>
-                    <div>
-                        <h2>Itens do pedido</h2>
-                        <p>Adicione os produtos comprados e vincule ao catálogo interno quando possível.</p>
+                <div class="section-toolbar manual-items-toolbar">
+                    <div class="section-title">
+                        <span class="section-step">2</span>
+                        <div>
+                            <h2>Itens do pedido</h2>
+                            <p>Adicione os produtos vendidos e vincule ao catalogo interno quando possivel.</p>
+                        </div>
                     </div>
+                    <button type="button" class="btn btn-outline-primary" id="add-order-item">
+                        <i class="fas fa-plus fa-sm mr-1"></i>Adicionar item
+                    </button>
                 </div>
-                <button type="button" class="btn btn-outline-primary" id="add-order-item">
-                    <i class="fas fa-plus fa-sm mr-1"></i>Adicionar item
-                </button>
-            </div>
 
-            <div class="manual-items-list" id="order-items-body">
-                @for (var i = 0; i < Model.Items.Count; i++)
-                {
-                    <div class="order-item-row manual-item-card">
-                        <div class="manual-item-header">
-                            <div>
-                                <span class="manual-item-kicker">Item <span data-item-number>@(i + 1)</span></span>
-                                <strong data-item-title>Novo item</strong>
+                <div class="manual-items-list" id="order-items-body">
+                    @for (var i = 0; i < Model.Items.Count; i++)
+                    {
+                        <div class="order-item-row manual-item-card">
+                            <div class="manual-item-header">
+                                <div>
+                                    <span class="manual-item-kicker">Item <span data-item-number>@(i + 1)</span></span>
+                                    <strong data-item-title>Novo item</strong>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>
+                                    <i class="fas fa-trash-alt fa-sm mr-1"></i>Remover
+                                </button>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>
-                                <i class="fas fa-trash-alt fa-sm mr-1"></i>Remover
-                            </button>
-                        </div>
 
-                        <div class="manual-item-grid">
-                            <div class="form-group">
-                                <label class="form-label">Código externo</label>
-                                <input asp-for="Items[i].ExternalItemId" class="form-control" placeholder="SKU, código ou referência" data-item-field />
-                            </div>
-                            <div class="form-group manual-item-description">
-                                <label class="form-label">Descrição</label>
-                                <input asp-for="Items[i].Description" class="form-control" placeholder="Produto vendido" data-item-field data-description-field />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Quantidade</label>
-                                <input asp-for="Items[i].Quantity" class="form-control" data-item-field data-quantity-field />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Valor unitário</label>
-                                <input asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
-                            </div>
-                            <div class="form-group manual-item-product">
-                                <label class="form-label">Produto interno</label>
-                            <div class="product-picker">
-                                <input type="search" class="form-control product-filter" placeholder="Filtrar produtos" aria-label="Filtrar produtos internos" />
-                                <select asp-for="Items[i].ProductId" asp-items="products" class="form-select" data-item-field>
-                                    <option value="">Sem vínculo</option>
-                                </select>
-                            </div>
-                            </div>
-                            <div class="manual-item-total">
-                                <span>Total do item</span>
-                                <strong data-item-total>R$ 0,00</strong>
+                            <div class="manual-item-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Codigo externo</label>
+                                    <input asp-for="Items[i].ExternalItemId" class="form-control" placeholder="SKU, codigo ou referencia" data-item-field />
+                                </div>
+                                <div class="form-group manual-item-description">
+                                    <label class="form-label">Descricao</label>
+                                    <input asp-for="Items[i].Description" class="form-control" placeholder="Produto vendido" data-item-field data-description-field />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quantidade</label>
+                                    <input asp-for="Items[i].Quantity" class="form-control" data-item-field data-quantity-field />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Valor unitario</label>
+                                    <input asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
+                                </div>
+                                <div class="form-group manual-item-product">
+                                    <label class="form-label">Produto interno</label>
+                                    <div class="product-picker">
+                                        <input type="search" class="form-control product-filter" placeholder="Filtrar produtos" aria-label="Filtrar produtos internos" />
+                                        <select asp-for="Items[i].ProductId" asp-items="products" class="form-select" data-item-field>
+                                            <option value="">Sem vinculo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="manual-item-total">
+                                    <span>Total do item</span>
+                                    <strong data-item-total>R$ 0,00</strong>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                }
-            </div>
-        </section>
+                    }
+                </div>
+            </section>
         </div>
 
         <aside class="manual-order-summary">
@@ -166,6 +189,16 @@
                 });
             };
 
+            const rowHasValue = (row) => {
+                return [...row.querySelectorAll('[data-item-field]')].some((field) => {
+                    if (field.tagName === 'SELECT') {
+                        return field.value !== '';
+                    }
+
+                    return field.value.trim() !== '' && field.value !== '0';
+                });
+            };
+
             const updateSummary = () => {
                 let filledItems = 0;
                 let total = 0;
@@ -205,16 +238,6 @@
                 body.appendChild(clone);
                 updateIndexes();
                 updateSummary();
-            };
-
-            const rowHasValue = (row) => {
-                return [...row.querySelectorAll('[data-item-field]')].some((field) => {
-                    if (field.tagName === 'SELECT') {
-                        return field.value !== '';
-                    }
-
-                    return field.value.trim() !== '' && field.value !== '0';
-                });
             };
 
             const ensureBlankLastRow = () => {

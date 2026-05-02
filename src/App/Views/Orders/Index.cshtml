@@ -67,7 +67,7 @@
                 <tr>
                     <th>Origem</th>
                     <th>Pedido externo</th>
-                    <th>Cliente</th>
+                    <th>Data de envio</th>
                     <th>Status</th>
                     <th>Itens</th>
                     <th>Criado em</th>
@@ -93,7 +93,7 @@
                         <tr>
                             <td>@order.Source</td>
                             <td><strong>@order.ExternalOrderId</strong></td>
-                            <td>@order.CustomerName</td>
+                            <td>@(order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-")</td>
                             <td><span class="status-badge status-@order.Status.ToString().ToLowerInvariant()">@StatusLabel(order.Status)</span></td>
                             <td>@order.ItemCount</td>
                             <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>

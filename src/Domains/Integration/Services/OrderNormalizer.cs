@@ -28,7 +28,6 @@ public sealed class OrderNormalizer : IOrderNormalizer
         return new Order(
             Guid.NewGuid(),
             new OrderOrigin(rawOrder.Source, rawOrder.ExternalOrderId),
-            new CustomerInfo(rawOrder.CustomerName, rawOrder.CustomerEmail),
             items);
     }
 }

@@ -62,10 +62,9 @@ public sealed class OrderRepository : IOrderRepository
         {
             entity.Source = order.Origin.Source;
             entity.ExternalOrderId = order.Origin.ExternalOrderId;
-            entity.CustomerName = order.Customer.Name;
-            entity.CustomerEmail = order.Customer.Email;
             entity.Status = order.Status.ToString();
             entity.CreatedAt = order.CreatedAt;
+            entity.ShippingDate = order.ShippingDate;
 
             var orderItemsById = order.Items.ToDictionary(item => item.Id);
             var removedItems = entity.Items
@@ -135,10 +134,10 @@ public sealed class OrderRepository : IOrderRepository
         return new Order(
             entity.Id,
             new OrderOrigin(entity.Source, entity.ExternalOrderId),
-            new CustomerInfo(entity.CustomerName, entity.CustomerEmail),
             items,
             Enum.Parse<OrderStatus>(entity.Status),
             entity.CreatedAt,
+            entity.ShippingDate,
             raiseNormalizedEvent: false);
     }
 
@@ -149,10 +148,9 @@ public sealed class OrderRepository : IOrderRepository
             Id = order.Id,
             Source = order.Origin.Source,
             ExternalOrderId = order.Origin.ExternalOrderId,
-            CustomerName = order.Customer.Name,
-            CustomerEmail = order.Customer.Email,
             Status = order.Status.ToString(),
             CreatedAt = order.CreatedAt,
+            ShippingDate = order.ShippingDate,
             Items = order.Items.Select(item => new OrderItemEntity
             {
                 Id = item.Id,

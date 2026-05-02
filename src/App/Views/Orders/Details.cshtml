@@ -8,7 +8,7 @@
     <div>
         <span class="eyebrow">@Model.Source</span>
         <h1>Pedido @Model.ExternalOrderId</h1>
-        <p>@Model.CustomerName - @Model.Status</p>
+        <p>@Model.Status</p>
     </div>
     <div class="page-actions">
         <a asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
@@ -46,8 +46,8 @@
             <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg>
         </span>
         <div>
-            <span>Cliente</span>
-            <strong>@Model.CustomerName</strong>
+            <span>Data de envio</span>
+            <strong>@(Model.ShippingDate?.ToString("dd/MM/yyyy") ?? "-")</strong>
         </div>
     </div>
     <div class="metric-card metric-card-with-icon">

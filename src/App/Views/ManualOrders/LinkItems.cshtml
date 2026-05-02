@@ -10,7 +10,7 @@
     <div>
         <span class="eyebrow">Pedido @Model.ExternalOrderId</span>
         <h1>Vincular produtos internos</h1>
-        <p>@Model.Source - @Model.CustomerName</p>
+        <p>@Model.Source</p>
     </div>
     <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Voltar</a>
 </section>

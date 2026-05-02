@@ -46,7 +46,7 @@ public sealed class ProductionScheduleService
                 return ToViewModel(
                     task,
                     durationsByProduct.GetValueOrDefault(task.ProductId, 1),
-                    order?.Customer.Name ?? "Cliente nao informado",
+                    order is null ? task.OrderId.ToString()[..8] : $"{order.Origin.Source} {order.Origin.ExternalOrderId}",
                     orderItem?.Description ?? "Item sem descricao",
                     order?.Origin.ExternalOrderId ?? task.OrderId.ToString()[..8]);
             })
@@ -95,7 +95,7 @@ public sealed class ProductionScheduleService
     public static ProductionTaskListItemViewModel ToViewModel(
         ProductionTask task,
         int productionDurationDays = 1,
-        string customerName = "",
+        string orderReference = "",
         string itemDescription = "",
         string externalOrderId = "")
     {
@@ -110,7 +110,7 @@ public sealed class ProductionScheduleService
             task.PlannedAt,
             task.StartedAt,
             task.CompletedAt,
-            customerName,
+            orderReference,
             itemDescription,
             externalOrderId);
     }

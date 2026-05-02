@@ -13,8 +13,6 @@ public sealed class OrderNormalizerTests
         var rawOrder = new RawOrder(
             "Elo7",
             "E-100",
-            "Ana",
-            "ana@example.com",
             [new RawOrderItem("EXT-1", "Produto externo", 3, 12.5m)]);
 
         var order = normalizer.Normalize(rawOrder);
@@ -30,7 +28,7 @@ public sealed class OrderNormalizerTests
     public void Normalizer_rejects_raw_order_without_items()
     {
         var normalizer = new OrderNormalizer();
-        var rawOrder = new RawOrder("Elo7", "E-101", "Ana", null, []);
+        var rawOrder = new RawOrder("Elo7", "E-101", []);
 
         var exception = Assert.Throws<InvalidOperationException>(() => normalizer.Normalize(rawOrder));
 

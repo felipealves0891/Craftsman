@@ -12,11 +12,11 @@ public sealed class Order
 
     public OrderOrigin Origin { get; }
 
-    public CustomerInfo Customer { get; }
-
     public OrderStatus Status { get; private set; }
 
     public DateTimeOffset CreatedAt { get; }
+
+    public DateOnly? ShippingDate { get; }
 
     public IReadOnlyCollection<OrderItem> Items => items.AsReadOnly();
 
@@ -25,10 +25,10 @@ public sealed class Order
     public Order(
         Guid id,
         OrderOrigin origin,
-        CustomerInfo customer,
         IEnumerable<OrderItem> items,
         OrderStatus status = OrderStatus.Normalized,
         DateTimeOffset? createdAt = null,
+        DateOnly? shippingDate = null,
         bool raiseNormalizedEvent = true)
     {
         if (id == Guid.Empty)
@@ -45,9 +45,9 @@ public sealed class Order
 
         Id = id;
         Origin = origin;
-        Customer = customer;
         Status = status;
         CreatedAt = createdAt ?? DateTimeOffset.UtcNow;
+        ShippingDate = shippingDate;
 
         if (raiseNormalizedEvent)
         {

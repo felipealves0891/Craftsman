@@ -30,8 +30,6 @@ public sealed class ShopeeIntegrationTests
 
         Assert.Equal("Shopee", rawOrder.Source);
         Assert.Equal("250428ABC", rawOrder.ExternalOrderId);
-        Assert.Equal("comprador", rawOrder.CustomerName);
-        Assert.Null(rawOrder.CustomerEmail);
         Assert.Collection(
             rawOrder.Items,
             item =>
@@ -391,7 +389,7 @@ public sealed class ShopeeIntegrationTests
         public Task<IReadOnlyCollection<RawOrder>> FetchOrdersAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyCollection<RawOrder>>([
-                new RawOrder("Manual", "M-1", "Cliente", null, [new RawOrderItem("SKU", "Produto", 1, 10m)])
+                new RawOrder("Manual", "M-1", [new RawOrderItem("SKU", "Produto", 1, 10m)])
             ]);
         }
     }
@@ -403,8 +401,8 @@ public sealed class ShopeeIntegrationTests
         public Task<IReadOnlyCollection<RawOrder>> FetchOrdersAsync(CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyCollection<RawOrder>>([
-                new RawOrder("Shopee", "250428DUP", "Cliente", null, [new RawOrderItem("SKU", "Produto", 1, 10m)]),
-                new RawOrder("Shopee", "250428DUP", "Cliente", null, [new RawOrderItem("SKU", "Produto", 1, 10m)])
+                new RawOrder("Shopee", "250428DUP", [new RawOrderItem("SKU", "Produto", 1, 10m)]),
+                new RawOrder("Shopee", "250428DUP", [new RawOrderItem("SKU", "Produto", 1, 10m)])
             ]);
         }
     }

@@ -65,9 +65,9 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Vendas</h6>
                         <a class="collapse-item @(controller == "Orders" ? "active" : null)" asp-area=""
-                           asp-controller="Orders" asp-action="Index">Carteira</a>
+                           asp-controller="Orders" asp-action="Index">Pedidos</a>
                         <a class="collapse-item @(controller == "ManualOrders" && action == "Create" ? "active" : null)"
-                           asp-area="" asp-controller="ManualOrders" asp-action="Create">Pedido manual</a>
+                           asp-area="" asp-controller="ManualOrders" asp-action="Create">Novo Pedido</a>
                         <a class="collapse-item @(controller == "Import" ? "active" : null)" asp-area=""
                            asp-controller="Import" asp-action="Index">Importação</a>
                     </div>

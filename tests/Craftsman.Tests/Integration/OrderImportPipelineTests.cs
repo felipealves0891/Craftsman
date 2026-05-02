@@ -39,7 +39,6 @@ public sealed class OrderImportPipelineTests
         var existingOrder = new Order(
             Guid.NewGuid(),
             new OrderOrigin("Simulated", "SIM-1001"),
-            new CustomerInfo("Cliente", null),
             [new OrderItem(Guid.NewGuid(), "SIM-SKU-1", "Produto", 1, new Money(10, "BRL"))]);
         await orderRepository.AddAsync(existingOrder);
 

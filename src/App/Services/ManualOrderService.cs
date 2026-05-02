@@ -11,21 +11,23 @@ namespace Craftsman.App.Services;
 
 public sealed class ManualOrderService
 {
-    private const string ManualSource = "Manual";
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly IOrderRepository orderRepository;
+    private readonly IOrderSourceCatalogRepository orderSourceCatalogRepository;
     private readonly OrderProductionPlanningService productionPlanningService;
     private readonly IProductRepository productRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public ManualOrderService(
         IOrderRepository orderRepository,
+        IOrderSourceCatalogRepository orderSourceCatalogRepository,
         IProductRepository productRepository,
         OrderProductionPlanningService productionPlanningService,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher)
     {
         this.orderRepository = orderRepository;
+        this.orderSourceCatalogRepository = orderSourceCatalogRepository;
         this.productRepository = productRepository;
         this.productionPlanningService = productionPlanningService;
         this.unitOfWork = unitOfWork;
@@ -40,14 +42,22 @@ public sealed class ManualOrderService
 
         if (populatedItems.Count == 0)
         {
-            throw new InvalidOperationException("Pedido manual deve conter ao menos um item.");
+            throw new InvalidOperationException("Novo pedido deve conter ao menos um item.");
         }
 
         var externalOrderId = string.IsNullOrWhiteSpace(input.Reference)
             ? $"MAN-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..30]
             : input.Reference.Trim();
 
-        var existingOrder = await orderRepository.GetByOriginAsync(new OrderOrigin(ManualSource, externalOrderId), cancellationToken);
+        if (!input.ShippingDate.HasValue)
+        {
+            throw new InvalidOperationException("Data de envio e obrigatoria.");
+        }
+
+        var source = await orderSourceCatalogRepository.GetByNameAsync(input.Source, cancellationToken)
+            ?? throw new InvalidOperationException("Origem nao encontrada.");
+
+        var existingOrder = await orderRepository.GetByOriginAsync(new OrderOrigin(source.Name, externalOrderId), cancellationToken);
         if (existingOrder is not null)
         {
             throw new InvalidOperationException("Referencia manual ja existe.");
@@ -71,9 +81,9 @@ public sealed class ManualOrderService
 
         var order = new Order(
             Guid.NewGuid(),
-            new OrderOrigin(ManualSource, externalOrderId),
-            new CustomerInfo(input.CustomerName, input.CustomerEmail),
-            items);
+            new OrderOrigin(source.Name, externalOrderId),
+            items,
+            shippingDate: input.ShippingDate);
 
         await orderRepository.AddAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -98,6 +108,24 @@ public sealed class ManualOrderService
             .Select(product => new ProductOptionViewModel(product.Id, product.Name))
             .ToList()
             .AsReadOnly();
+    }
+
+    public async Task<IReadOnlyCollection<string>> ListOrderSourcesAsync(CancellationToken cancellationToken = default)
+    {
+        var sources = await orderSourceCatalogRepository.ListAsync(cancellationToken);
+        return sources.Select(source => source.Name).ToList().AsReadOnly();
+    }
+
+    public async Task CreateOrderSourceAsync(OrderSourceInputModel input, CancellationToken cancellationToken = default)
+    {
+        var existingSource = await orderSourceCatalogRepository.GetByNameAsync(input.Name, cancellationToken);
+        if (existingSource is not null)
+        {
+            throw new InvalidOperationException("Origem ja existe.");
+        }
+
+        await orderSourceCatalogRepository.AddAsync(new OrderSource(Guid.NewGuid(), input.Name), cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task LinkProductAsync(Guid orderId, Guid itemId, Guid productId, CancellationToken cancellationToken = default)

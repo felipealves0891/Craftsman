@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<LoggiOptions>, LoggiOptionsValidator>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderSourceCatalogRepository, OrderSourceCatalogRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductMappingRepository, ProductMappingRepository>();
         services.AddScoped<IRawMaterialRepository, RawMaterialRepository>();

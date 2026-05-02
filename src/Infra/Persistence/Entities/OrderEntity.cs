@@ -8,13 +8,11 @@ public sealed class OrderEntity : IPersistenceEntity<Guid>
 
     public string ExternalOrderId { get; set; } = string.Empty;
 
-    public string CustomerName { get; set; } = string.Empty;
-
-    public string? CustomerEmail { get; set; }
-
     public string Status { get; set; } = string.Empty;
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    public DateOnly? ShippingDate { get; set; }
 
     public List<OrderItemEntity> Items { get; set; } = [];
 }

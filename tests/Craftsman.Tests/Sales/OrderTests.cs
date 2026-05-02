@@ -32,7 +32,6 @@ public sealed class OrderTests
         return new Order(
             Guid.NewGuid(),
             new OrderOrigin("Shopee", "SO-1"),
-            new CustomerInfo("Maria", "maria@example.com"),
             [
                 new OrderItem(Guid.NewGuid(), "SKU-1", "Caneca", 2, new Money(35, "BRL"))
             ]);

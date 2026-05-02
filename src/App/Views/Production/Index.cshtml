@@ -157,7 +157,7 @@
                                     <div class="calendar-task-main">
                                         <span class="status-badge status-@task.Status.ToLowerInvariant()">@StatusLabelText(task.Status)</span>
                                         <span class="calendar-task-range">@rangeLabel</span>
-                                        <strong>@task.CustomerName</strong>
+                                        <strong>@task.OrderReference</strong>
                                         <span>@task.ItemDescription</span>
                                         <span>@task.Quantity unidade(s) - prazo @task.PlannedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
                                     </div>

@@ -28,6 +28,8 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     public DbSet<OrderEntity> Orders => Set<OrderEntity>();
 
+    public DbSet<OrderSourceEntity> OrderSources => Set<OrderSourceEntity>();
+
     public DbSet<OrderItemEntity> OrderItems => Set<OrderItemEntity>();
 
     public DbSet<ProductEntity> Products => Set<ProductEntity>();

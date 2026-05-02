@@ -11,6 +11,7 @@ using Craftsman.Domain.Production.Services;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Infra.Persistence;
+using Craftsman.Infra.Persistence.Entities;
 using Craftsman.Infra.Repositories;
 using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.Http;
@@ -28,13 +29,16 @@ public sealed class ManualOperationsTests
     {
         await using var dbContext = CreateDbContext();
         var orderRepository = new OrderRepository(dbContext);
+        var orderSourceRepository = new OrderSourceCatalogRepository(dbContext);
         var productRepository = new ProductRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var productionTaskRepository = new ProductionTaskRepository(dbContext);
         var unitOfWork = new UnitOfWork(dbContext);
+        await SeedOrderSourceAsync(dbContext, "WhatsApp");
         var service = new ManualOrderService(
             orderRepository,
+            orderSourceRepository,
             productRepository,
             new OrderProductionPlanningService(
                 orderRepository,
@@ -48,8 +52,9 @@ public sealed class ManualOperationsTests
 
         var orderId = await service.CreateAsync(new ManualOrderInputModel
         {
+            Source = "WhatsApp",
             Reference = "MAN-001",
-            CustomerName = "Cliente manual",
+            ShippingDate = new DateOnly(2026, 5, 3),
             Items =
             [
                 new ManualOrderItemInputModel
@@ -65,9 +70,49 @@ public sealed class ManualOperationsTests
         var loaded = await new OrderRepository(dbContext).GetByIdAsync(orderId);
 
         Assert.NotNull(loaded);
-        Assert.Equal("Manual", loaded.Origin.Source);
+        Assert.Equal("WhatsApp", loaded.Origin.Source);
         Assert.Equal("MAN-001", loaded.Origin.ExternalOrderId);
+        Assert.Equal(new DateOnly(2026, 5, 3), loaded.ShippingDate);
         Assert.Single(loaded.Items);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_creates_new_order_source_and_rejects_duplicate()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+
+        await service.CreateOrderSourceAsync(new OrderSourceInputModel { Name = "Elo7" });
+
+        var sources = await service.ListOrderSourcesAsync();
+        Assert.Contains("Elo7", sources);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateOrderSourceAsync(new OrderSourceInputModel { Name = "Elo7" }));
+    }
+
+    [Fact]
+    public async Task Manual_order_service_requires_shipping_date()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        var service = CreateManualOrderService(dbContext);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-NO-DATE",
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 1,
+                    UnitPriceAmount = 10
+                }
+            ]
+        }));
+
+        Assert.Contains("Data de envio", exception.Message);
     }
 
     [Fact]
@@ -75,6 +120,7 @@ public sealed class ManualOperationsTests
     {
         await using var dbContext = CreateDbContext();
         var orderRepository = new OrderRepository(dbContext);
+        var orderSourceRepository = new OrderSourceCatalogRepository(dbContext);
         var productRepository = new ProductRepository(dbContext);
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
@@ -84,6 +130,7 @@ public sealed class ManualOperationsTests
         var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
         var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
 
+        await SeedOrderSourceAsync(dbContext, "Manual");
         await rawMaterialRepository.AddAsync(material);
         await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 10, "Compra", null));
         await productRepository.AddAsync(product);
@@ -91,6 +138,7 @@ public sealed class ManualOperationsTests
 
         var service = new ManualOrderService(
             orderRepository,
+            orderSourceRepository,
             productRepository,
             new OrderProductionPlanningService(
                 orderRepository,
@@ -104,8 +152,9 @@ public sealed class ManualOperationsTests
 
         var orderId = await service.CreateAsync(new ManualOrderInputModel
         {
+            Source = "Manual",
             Reference = "MAN-PROD-001",
-            CustomerName = "Cliente manual",
+            ShippingDate = new DateOnly(2026, 5, 4),
             Items =
             [
                 new ManualOrderItemInputModel
@@ -145,7 +194,6 @@ public sealed class ManualOperationsTests
         var order = new Order(
             Guid.NewGuid(),
             new OrderOrigin("Shopee", "SO-MANUAL-PROD-001"),
-            new CustomerInfo("Cliente", "cliente@example.com"),
             [
                 new OrderItem(
                     Guid.NewGuid(),
@@ -313,6 +361,43 @@ public sealed class ManualOperationsTests
             .Options;
 
         return new AppDbContext(options);
+    }
+
+    private static ManualOrderService CreateManualOrderService(AppDbContext dbContext)
+    {
+        var orderRepository = new OrderRepository(dbContext);
+        var orderSourceRepository = new OrderSourceCatalogRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var unitOfWork = new UnitOfWork(dbContext);
+        var publisher = new RecordingDomainEventPublisher();
+
+        return new ManualOrderService(
+            orderRepository,
+            orderSourceRepository,
+            productRepository,
+            new OrderProductionPlanningService(
+                orderRepository,
+                new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
+                productionTaskRepository,
+                unitOfWork,
+                publisher,
+                NullLogger<OrderProductionPlanningService>.Instance),
+            unitOfWork,
+            publisher);
+    }
+
+    private static async Task SeedOrderSourceAsync(AppDbContext dbContext, string name)
+    {
+        await dbContext.OrderSources.AddAsync(new OrderSourceEntity
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
     }
 
     private sealed class RecordingDomainEventPublisher : IDomainEventPublisher

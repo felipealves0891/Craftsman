@@ -19,7 +19,7 @@ public sealed class ProductionPlannerTests
         var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
         var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 2)]);
         var orderItem = new OrderItem(Guid.NewGuid(), "EXT-1", "Bolsa externa", 2, new Money(50, "BRL"), product.Id);
-        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), new CustomerInfo("Ana", null), [orderItem]);
+        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), [orderItem]);
 
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
@@ -48,7 +48,6 @@ public sealed class ProductionPlannerTests
         var order = new Order(
             Guid.NewGuid(),
             new OrderOrigin("Elo7", "E-2"),
-            new CustomerInfo("Ana", null),
             [new OrderItem(Guid.NewGuid(), "EXT-1", "Bolsa externa", 2, new Money(50, "BRL"))]);
         var planner = new ProductionPlanner(
             new ProductRepository(dbContext),

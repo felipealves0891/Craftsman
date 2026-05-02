@@ -6,9 +6,6 @@ public static class ShopeeOrderMapper
 {
     public static RawOrder ToRawOrder(ShopeeOrderDetail detail)
     {
-        var customerName = FirstNonEmpty(detail.BuyerUsername, detail.RecipientAddress?.Name)
-            ?? throw new InvalidOperationException($"Shopee order {detail.OrderSn} does not have a buyer or recipient name.");
-
         var items = detail.Items.Select(item =>
         {
             var externalItemId = item.ModelId > 0 ? item.ModelId.ToString() : item.ItemId.ToString();
@@ -24,11 +21,6 @@ public static class ShopeeOrderMapper
                 unitPrice);
         }).ToList();
 
-        return new RawOrder("Shopee", detail.OrderSn, customerName, null, items.AsReadOnly());
-    }
-
-    private static string? FirstNonEmpty(params string?[] values)
-    {
-        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+        return new RawOrder("Shopee", detail.OrderSn, items.AsReadOnly());
     }
 }

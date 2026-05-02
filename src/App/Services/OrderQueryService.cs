@@ -33,10 +33,10 @@ public sealed class OrderQueryService
             order.Id,
             order.Origin.Source,
             order.Origin.ExternalOrderId,
-            order.Customer.Name,
             order.Status.ToString(),
             order.Items.Count,
-            order.CreatedAt)).ToList().AsReadOnly();
+            order.CreatedAt,
+            order.ShippingDate)).ToList().AsReadOnly();
     }
 
     public async Task<OrderDetailViewModel?> GetDetailAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -57,10 +57,9 @@ public sealed class OrderQueryService
             order.Id,
             order.Origin.Source,
             order.Origin.ExternalOrderId,
-            order.Customer.Name,
-            order.Customer.Email,
             order.Status.ToString(),
             order.CreatedAt,
+            order.ShippingDate,
             order.Items.Select(item => new OrderItemViewModel(
                 item.Id,
                 item.ExternalItemId,

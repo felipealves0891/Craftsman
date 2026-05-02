@@ -39,11 +39,11 @@
                         <strong>Importar ou criar pedido.</strong>
                         Use a <a asp-controller="Import" asp-action="Index">importa&ccedil;&atilde;o de pedidos</a>
                         para trazer vendas externas, ou cadastre um
-                        <a asp-controller="ManualOrders" asp-action="Create">pedido manual</a> quando a venda nasceu fora das integracoes.
+                        <a asp-controller="ManualOrders" asp-action="Create">novo pedido</a> quando a venda nasceu fora das integracoes.
                     </li>
                     <li class="mb-3">
                         <strong>Mapear itens para produtos internos.</strong>
-                        Revise a <a asp-controller="Orders" asp-action="Index">carteira de pedidos</a>, cadastre ou ajuste
+                        Revise os <a asp-controller="Orders" asp-action="Index">pedidos</a>, cadastre ou ajuste
                         <a asp-controller="Products" asp-action="Index">produtos</a> e mantenha
                         <a asp-controller="Products" asp-action="Mappings">mapeamentos</a> para que itens externos apontem para o produto correto.
                     </li>
@@ -102,7 +102,7 @@
             </div>
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action" asp-controller="Import" asp-action="Index">Pedidos/importa&ccedil;&atilde;o</a>
-                <a class="list-group-item list-group-item-action" asp-controller="ManualOrders" asp-action="Create">Pedido manual</a>
+                <a class="list-group-item list-group-item-action" asp-controller="ManualOrders" asp-action="Create">Novo Pedido</a>
                 <a class="list-group-item list-group-item-action" asp-controller="Products" asp-action="Index">Produtos</a>
                 <a class="list-group-item list-group-item-action" asp-controller="Products" asp-action="Mappings">Mapeamentos</a>
                 <a class="list-group-item list-group-item-action" asp-controller="Inventory" asp-action="Index">Mat&eacute;rias-primas/estoque</a>

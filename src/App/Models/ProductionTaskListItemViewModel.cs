@@ -13,7 +13,7 @@ public sealed record ProductionTaskListItemViewModel(
     DateTimeOffset PlannedAt,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,
-    string CustomerName = "",
+    string OrderReference = "",
     string ItemDescription = "",
     string ExternalOrderId = "")
 {

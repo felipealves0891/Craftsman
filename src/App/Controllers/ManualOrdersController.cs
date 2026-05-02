@@ -21,7 +21,7 @@ public sealed class ManualOrdersController : Controller
 
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
-        await PopulateProductsAsync(cancellationToken);
+        await PopulateFormOptionsAsync(cancellationToken);
         return View(new ManualOrderInputModel());
     }
 
@@ -32,7 +32,7 @@ public sealed class ManualOrdersController : Controller
     {
         if (!ModelState.IsValid)
         {
-            await PopulateProductsAsync(cancellationToken);
+            await PopulateFormOptionsAsync(cancellationToken);
             return View(input);
         }
 
@@ -44,9 +44,33 @@ public sealed class ManualOrdersController : Controller
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
         {
             ModelState.AddModelError(string.Empty, exception.Message);
-            await PopulateProductsAsync(cancellationToken);
+            await PopulateFormOptionsAsync(cancellationToken);
             return View(input);
         }
+    }
+
+    [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSource(OrderSourceInputModel input, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Informe o nome da origem.";
+            return RedirectToAction(nameof(Create));
+        }
+
+        try
+        {
+            await manualOrderService.CreateOrderSourceAsync(input, cancellationToken);
+            TempData["Success"] = "Origem cadastrada.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
+        }
+
+        return RedirectToAction(nameof(Create));
     }
 
     public async Task<IActionResult> LinkItems(Guid id, CancellationToken cancellationToken)
@@ -57,7 +81,7 @@ public sealed class ManualOrdersController : Controller
             return NotFound();
         }
 
-        await PopulateProductsAsync(cancellationToken);
+        await PopulateFormOptionsAsync(cancellationToken);
         return View(order);
     }
 
@@ -78,9 +102,12 @@ public sealed class ManualOrdersController : Controller
         }
     }
 
-    private async Task PopulateProductsAsync(CancellationToken cancellationToken)
+    private async Task PopulateFormOptionsAsync(CancellationToken cancellationToken)
     {
         var products = await manualOrderService.ListProductOptionsAsync(cancellationToken);
         ViewBag.Products = products.Select(product => new SelectListItem(product.Name, product.Id.ToString())).ToList();
+
+        var sources = await manualOrderService.ListOrderSourcesAsync(cancellationToken);
+        ViewBag.OrderSources = sources.Select(source => new SelectListItem(source, source)).ToList();
     }
 }

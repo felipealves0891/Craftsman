@@ -11,11 +11,54 @@ public static class DevelopmentDataSeeder
 
     public static async Task SeedAsync(AppDbContext dbContext, CancellationToken cancellationToken = default)
     {
+        await SeedOrderSourcesAsync(dbContext, cancellationToken);
         await SeedRawMaterialsAsync(dbContext, cancellationToken);
         await SeedProductsAsync(dbContext, cancellationToken);
         await SeedBillOfMaterialsAsync(dbContext, cancellationToken);
         await SeedProductMappingsAsync(dbContext, cancellationToken);
         await SeedInitialStockAsync(dbContext, cancellationToken);
+    }
+
+    private static async Task SeedOrderSourcesAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var existingNames = await dbContext.OrderSources
+            .Select(source => source.Name)
+            .ToListAsync(cancellationToken);
+
+        var existingNameSet = existingNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var sources = new[]
+        {
+            new OrderSourceEntity
+            {
+                Id = Guid.Parse("b1c93b88-fd77-4d32-a2be-95b9aa7b0101"),
+                Name = "Manual",
+                CreatedAt = SeedOccurredAt
+            },
+            new OrderSourceEntity
+            {
+                Id = Guid.Parse("b1c93b88-fd77-4d32-a2be-95b9aa7b0102"),
+                Name = "Simulated",
+                CreatedAt = SeedOccurredAt
+            },
+            new OrderSourceEntity
+            {
+                Id = Guid.Parse("b1c93b88-fd77-4d32-a2be-95b9aa7b0103"),
+                Name = "Shopee",
+                CreatedAt = SeedOccurredAt
+            }
+        };
+
+        var missingSources = sources
+            .Where(source => !existingNameSet.Contains(source.Name))
+            .ToList();
+
+        if (missingSources.Count == 0)
+        {
+            return;
+        }
+
+        await dbContext.OrderSources.AddRangeAsync(missingSources, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static async Task SeedRawMaterialsAsync(AppDbContext dbContext, CancellationToken cancellationToken)

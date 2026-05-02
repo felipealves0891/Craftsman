@@ -10,14 +10,10 @@ public sealed class InMemoryOrderSource : IOrderSource
         new RawOrder(
             "Simulated",
             "SIM-1001",
-            "Cliente Simulado",
-            "cliente.simulado@example.com",
             [new RawOrderItem("SIM-SKU-1", "Produto simulado", 1, 49.9m)]),
         new RawOrder(
             "Simulated",
             "SIM-INVALID",
-            "Cliente Sem Item",
-            null,
             [])
     ];
 

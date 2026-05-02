@@ -21,8 +21,8 @@ public sealed class PersistenceRepositoryTests
         var order = new Order(
             Guid.NewGuid(),
             new OrderOrigin("Shopee", "SO-200"),
-            new CustomerInfo("Cliente", null),
-            [new OrderItem(Guid.NewGuid(), "SKU-1", "Item", 1, new Money(99, "BRL"))]);
+            [new OrderItem(Guid.NewGuid(), "SKU-1", "Item", 1, new Money(99, "BRL"))],
+            shippingDate: new DateOnly(2026, 5, 10));
 
         await repository.AddAsync(order);
         await dbContext.SaveChangesAsync();
@@ -31,6 +31,7 @@ public sealed class PersistenceRepositoryTests
 
         Assert.NotNull(loaded);
         Assert.Equal(order.Id, loaded.Id);
+        Assert.Equal(new DateOnly(2026, 5, 10), loaded.ShippingDate);
         Assert.Single(loaded.Items);
         Assert.Empty(loaded.DomainEvents);
     }
