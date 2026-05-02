@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +48,7 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
     options.AddPolicy(ApplicationPolicies.Read, policy => policy.RequireRole(ApplicationRoles.Admin, ApplicationRoles.Operador, ApplicationRoles.Consulta));
     options.AddPolicy(ApplicationPolicies.Write, policy => policy.RequireRole(ApplicationRoles.Admin, ApplicationRoles.Operador));
     options.AddPolicy(ApplicationPolicies.AdminOnly, policy => policy.RequireRole(ApplicationRoles.Admin));
@@ -55,11 +58,19 @@ builder.Services.AddScoped<IdentitySeeder>();
 
 var app = builder.Build();
 
+var supportedCulture = new CultureInfo("pt-BR");
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(supportedCulture),
+    SupportedCultures = [supportedCulture],
+    SupportedUICultures = [supportedCulture]
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     Console.WriteLine("Running in Development environment. Applying migrations and seeding data...");
-    
+
     app.UseDeveloperExceptionPage();
     using var scope = app.Services.CreateScope();
 

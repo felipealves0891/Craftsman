@@ -90,7 +90,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Valor unitário</label>
-                                <input asp-for="Items[i].UnitPriceAmount" class="form-control" data-item-field data-price-field />
+                                <input asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
                             </div>
                             <div class="form-group manual-item-product">
                                 <label class="form-label">Produto interno</label>
@@ -145,7 +145,7 @@
             const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
             const parseNumber = (value) => {
-                const normalized = value.replace(/\./g, '').replace(',', '.');
+                const normalized = value.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
                 const parsed = Number.parseFloat(normalized);
                 return Number.isFinite(parsed) ? parsed : 0;
             };

@@ -29,11 +29,11 @@
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Quantity" class="form-label"></label>
-            <input asp-for="Quantity" class="form-control" />
+            <input asp-for="Quantity" type="text" inputmode="decimal" class="form-control" data-decimal-input />
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="UnitCostAmount" class="form-label"></label>
-            <input asp-for="UnitCostAmount" class="form-control" />
+            <input asp-for="UnitCostAmount" type="text" inputmode="decimal" class="form-control" data-currency-input />
         </div>
         <div class="col-md-3 form-group">
             <label asp-for="Reason" class="form-label"></label>
