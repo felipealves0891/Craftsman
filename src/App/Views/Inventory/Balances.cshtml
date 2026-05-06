@@ -20,6 +20,7 @@
                 <tr>
                     <th>Matéria-prima</th>
                     <th>Saldo</th>
+                    <th>Alerta</th>
                     <th class="text-right">Ações</th>
                 </tr>
             </thead>
@@ -27,7 +28,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="3">
+                        <td colspan="4">
                             <div class="empty-state">
                                 <strong>Nenhum saldo registrado</strong>
                                 <span>Cadastre matérias-primas e movimentos para acompanhar o estoque.</span>
@@ -42,6 +43,22 @@
                         <tr>
                             <td><strong>@balance.RawMaterialName</strong></td>
                             <td>@balance.Balance @balance.UnitOfMeasure</td>
+                            <td>
+                                @if (balance.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical)
+                                {
+                                    <span class="badge badge-danger">Critico</span>
+                                    <span class="small text-muted">limite @balance.ReachedLimit</span>
+                                }
+                                else if (balance.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning)
+                                {
+                                    <span class="badge badge-warning">Aviso</span>
+                                    <span class="small text-muted">limite @balance.ReachedLimit</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Normal</span>
+                                }
+                            </td>
                             <td class="text-right"><a asp-action="History" asp-route-id="@balance.RawMaterialId" class="btn btn-sm btn-outline-primary">Histórico</a></td>
                         </tr>
                     }

@@ -221,6 +221,7 @@ public sealed class ManualOperationsTests
             new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
             new EmptyOrderImportPipeline(),
             planningService,
+            new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
             new NoOpAuditService())
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
@@ -355,6 +356,122 @@ public sealed class ManualOperationsTests
         var movement = Assert.Single(movements);
         Assert.Equal(12, movement.UnitCostAmount);
         Assert.Equal(36, movement.TotalCostAmount);
+    }
+
+    [Fact]
+    public async Task Inventory_service_saves_updates_and_lists_low_stock_levels()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext));
+
+        var materialId = await service.SaveRawMaterialAsync(new RawMaterialInputModel
+        {
+            Name = "Linha",
+            UnitOfMeasure = "un",
+            MinimumStockLevel = 10,
+            CriticalStockLevel = 3
+        });
+
+        await service.SaveRawMaterialAsync(new RawMaterialInputModel
+        {
+            Id = materialId,
+            Name = "Linha",
+            UnitOfMeasure = "un",
+            Status = RawMaterialStatus.Active,
+            MinimumStockLevel = 8,
+            CriticalStockLevel = 2
+        });
+
+        var input = await service.GetRawMaterialInputAsync(materialId);
+        var materials = await service.ListRawMaterialsAsync();
+
+        Assert.Equal(8, input?.MinimumStockLevel);
+        Assert.Equal(2, input?.CriticalStockLevel);
+        var listed = Assert.Single(materials);
+        Assert.Equal(8, listed.MinimumStockLevel);
+        Assert.Equal(2, listed.CriticalStockLevel);
+    }
+
+    [Fact]
+    public async Task Stock_alert_service_returns_critical_alerts_before_warnings_and_only_critical_for_movements()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var warningMaterial = new RawMaterial(Guid.NewGuid(), "Linha", "un", minimumStockLevel: 10, criticalStockLevel: 3);
+        var criticalMaterial = new RawMaterial(Guid.NewGuid(), "Couro", "m2", minimumStockLevel: 10, criticalStockLevel: 2);
+        var normalMaterial = new RawMaterial(Guid.NewGuid(), "Ziper", "un", minimumStockLevel: 2);
+        var service = new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository);
+
+        await rawMaterialRepository.AddAsync(warningMaterial);
+        await rawMaterialRepository.AddAsync(criticalMaterial);
+        await rawMaterialRepository.AddAsync(normalMaterial);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), warningMaterial.Id, StockMovementType.Inbound, 5, "Compra", null));
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), criticalMaterial.Id, StockMovementType.Inbound, 2, "Compra", null));
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), normalMaterial.Id, StockMovementType.Inbound, 5, "Compra", null));
+        await dbContext.SaveChangesAsync();
+
+        var alerts = await service.ListAlertsAsync();
+        var criticalAlerts = await service.ListCriticalAlertsAsync();
+
+        Assert.Collection(
+            alerts,
+            alert => Assert.Equal(StockAlertLevel.Critical, alert.Level),
+            alert => Assert.Equal(StockAlertLevel.Warning, alert.Level));
+        Assert.Single(criticalAlerts);
+        Assert.Equal(criticalMaterial.Id, criticalAlerts.Single().RawMaterialId);
+    }
+
+    [Fact]
+    public async Task Orders_controller_sending_to_production_includes_low_stock_alert_without_blocking_when_available()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var unitOfWork = new UnitOfWork(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m", minimumStockLevel: 5, criticalStockLevel: 2);
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 1)]);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "LOW-STOCK-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(10, "BRL"), product.Id)]);
+
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 5, "Compra", null));
+        await productRepository.AddAsync(product);
+        await orderRepository.AddAsync(order);
+        await dbContext.SaveChangesAsync();
+
+        var planningService = new OrderProductionPlanningService(
+            orderRepository,
+            new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
+            productionTaskRepository,
+            unitOfWork,
+            new RecordingDomainEventPublisher(),
+            NullLogger<OrderProductionPlanningService>.Instance);
+        var controller = new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
+            new EmptyOrderImportPipeline(),
+            planningService,
+            new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
+            new NoOpAuditService())
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+
+        await controller.SendToProduction(order.Id, CancellationToken.None);
+
+        Assert.Equal("Pedido enviado para producao.", controller.TempData["Success"]);
+        Assert.Contains("Aviso: Tecido", Assert.IsType<string>(controller.TempData["StockAlerts"]));
+        Assert.Single(await productionTaskRepository.ListAsync());
     }
 
     private static AppDbContext CreateDbContext()

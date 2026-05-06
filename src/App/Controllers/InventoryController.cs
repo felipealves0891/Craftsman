@@ -11,10 +11,12 @@ namespace Craftsman.App.Controllers;
 public sealed class InventoryController : Controller
 {
     private readonly InventoryAppService inventoryAppService;
+    private readonly StockAlertAppService stockAlertAppService;
 
-    public InventoryController(InventoryAppService inventoryAppService)
+    public InventoryController(InventoryAppService inventoryAppService, StockAlertAppService stockAlertAppService)
     {
         this.inventoryAppService = inventoryAppService;
+        this.stockAlertAppService = stockAlertAppService;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -59,6 +61,7 @@ public sealed class InventoryController : Controller
     public async Task<IActionResult> Movements(CancellationToken cancellationToken)
     {
         await PopulateRawMaterialsAsync(cancellationToken);
+        ViewBag.CriticalStockAlerts = await stockAlertAppService.ListCriticalAlertsAsync(cancellationToken);
         ViewBag.Movements = await inventoryAppService.ListMovementsAsync(cancellationToken: cancellationToken);
         return View(new StockMovementInputModel());
     }
@@ -73,6 +76,7 @@ public sealed class InventoryController : Controller
             try
             {
                 await inventoryAppService.RegisterMovementAsync(input, cancellationToken);
+                TempData["Success"] = "Movimento de estoque registrado.";
                 return RedirectToAction(nameof(Movements));
             }
             catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
@@ -82,6 +86,7 @@ public sealed class InventoryController : Controller
         }
 
         await PopulateRawMaterialsAsync(cancellationToken);
+        ViewBag.CriticalStockAlerts = await stockAlertAppService.ListCriticalAlertsAsync(cancellationToken);
         ViewBag.Movements = await inventoryAppService.ListMovementsAsync(cancellationToken: cancellationToken);
         return View(input);
     }

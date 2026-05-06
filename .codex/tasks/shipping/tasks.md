@@ -54,3 +54,27 @@ Critérios de aceitação:
 - Envios podem ser salvos e consultados por pedido e status.
 - O mapeamento entre persistência e domínio é explícito.
 - Alterações de envio emitem os eventos necessários.
+
+### SH-006 - Selecionar pedido em modal ao criar envio
+- [ ] Substituir o campo livre de `OrderId` por um fluxo de selecao em modal na tela de criacao de envio.
+- [ ] Listar pedidos disponiveis para envio no modal.
+- [ ] Exibir detalhes do pedido no modal antes da selecao, incluindo itens.
+- [ ] Preencher o pedido selecionado no formulario de envio.
+- [ ] Manter a criacao do envio passando pelo servico de aplicacao existente.
+- [ ] Criar ou atualizar testes automatizados cobrindo os criterios de aceitacao.
+
+Criterios de aceitacao:
+- Usuario consegue abrir um modal na tela de criacao de envio para selecionar um pedido.
+- O modal lista pedidos disponiveis para envio.
+- O modal exibe detalhes do pedido antes da selecao, incluindo itens.
+- Ao selecionar um pedido, o formulario mostra o pedido escolhido e envia seu `OrderId`.
+- O usuario nao precisa digitar manualmente o `OrderId`.
+- A criacao do envio continua validando pedido existente e codigo de rastreio pelo fluxo atual de aplicacao/dominio.
+- A interface nao acessa `DbContext` diretamente.
+
+Plano de testes:
+- Teste de Razor/view garantindo que a tela de criacao de envio possui acionador do modal de pedidos.
+- Teste de Razor/view garantindo que o campo de `OrderId` nao fica exposto como entrada manual principal.
+- Teste de Razor/view garantindo que o modal exibe dados e itens do pedido.
+- Teste de aplicacao para consulta de pedidos disponiveis ao modal.
+- Teste de aplicacao para criacao de envio com o `OrderId` selecionado.

@@ -56,11 +56,11 @@ Critérios de aceitação:
 - Alterações de estoque invalidam cache relacionado.
 
 ### I-006 - Criar cadastro manual de matéria-prima
-- [ ] Criar serviço de aplicação para cadastrar e editar matéria-prima.
-- [ ] Criar telas Razor para listar, criar, editar, ativar e inativar matérias-primas.
-- [ ] Validar nome, unidade de medida e status.
-- [ ] Persistir alterações pelo repositório de estoque.
-- [ ] Invalidar cache de estoque quando matéria-prima mudar.
+- [x] Criar serviço de aplicação para cadastrar e editar matéria-prima.
+- [x] Criar telas Razor para listar, criar, editar, ativar e inativar matérias-primas.
+- [x] Validar nome, unidade de medida e status.
+- [x] Persistir alterações pelo repositório de estoque.
+- [x] Invalidar cache de estoque quando matéria-prima mudar.
 
 Critérios de aceitação:
 - Matéria-prima manual usa a mesma entidade `RawMaterial` do domínio.
@@ -69,11 +69,11 @@ Critérios de aceitação:
 - A interface não acessa `DbContext` diretamente.
 
 ### I-007 - Criar lançamento manual de movimentações de estoque
-- [ ] Criar tela para registrar entrada, saída e ajuste de estoque.
-- [ ] Permitir informar quantidade, motivo, referência de negócio e custo unitário quando aplicável.
-- [ ] Bloquear saída manual que gere saldo negativo.
-- [ ] Persistir toda alteração como `StockMovement`.
-- [ ] Invalidar cache de saldo e movimentações.
+- [x] Criar tela para registrar entrada, saída e ajuste de estoque.
+- [x] Permitir informar quantidade, motivo, referência de negócio e custo unitário quando aplicável.
+- [x] Bloquear saída manual que gere saldo negativo.
+- [x] Persistir toda alteração como `StockMovement`.
+- [x] Invalidar cache de saldo e movimentações.
 
 Critérios de aceitação:
 - Toda alteração manual gera movimentação auditável.
@@ -82,12 +82,51 @@ Critérios de aceitação:
 - Entradas com custo unitário ficam disponíveis para cálculo financeiro de custo real.
 
 ### I-008 - Criar consulta operacional de estoque
-- [ ] Criar tela de saldo por matéria-prima.
-- [ ] Criar tela de histórico de movimentações por matéria-prima.
-- [ ] Exibir motivo, data, quantidade, custo unitário e referência de negócio.
-- [ ] Usar consultas cacheáveis com invalidação quando houver movimentação.
+- [x] Criar tela de saldo por matéria-prima.
+- [x] Criar tela de histórico de movimentações por matéria-prima.
+- [x] Exibir motivo, data, quantidade, custo unitário e referência de negócio.
+- [x] Usar consultas cacheáveis com invalidação quando houver movimentação.
 
 Critérios de aceitação:
 - Usuário consegue auditar como o saldo foi formado.
 - Consulta usa dados internos de estoque.
 - Alterações de estoque refletem na consulta após invalidação de cache.
+
+## I-009 - Alerta de Estoque baixo
+- [x] Deve ser possivel criar regra de estoque baixo ao cadastrar produto
+- [x] Deve ser possivel cadastrar dois niveis de regra, "Aviso" e "Critico"
+- [x] Alerta de quantidade minima alertar no envio para produção
+- [x] Alerta de quantidade critica no envio para produção, tela de entrada e no sino de notificações
+
+Exemplos de notificação:
+- .codex\startbootstrap-sb-admin-2-gh-pages
+
+Critérios de aceitação:
+- Usuario consegue cadastrar os alertas no cadastro/edição do produto
+- Quando a quantidade no estoque for igual ou abaixo da quantidade minima alertar no envio para produção e no sino de notificações
+- Quando a quantidade no estoque for igual ou abaixo da quantidade critica alertar no envio para produção, tela de entrada e no sino de notificações
+
+## I-010 - Ajustes em movimentos de estoque
+- [x] Ocultar o campo de referencia no formulario de lancamento manual de movimentos de estoque.
+- [x] Exigir e exibir o campo de motivo apenas quando o movimento for saida (`Outbound`).
+- [x] Ajustar os alertas de erro e sucesso do lancamento manual para mensagens claras e consistentes com o padrao da aplicacao.
+- [x] Liberar o tipo ajuste (`Adjustment`) quando o movimento for manual.
+- [x] Criar ou atualizar testes automatizados cobrindo os criterios de aceitacao.
+
+Criterios de aceitacao:
+- O usuario nao visualiza nem preenche referencia no lancamento manual de movimentos de estoque.
+- Movimentos gerados pelo fluxo manual continuam auditaveis mesmo sem referencia informada pela tela.
+- O campo motivo aparece e e obrigatorio apenas para saidas manuais.
+- Entradas e ajustes manuais nao exigem motivo.
+- Mensagens de erro devem informar o problema validado sem expor detalhe tecnico.
+- Mensagem de sucesso deve confirmar que o movimento foi registrado.
+- O tipo ajuste fica disponivel para lancamento manual.
+- Ajustes manuais respeitam as regras de saldo ja existentes no dominio e na aplicacao.
+
+Plano de testes:
+- Teste de Razor/view garantindo que o campo referencia nao aparece no formulario manual.
+- Teste de Razor/view garantindo que o motivo e condicionado ao tipo saida.
+- Teste de aplicacao para saida manual sem motivo retornar erro de validacao.
+- Teste de aplicacao para entrada manual sem motivo ser aceita.
+- Teste de aplicacao para ajuste manual ser aceito quando valido.
+- Teste de aplicacao para mensagens de erro e sucesso esperadas no fluxo manual.

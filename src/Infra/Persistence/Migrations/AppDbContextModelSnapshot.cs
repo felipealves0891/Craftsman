@@ -481,6 +481,16 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
+                    b.Property<decimal?>("CriticalStockLevel")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("critical_stock_level");
+
+                    b.Property<decimal?>("MinimumStockLevel")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("minimum_stock_level");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)

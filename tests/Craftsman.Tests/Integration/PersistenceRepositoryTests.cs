@@ -79,6 +79,23 @@ public sealed class PersistenceRepositoryTests
     }
 
     [Fact]
+    public async Task Raw_material_repository_saves_and_loads_low_stock_levels()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new RawMaterialRepository(dbContext);
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Linha", "un", minimumStockLevel: 10, criticalStockLevel: 2);
+
+        await repository.AddAsync(rawMaterial);
+        await dbContext.SaveChangesAsync();
+
+        var loaded = await repository.GetByIdAsync(rawMaterial.Id);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(10, loaded.MinimumStockLevel);
+        Assert.Equal(2, loaded.CriticalStockLevel);
+    }
+
+    [Fact]
     public async Task Stock_movement_repository_loads_signed_adjustments_and_ignores_zero_quantity_rows()
     {
         await using var dbContext = CreateDbContext();

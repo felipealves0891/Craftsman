@@ -3,11 +3,40 @@ using Craftsman.Domain.Inventory.Entities;
 
 namespace Craftsman.App.Models;
 
-public sealed record RawMaterialListItemViewModel(Guid Id, string Name, string UnitOfMeasure, string Status);
+public sealed record RawMaterialListItemViewModel(
+    Guid Id,
+    string Name,
+    string UnitOfMeasure,
+    string Status,
+    decimal? MinimumStockLevel,
+    decimal? CriticalStockLevel,
+    StockAlertLevel? AlertLevel);
 
 public sealed record RawMaterialOptionViewModel(Guid Id, string Name, string UnitOfMeasure);
 
-public sealed record InventoryBalanceViewModel(Guid RawMaterialId, string RawMaterialName, string UnitOfMeasure, decimal Balance);
+public sealed record InventoryBalanceViewModel(
+    Guid RawMaterialId,
+    string RawMaterialName,
+    string UnitOfMeasure,
+    decimal Balance,
+    StockAlertLevel AlertLevel,
+    decimal? ReachedLimit);
+
+public sealed record StockAlertViewModel(
+    Guid RawMaterialId,
+    string RawMaterialName,
+    string UnitOfMeasure,
+    decimal Balance,
+    StockAlertLevel Level,
+    decimal ReachedLimit)
+{
+    public string LevelLabel => Level switch
+    {
+        StockAlertLevel.Critical => "Critico",
+        StockAlertLevel.Warning => "Aviso",
+        _ => "Normal"
+    };
+}
 
 public sealed record StockMovementViewModel(
     Guid Id,
@@ -21,7 +50,7 @@ public sealed record StockMovementViewModel(
     string? BusinessReference,
     DateTimeOffset OccurredAt);
 
-public sealed class RawMaterialInputModel
+public sealed class RawMaterialInputModel : IValidatableObject
 {
     public Guid? Id { get; set; }
 
@@ -35,9 +64,29 @@ public sealed class RawMaterialInputModel
 
     [Required]
     public RawMaterialStatus Status { get; set; } = RawMaterialStatus.Active;
+
+    [Range(0, double.MaxValue)]
+    [Display(Name = "Quantidade minima")]
+    public decimal? MinimumStockLevel { get; set; }
+
+    [Range(0, double.MaxValue)]
+    [Display(Name = "Quantidade critica")]
+    public decimal? CriticalStockLevel { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (MinimumStockLevel.HasValue &&
+            CriticalStockLevel.HasValue &&
+            CriticalStockLevel.Value > MinimumStockLevel.Value)
+        {
+            yield return new ValidationResult(
+                "Quantidade critica deve ser menor ou igual a quantidade minima.",
+                [nameof(CriticalStockLevel)]);
+        }
+    }
 }
 
-public sealed class StockMovementInputModel
+public sealed class StockMovementInputModel : IValidatableObject
 {
     [Required]
     [Display(Name = "Materia-prima")]
@@ -50,7 +99,6 @@ public sealed class StockMovementInputModel
     [Display(Name = "Quantidade")]
     public decimal Quantity { get; set; }
 
-    [Required]
     [Display(Name = "Motivo")]
     public string Reason { get; set; } = string.Empty;
 
@@ -60,4 +108,14 @@ public sealed class StockMovementInputModel
     [Range(0, double.MaxValue)]
     [Display(Name = "Custo unitario")]
     public decimal UnitCostAmount { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Type == StockMovementType.Outbound && string.IsNullOrWhiteSpace(Reason))
+        {
+            yield return new ValidationResult(
+                "Informe o motivo da saida manual.",
+                [nameof(Reason)]);
+        }
+    }
 }

@@ -67,7 +67,13 @@ public sealed class RawMaterialRepository : IRawMaterialRepository
 
     private static RawMaterial ToModel(RawMaterialEntity entity)
     {
-        return new RawMaterial(entity.Id, entity.Name, entity.UnitOfMeasure, Enum.Parse<RawMaterialStatus>(entity.Status));
+        return new RawMaterial(
+            entity.Id,
+            entity.Name,
+            entity.UnitOfMeasure,
+            Enum.Parse<RawMaterialStatus>(entity.Status),
+            entity.MinimumStockLevel,
+            entity.CriticalStockLevel);
     }
 
     private static RawMaterialEntity ToEntity(RawMaterial rawMaterial)
@@ -83,5 +89,7 @@ public sealed class RawMaterialRepository : IRawMaterialRepository
         entity.Name = rawMaterial.Name;
         entity.UnitOfMeasure = rawMaterial.UnitOfMeasure;
         entity.Status = rawMaterial.Status.ToString();
+        entity.MinimumStockLevel = rawMaterial.MinimumStockLevel;
+        entity.CriticalStockLevel = rawMaterial.CriticalStockLevel;
     }
 }

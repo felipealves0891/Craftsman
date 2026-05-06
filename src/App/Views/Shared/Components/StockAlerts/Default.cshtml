@@ -1,0 +1,34 @@
+@model IReadOnlyCollection<Craftsman.App.Models.StockAlertViewModel>
+
+@if (Model.Any())
+{
+    <li class="nav-item dropdown no-arrow mx-1">
+        <a class="nav-link dropdown-toggle" href="#" id="stockAlertsDropdown" role="button"
+           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-bell fa-fw"></i>
+            <span class="badge badge-danger badge-counter">@Model.Count</span>
+        </a>
+        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+             aria-labelledby="stockAlertsDropdown">
+            <h6 class="dropdown-header">Alertas de estoque</h6>
+            @foreach (var alert in Model)
+            {
+                var iconClass = alert.Level == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical
+                    ? "bg-danger"
+                    : "bg-warning";
+                <a class="dropdown-item d-flex align-items-center" asp-controller="Inventory" asp-action="History" asp-route-id="@alert.RawMaterialId">
+                    <div class="mr-3">
+                        <div class="icon-circle @iconClass">
+                            <i class="fas fa-box-open text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="small text-gray-500">@alert.LevelLabel</div>
+                        <span class="font-weight-bold">@alert.RawMaterialName: @alert.Balance @alert.UnitOfMeasure</span>
+                    </div>
+                </a>
+            }
+            <a class="dropdown-item text-center small text-gray-500" asp-controller="Inventory" asp-action="Balances">Ver saldos</a>
+        </div>
+    </li>
+}

@@ -24,15 +24,22 @@ public sealed class InventoryAppService
     public async Task<IReadOnlyCollection<RawMaterialListItemViewModel>> ListRawMaterialsAsync(CancellationToken cancellationToken = default)
     {
         var materials = await rawMaterialRepository.ListAsync(cancellationToken);
+        var viewModels = new List<RawMaterialListItemViewModel>();
 
-        return materials
-            .Select(material => new RawMaterialListItemViewModel(
+        foreach (var material in materials)
+        {
+            var balance = await stockMovementRepository.GetBalanceAsync(material.Id, cancellationToken);
+            viewModels.Add(new RawMaterialListItemViewModel(
                 material.Id,
                 material.Name,
                 material.UnitOfMeasure,
-                material.Status.ToString()))
-            .ToList()
-            .AsReadOnly();
+                material.Status.ToString(),
+                material.MinimumStockLevel,
+                material.CriticalStockLevel,
+                material.GetStockAlertLevel(balance)));
+        }
+
+        return viewModels.AsReadOnly();
     }
 
     public async Task<RawMaterialInputModel?> GetRawMaterialInputAsync(Guid id, CancellationToken cancellationToken = default)
@@ -46,13 +53,21 @@ public sealed class InventoryAppService
                 Id = material.Id,
                 Name = material.Name,
                 UnitOfMeasure = material.UnitOfMeasure,
-                Status = material.Status
+                Status = material.Status,
+                MinimumStockLevel = material.MinimumStockLevel,
+                CriticalStockLevel = material.CriticalStockLevel
             };
     }
 
     public async Task<Guid> SaveRawMaterialAsync(RawMaterialInputModel input, CancellationToken cancellationToken = default)
     {
-        var material = new RawMaterial(input.Id.GetValueOrDefault(Guid.NewGuid()), input.Name, input.UnitOfMeasure, input.Status);
+        var material = new RawMaterial(
+            input.Id.GetValueOrDefault(Guid.NewGuid()),
+            input.Name,
+            input.UnitOfMeasure,
+            input.Status,
+            input.MinimumStockLevel,
+            input.CriticalStockLevel);
 
         if (input.Id is null || input.Id == Guid.Empty)
         {
@@ -73,6 +88,11 @@ public sealed class InventoryAppService
         _ = await rawMaterialRepository.GetByIdAsync(input.RawMaterialId, cancellationToken)
             ?? throw new InvalidOperationException("Materia-prima nao encontrada.");
 
+        if (input.Type == StockMovementType.Outbound && string.IsNullOrWhiteSpace(input.Reason))
+        {
+            throw new InvalidOperationException("Informe o motivo da saida manual.");
+        }
+
         if (input.Type != StockMovementType.Adjustment && input.Quantity <= 0)
         {
             throw new InvalidOperationException("Quantidade deve ser maior que zero.");
@@ -91,6 +111,14 @@ public sealed class InventoryAppService
                 throw new InvalidOperationException("Saida manual nao pode gerar saldo negativo.");
             }
         }
+        else if (input.Type == StockMovementType.Adjustment)
+        {
+            var currentBalance = await stockMovementRepository.GetBalanceAsync(input.RawMaterialId, cancellationToken);
+            if (currentBalance + input.Quantity < 0)
+            {
+                throw new InvalidOperationException("Ajuste manual nao pode gerar saldo negativo.");
+            }
+        }
 
         var unitCost = input.Type == StockMovementType.Inbound ? input.UnitCostAmount : 0;
         var movement = new StockMovement(
@@ -98,8 +126,8 @@ public sealed class InventoryAppService
             input.RawMaterialId,
             input.Type,
             input.Quantity,
-            input.Reason,
-            input.BusinessReference,
+            ResolveManualReason(input),
+            null,
             unitCostAmount: unitCost);
 
         await stockMovementRepository.AddAsync(movement, cancellationToken);
@@ -114,7 +142,20 @@ public sealed class InventoryAppService
         foreach (var material in materials)
         {
             var balance = await stockMovementRepository.GetBalanceAsync(material.Id, cancellationToken);
-            balances.Add(new InventoryBalanceViewModel(material.Id, material.Name, material.UnitOfMeasure, balance));
+            var alertLevel = material.GetStockAlertLevel(balance);
+            var reachedLimit = alertLevel switch
+            {
+                StockAlertLevel.Critical => material.CriticalStockLevel,
+                StockAlertLevel.Warning => material.MinimumStockLevel,
+                _ => null
+            };
+            balances.Add(new InventoryBalanceViewModel(
+                material.Id,
+                material.Name,
+                material.UnitOfMeasure,
+                balance,
+                alertLevel,
+                reachedLimit));
         }
 
         return balances.AsReadOnly();
@@ -153,5 +194,20 @@ public sealed class InventoryAppService
             .Select(material => new RawMaterialOptionViewModel(material.Id, material.Name, material.UnitOfMeasure))
             .ToList()
             .AsReadOnly();
+    }
+
+    private static string ResolveManualReason(StockMovementInputModel input)
+    {
+        if (!string.IsNullOrWhiteSpace(input.Reason))
+        {
+            return input.Reason.Trim();
+        }
+
+        return input.Type switch
+        {
+            StockMovementType.Inbound => "Entrada manual",
+            StockMovementType.Adjustment => "Ajuste manual",
+            _ => throw new InvalidOperationException("Informe o motivo da saida manual.")
+        };
     }
 }

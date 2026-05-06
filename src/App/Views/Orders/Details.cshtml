@@ -31,6 +31,11 @@
     <div class="alert alert-danger">@error</div>
 }
 
+@if (TempData["StockAlerts"] is string stockAlerts)
+{
+    <div class="alert alert-warning">@stockAlerts</div>
+}
+
 <div class="metric-row mb-4">
     <div class="metric-card metric-card-with-icon">
         <span class="metric-icon text-center" aria-hidden="true">

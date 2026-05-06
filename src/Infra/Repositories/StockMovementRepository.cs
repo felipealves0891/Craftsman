@@ -23,6 +23,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
         await dbContext.StockMovements.AddAsync(ToEntity(movement), cancellationToken);
         cache?.Remove($"inventory:balance:{movement.RawMaterialId}");
         cache?.RemoveByPrefix("inventory:movements:");
+        cache?.RemoveByPrefix("inventory:alerts:");
     }
 
     public async Task<IReadOnlyCollection<StockMovement>> GetByRawMaterialAsync(Guid rawMaterialId, CancellationToken cancellationToken = default)

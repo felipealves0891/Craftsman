@@ -16,5 +16,7 @@ public sealed class RawMaterialConfiguration : IEntityTypeConfiguration<RawMater
         builder.Property(material => material.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
         builder.Property(material => material.UnitOfMeasure).HasColumnName("unit_of_measure").HasMaxLength(50).IsRequired();
         builder.Property(material => material.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
+        builder.Property(material => material.MinimumStockLevel).HasColumnName("minimum_stock_level").HasPrecision(18, 2);
+        builder.Property(material => material.CriticalStockLevel).HasColumnName("critical_stock_level").HasPrecision(18, 2);
     }
 }

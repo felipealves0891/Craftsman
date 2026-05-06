@@ -25,6 +25,9 @@
                     <th>Nome</th>
                     <th>Unidade</th>
                     <th>Status</th>
+                    <th>Minimo</th>
+                    <th>Critico</th>
+                    <th>Alerta</th>
                     <th class="text-right">Ações</th>
                 </tr>
             </thead>
@@ -32,7 +35,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="4">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <strong>Nenhuma matéria-prima cadastrada</strong>
                                 <span>Cadastre o primeiro insumo antes de registrar movimentos de estoque.</span>
@@ -48,6 +51,22 @@
                             <td><strong>@material.Name</strong></td>
                             <td>@material.UnitOfMeasure</td>
                             <td><span class="status-badge status-@material.Status.ToString().ToLowerInvariant()">@material.Status</span></td>
+                            <td>@(material.MinimumStockLevel?.ToString() ?? "-")</td>
+                            <td>@(material.CriticalStockLevel?.ToString() ?? "-")</td>
+                            <td>
+                                @if (material.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical)
+                                {
+                                    <span class="badge badge-danger">Critico</span>
+                                }
+                                else if (material.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning)
+                                {
+                                    <span class="badge badge-warning">Aviso</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Normal</span>
+                                }
+                            </td>
                             <td class="text-right"><a asp-action="EditMaterial" asp-route-id="@material.Id" class="btn btn-sm btn-outline-primary">Editar</a></td>
                         </tr>
                     }

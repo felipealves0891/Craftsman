@@ -14,17 +14,20 @@ public sealed class OrdersController : Controller
     private readonly IOrderImportPipeline orderImportPipeline;
     private readonly OrderQueryService orderQueryService;
     private readonly OrderProductionPlanningService productionPlanningService;
+    private readonly StockAlertAppService stockAlertAppService;
     private readonly IAuditService auditService;
 
     public OrdersController(
         OrderQueryService orderQueryService,
         IOrderImportPipeline orderImportPipeline,
         OrderProductionPlanningService productionPlanningService,
+        StockAlertAppService stockAlertAppService,
         IAuditService auditService)
     {
         this.orderQueryService = orderQueryService;
         this.orderImportPipeline = orderImportPipeline;
         this.productionPlanningService = productionPlanningService;
+        this.stockAlertAppService = stockAlertAppService;
         this.auditService = auditService;
     }
 
@@ -66,6 +69,7 @@ public sealed class OrdersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendToProduction(Guid id, CancellationToken cancellationToken)
     {
+        var stockAlerts = await stockAlertAppService.ListAlertsForOrderAsync(id, cancellationToken);
         var planned = await productionPlanningService.TryPlanAsync(id, cancellationToken);
         await auditService.RecordAsync(
             AuditAction.SendToProduction,
@@ -76,6 +80,12 @@ public sealed class OrdersController : Controller
         TempData[planned ? "Success" : "Error"] = planned
             ? "Pedido enviado para producao."
             : "Pedido nao pode ser enviado para producao. Verifique vinculos, estoque e tarefas ja existentes.";
+        if (stockAlerts.Count > 0)
+        {
+            TempData["StockAlerts"] = string.Join(
+                " | ",
+                stockAlerts.Select(alert => $"{alert.LevelLabel}: {alert.RawMaterialName} com saldo {alert.Balance} {alert.UnitOfMeasure} (limite {alert.ReachedLimit})"));
+        }
 
         return RedirectToAction(nameof(Details), new { id });
     }

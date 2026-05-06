@@ -5,6 +5,7 @@
     ViewData["Title"] = "Movimentos de estoque";
     var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
     var movements = ViewBag.Movements as IReadOnlyCollection<Craftsman.App.Models.StockMovementViewModel> ?? [];
+    var criticalAlerts = ViewBag.CriticalStockAlerts as IReadOnlyCollection<Craftsman.App.Models.StockAlertViewModel> ?? [];
 }
 
 <section class="page-heading">
@@ -16,8 +17,24 @@
     <a asp-action="Balances" class="btn btn-outline-secondary">Ver saldos</a>
 </section>
 
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (criticalAlerts.Any())
+{
+    <div class="alert alert-danger">
+        <strong>Estoque critico:</strong>
+        @string.Join(" | ", criticalAlerts.Select(alert => $"{alert.RawMaterialName}: {alert.Balance} {alert.UnitOfMeasure} (limite {alert.ReachedLimit})"))
+    </div>
+}
+
 <form asp-action="Movements" method="post" class="form-panel mb-4">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+    }
     <div class="row">
         <div class="col-md-3 form-group">
             <label asp-for="RawMaterialId" class="form-label"></label>
@@ -25,7 +42,7 @@
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Type" class="form-label"></label>
-            <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select"></select>
+            <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select" data-stock-movement-type></select>
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Quantity" class="form-label"></label>
@@ -35,13 +52,10 @@
             <label asp-for="UnitCostAmount" class="form-label"></label>
             <input asp-for="UnitCostAmount" type="text" inputmode="decimal" class="form-control" data-currency-input />
         </div>
-        <div class="col-md-3 form-group">
+        <div class="col-md-3 form-group" data-stock-movement-reason-group>
             <label asp-for="Reason" class="form-label"></label>
-            <input asp-for="Reason" class="form-control" />
-        </div>
-        <div class="col-md-4 form-group">
-            <label asp-for="BusinessReference" class="form-label"></label>
-            <input asp-for="BusinessReference" class="form-control" />
+            <input asp-for="Reason" class="form-control" data-stock-movement-reason />
+            <span asp-validation-for="Reason" class="text-danger"></span>
         </div>
         <div class="col-md-2 d-flex align-items-end form-group">
             <button type="submit" class="btn btn-primary w-100">Registrar</button>
@@ -96,3 +110,31 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const typeField = document.querySelector("[data-stock-movement-type]");
+            const reasonGroup = document.querySelector("[data-stock-movement-reason-group]");
+            const reasonField = document.querySelector("[data-stock-movement-reason]");
+
+            if (!typeField || !reasonGroup || !reasonField) {
+                return;
+            }
+
+            const outboundValue = "2";
+            const updateReasonVisibility = () => {
+                const isOutbound = typeField.value === outboundValue;
+                reasonGroup.hidden = !isOutbound;
+                reasonField.required = isOutbound;
+                reasonField.disabled = !isOutbound;
+                if (!isOutbound) {
+                    reasonField.value = "";
+                }
+            };
+
+            typeField.addEventListener("change", updateReasonVisibility);
+            updateReasonVisibility();
+        })();
+    </script>
+}

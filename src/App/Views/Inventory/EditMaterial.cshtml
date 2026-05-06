@@ -28,6 +28,19 @@
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
 
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="MinimumStockLevel" class="form-label"></label>
+            <input asp-for="MinimumStockLevel" type="text" inputmode="decimal" class="form-control" data-decimal-input />
+            <span asp-validation-for="MinimumStockLevel" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label asp-for="CriticalStockLevel" class="form-label"></label>
+            <input asp-for="CriticalStockLevel" type="text" inputmode="decimal" class="form-control" data-decimal-input />
+            <span asp-validation-for="CriticalStockLevel" class="text-danger"></span>
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Salvar</button>
     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
 </form>
