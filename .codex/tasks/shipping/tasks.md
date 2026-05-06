@@ -56,12 +56,12 @@ Critérios de aceitação:
 - Alterações de envio emitem os eventos necessários.
 
 ### SH-006 - Selecionar pedido em modal ao criar envio
-- [ ] Substituir o campo livre de `OrderId` por um fluxo de selecao em modal na tela de criacao de envio.
-- [ ] Listar pedidos disponiveis para envio no modal.
-- [ ] Exibir detalhes do pedido no modal antes da selecao, incluindo itens.
-- [ ] Preencher o pedido selecionado no formulario de envio.
-- [ ] Manter a criacao do envio passando pelo servico de aplicacao existente.
-- [ ] Criar ou atualizar testes automatizados cobrindo os criterios de aceitacao.
+- [x] Substituir o campo livre de `OrderId` por um fluxo de selecao em modal na tela de criacao de envio.
+- [x] Listar pedidos disponiveis para envio no modal.
+- [x] Exibir detalhes do pedido no modal antes da selecao, incluindo itens.
+- [x] Preencher o pedido selecionado no formulario de envio.
+- [x] Manter a criacao do envio passando pelo servico de aplicacao existente.
+- [x] Criar ou atualizar testes automatizados cobrindo os criterios de aceitacao.
 
 Criterios de aceitacao:
 - Usuario consegue abrir um modal na tela de criacao de envio para selecionar um pedido.

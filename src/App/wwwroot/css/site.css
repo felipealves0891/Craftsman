@@ -297,6 +297,58 @@ a.card:hover {
   min-height: calc(1.5em + .75rem + 2px);
 }
 
+.selected-order-panel,
+.order-selection-summary {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.selected-order-panel {
+  border: 1px solid #d1d3e2;
+  border-radius: .35rem;
+  padding: .75rem;
+}
+
+.selected-order-panel strong {
+  display: block;
+}
+
+.order-selection-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.order-selection-item {
+  border: 1px solid #e3e6f0;
+  border-radius: .35rem;
+  padding: 1rem;
+}
+
+.order-selection-item h3 {
+  font-size: 1rem;
+  margin: .15rem 0 .5rem;
+}
+
+.order-selection-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.25rem;
+  margin: 0;
+}
+
+.order-selection-meta dt {
+  color: #858796;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.order-selection-meta dd {
+  margin: 0;
+}
+
 .narrow-form {
   max-width: 1500px;
 }

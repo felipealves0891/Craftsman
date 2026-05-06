@@ -27,9 +27,10 @@ public sealed class ShipmentsController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create(Guid? orderId)
+    public async Task<IActionResult> Create(Guid? orderId, CancellationToken cancellationToken)
     {
-        return View(new CreateShipmentInputModel { OrderId = orderId ?? Guid.Empty });
+        var model = await shippingAppService.BuildCreateModelAsync(orderId, cancellationToken: cancellationToken);
+        return View(model);
     }
 
     [HttpPost]
@@ -39,11 +40,21 @@ public sealed class ShipmentsController : Controller
     {
         if (!ModelState.IsValid)
         {
+            input = await shippingAppService.BuildCreateModelAsync(input: input, cancellationToken: cancellationToken);
             return View(input);
         }
 
-        await shippingAppService.CreateAsync(input, cancellationToken);
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await shippingAppService.CreateAsync(input, cancellationToken);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException exception)
+        {
+            ModelState.AddModelError(nameof(CreateShipmentInputModel.OrderId), exception.Message);
+            input = await shippingAppService.BuildCreateModelAsync(input: input, cancellationToken: cancellationToken);
+            return View(input);
+        }
     }
 
     [HttpPost]

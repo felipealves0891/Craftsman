@@ -1,7 +1,12 @@
+@using Craftsman.App.Models
 @model Craftsman.App.Models.CreateShipmentInputModel
 
 @{
     ViewData["Title"] = "Criar envio";
+    var selectedOrder = Model.AvailableOrders.FirstOrDefault(order => order.Id == Model.OrderId);
+    var selectedOrderText = selectedOrder?.DisplayName ?? "Nenhum pedido selecionado";
+
+    string FormatMoney(OrderItemViewModel item) => $"{item.UnitPrice:N2} {item.Currency}";
 }
 
 <section class="page-heading">
@@ -14,10 +19,19 @@
 </section>
 
 <form asp-action="Create" method="post" class="form-panel narrow-form">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div asp-validation-summary="All" class="text-danger"></div>
     <div class="form-group">
-        <label asp-for="OrderId" class="form-label">Pedido</label>
-        <input asp-for="OrderId" class="form-control" />
+        <label class="form-label">Pedido</label>
+        <input asp-for="OrderId" type="hidden" data-selected-order-id />
+        <div class="selected-order-panel">
+            <div>
+                <span class="text-muted small">Pedido selecionado</span>
+                <strong data-selected-order-name>@selectedOrderText</strong>
+            </div>
+            <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#orderSelectionModal" data-order-modal-trigger>
+                Selecionar pedido
+            </button>
+        </div>
         <span asp-validation-for="OrderId" class="text-danger"></span>
     </div>
     <div class="form-group">
@@ -30,3 +44,129 @@
         <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
     </div>
 </form>
+
+<div class="modal fade" id="orderSelectionModal" tabindex="-1" role="dialog" aria-labelledby="orderSelectionModalLabel" aria-hidden="true" data-shipment-order-modal>
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="orderSelectionModalLabel">Selecionar pedido</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="orderSelectionSearch" class="form-label">Buscar pedido</label>
+                    <input id="orderSelectionSearch" type="search" class="form-control" placeholder="Origem, referencia ou item" data-order-search />
+                </div>
+
+                @if (Model.AvailableOrders.Count == 0)
+                {
+                    <div class="empty-state">
+                        <strong>Nenhum pedido disponivel</strong>
+                        <span>Nao ha pedidos disponiveis para criar envio no momento.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="order-selection-list">
+                        @foreach (var order in Model.AvailableOrders)
+                        {
+                            var searchText = string.Join(
+                                " ",
+                                order.Source,
+                                order.ExternalOrderId,
+                                order.Status,
+                                order.ShippingDate?.ToString("dd/MM/yyyy") ?? string.Empty,
+                                string.Join(" ", order.Items.Select(item => item.Description)));
+
+                            <article class="order-selection-item" data-order-option data-order-search-text="@searchText.ToLowerInvariant()">
+                                <div class="order-selection-summary">
+                                    <div>
+                                        <span class="eyebrow">@order.Source</span>
+                                        <h3>@order.ExternalOrderId</h3>
+                                        <dl class="order-selection-meta">
+                                            <div>
+                                                <dt>Status</dt>
+                                                <dd>@order.Status</dd>
+                                            </div>
+                                            <div>
+                                                <dt>Data de envio</dt>
+                                                <dd>@(order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-")</dd>
+                                            </div>
+                                            <div>
+                                                <dt>Itens</dt>
+                                                <dd>@order.Items.Count</dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            data-order-select
+                                            data-order-id="@order.Id"
+                                            data-order-name="@order.DisplayName">
+                                        Selecionar
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive" data-order-items>
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Descricao</th>
+                                                <th>Quantidade</th>
+                                                <th>Valor unitario</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in order.Items)
+                                            {
+                                                <tr>
+                                                    <td>@item.ExternalItemId</td>
+                                                    <td>@item.Description</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>@FormatMoney(item)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var selectedOrderId = document.querySelector('[data-selected-order-id]');
+            var selectedOrderName = document.querySelector('[data-selected-order-name]');
+            var searchField = document.querySelector('[data-order-search]');
+            var options = Array.prototype.slice.call(document.querySelectorAll('[data-order-option]'));
+
+            document.querySelectorAll('[data-order-select]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedOrderId.value = button.getAttribute('data-order-id');
+                    selectedOrderName.textContent = button.getAttribute('data-order-name');
+                    $('#orderSelectionModal').modal('hide');
+                });
+            });
+
+            if (searchField) {
+                searchField.addEventListener('input', function () {
+                    var term = searchField.value.trim().toLowerCase();
+
+                    options.forEach(function (option) {
+                        var text = option.getAttribute('data-order-search-text') || '';
+                        option.classList.toggle('d-none', term.length > 0 && text.indexOf(term) === -1);
+                    });
+                });
+            }
+        })();
+    </script>
+}

@@ -1,6 +1,7 @@
 using Craftsman.App.Models;
 using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Repositories;
+using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Shipping.Repositories;
 
@@ -39,6 +40,41 @@ public sealed class OrderQueryService
             order.ShippingDate)).ToList().AsReadOnly();
     }
 
+    public async Task<IReadOnlyCollection<ShipmentOrderSelectionViewModel>> ListShipmentOrderSelectionsAsync(CancellationToken cancellationToken = default)
+    {
+        var orders = await orderRepository.ListAsync(cancellationToken);
+
+        return orders
+            .Where(IsAvailableForShipment)
+            .Select(order => new ShipmentOrderSelectionViewModel(
+                order.Id,
+                order.Origin.Source,
+                order.Origin.ExternalOrderId,
+                order.Status.ToString(),
+                order.ShippingDate,
+                order.Items.Select(ToOrderItemViewModel).ToList().AsReadOnly()))
+            .ToList()
+            .AsReadOnly();
+    }
+
+    public async Task<ShipmentOrderSelectionViewModel?> GetShipmentOrderSelectionAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
+
+        if (order is null || !IsAvailableForShipment(order))
+        {
+            return null;
+        }
+
+        return new ShipmentOrderSelectionViewModel(
+            order.Id,
+            order.Origin.Source,
+            order.Origin.ExternalOrderId,
+            order.Status.ToString(),
+            order.ShippingDate,
+            order.Items.Select(ToOrderItemViewModel).ToList().AsReadOnly());
+    }
+
     public async Task<OrderDetailViewModel?> GetDetailAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
@@ -58,19 +94,29 @@ public sealed class OrderQueryService
             order.Status.ToString(),
             order.CreatedAt,
             order.ShippingDate,
-            order.Items.Select(item => new OrderItemViewModel(
-                item.Id,
-                item.ExternalItemId,
-                item.Description,
-                item.Quantity,
-                item.UnitPrice.Amount,
-                item.UnitPrice.Currency,
-                item.ProductId)).ToList().AsReadOnly(),
+            order.Items.Select(ToOrderItemViewModel).ToList().AsReadOnly(),
             productionTasks
                 .Where(task => task.OrderId == order.Id)
                 .Select(task => ProductionScheduleService.ToViewModel(task))
                 .ToList()
                 .AsReadOnly(),
             shipments.Where(shipment => shipment.OrderId == order.Id).Select(ShippingAppService.ToViewModel).ToList().AsReadOnly());
+    }
+
+    private static bool IsAvailableForShipment(Order order)
+    {
+        return order.Status is not OrderStatus.Cancelled and not OrderStatus.Delivered;
+    }
+
+    private static OrderItemViewModel ToOrderItemViewModel(OrderItem item)
+    {
+        return new OrderItemViewModel(
+            item.Id,
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.UnitPrice.Amount,
+            item.UnitPrice.Currency,
+            item.ProductId);
     }
 }

@@ -75,11 +75,11 @@ dotnet test Craftsman.slnx --no-build -v:minimal
 
 ## Checklist de conclusao
 
-- [ ] Modal de selecao de pedido criado na tela de envio.
-- [ ] Detalhes do pedido exibidos no modal.
-- [ ] Pedido selecionado preenchendo o formulario de envio.
-- [ ] Campo livre de `OrderId` removido do fluxo principal.
-- [ ] Testes automatizados criados ou atualizados.
-- [ ] Build executado.
-- [ ] Testes executados.
-- [ ] SH-006 marcada como concluida em `.codex/tasks/shipping/tasks.md` apos implementacao.
+- [x] Modal de selecao de pedido criado na tela de envio.
+- [x] Detalhes do pedido exibidos no modal.
+- [x] Pedido selecionado preenchendo o formulario de envio.
+- [x] Campo livre de `OrderId` removido do fluxo principal.
+- [x] Testes automatizados criados ou atualizados.
+- [x] Build executado.
+- [x] Testes executados.
+- [x] SH-006 marcada como concluida em `.codex/tasks/shipping/tasks.md` apos implementacao.

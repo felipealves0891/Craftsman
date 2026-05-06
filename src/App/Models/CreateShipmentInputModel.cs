@@ -9,4 +9,7 @@ public sealed class CreateShipmentInputModel
 
     [StringLength(150)]
     public string? TrackingCode { get; set; }
+
+    public IReadOnlyCollection<ShipmentOrderSelectionViewModel> AvailableOrders { get; set; } =
+        Array.Empty<ShipmentOrderSelectionViewModel>();
 }
