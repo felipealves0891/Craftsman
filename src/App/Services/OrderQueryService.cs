@@ -49,8 +49,6 @@ public sealed class OrderQueryService
         }
 
         var productionTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
-        var products = await productRepository.ListAsync(cancellationToken);
-        var durationsByProduct = products.ToDictionary(product => product.Id, product => product.ProductionDurationHours);
         var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
 
         return new OrderDetailViewModel(
@@ -70,7 +68,7 @@ public sealed class OrderQueryService
                 item.ProductId)).ToList().AsReadOnly(),
             productionTasks
                 .Where(task => task.OrderId == order.Id)
-                .Select(task => ProductionScheduleService.ToViewModel(task, durationsByProduct.GetValueOrDefault(task.ProductId, 1)))
+                .Select(task => ProductionScheduleService.ToViewModel(task))
                 .ToList()
                 .AsReadOnly(),
             shipments.Where(shipment => shipment.OrderId == order.Id).Select(ShippingAppService.ToViewModel).ToList().AsReadOnly());

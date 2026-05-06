@@ -119,7 +119,15 @@ public sealed class PersistenceRepositoryTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new ProductionTaskRepository(dbContext);
-        var task = new ProductionTask(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+        var task = new ProductionTask(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1,
+            3,
+            plannedStartAt: new DateTimeOffset(2026, 5, 10, 8, 0, 0, TimeSpan.Zero),
+            plannedAt: new DateTimeOffset(2026, 5, 10, 11, 0, 0, TimeSpan.Zero));
 
         await repository.AddAsync(task);
         await dbContext.SaveChangesAsync();
@@ -136,6 +144,9 @@ public sealed class PersistenceRepositoryTests
 
         Assert.NotNull(persisted);
         Assert.Equal(ProductionTaskStatus.InProduction, persisted.Status);
+        Assert.Equal(3, persisted.ProductionDurationHours);
+        Assert.Equal(new DateTimeOffset(2026, 5, 10, 8, 0, 0, TimeSpan.Zero), persisted.PlannedStartAt);
+        Assert.Equal(new DateTimeOffset(2026, 5, 10, 11, 0, 0, TimeSpan.Zero), persisted.PlannedAt);
         Assert.NotNull(persisted.StartedAt);
     }
 

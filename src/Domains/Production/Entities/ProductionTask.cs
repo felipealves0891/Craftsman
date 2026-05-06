@@ -16,7 +16,11 @@ public sealed class ProductionTask
 
     public int Quantity { get; }
 
+    public int ProductionDurationHours { get; }
+
     public ProductionTaskStatus Status { get; private set; }
+
+    public DateTimeOffset PlannedStartAt { get; }
 
     public DateTimeOffset PlannedAt { get; }
 
@@ -32,7 +36,9 @@ public sealed class ProductionTask
         Guid orderItemId,
         Guid productId,
         int quantity,
+        int productionDurationHours = 1,
         ProductionTaskStatus status = ProductionTaskStatus.Planned,
+        DateTimeOffset? plannedStartAt = null,
         DateTimeOffset? plannedAt = null,
         DateTimeOffset? startedAt = null,
         DateTimeOffset? completedAt = null,
@@ -63,12 +69,19 @@ public sealed class ProductionTask
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
         }
 
+        if (productionDurationHours <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(productionDurationHours), "Production duration must be greater than zero.");
+        }
+
         Id = id;
         OrderId = orderId;
         OrderItemId = orderItemId;
         ProductId = productId;
         Quantity = quantity;
+        ProductionDurationHours = productionDurationHours;
         Status = status;
+        PlannedStartAt = plannedStartAt ?? plannedAt ?? DateTimeOffset.UtcNow;
         PlannedAt = plannedAt ?? DateTimeOffset.UtcNow;
         StartedAt = startedAt;
         CompletedAt = completedAt;

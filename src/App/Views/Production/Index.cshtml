@@ -5,10 +5,10 @@
 @{
     ViewData["Title"] = "Agenda de produção";
     var culture = CultureInfo.GetCultureInfo("pt-BR");
-    var tasks = Model.OrderBy(task => task.PlannedAt.ToLocalTime()).ToList();
+    var tasks = Model.OrderBy(task => task.PlannedStartAt.ToLocalTime()).ToList();
     DateOnly? selectedDate = ViewBag.PlannedDate is DateOnly plannedDate ? plannedDate : null;
     var referenceDate = selectedDate?.ToDateTime(TimeOnly.MinValue)
-        ?? tasks.FirstOrDefault()?.PlannedAt.ToLocalTime().Date
+        ?? tasks.FirstOrDefault()?.PlannedStartAt.ToLocalTime().Date
         ?? DateTime.Today;
     var monthStart = new DateTime(referenceDate.Year, referenceDate.Month, 1);
     var monthTitle = culture.TextInfo.ToTitleCase(monthStart.ToString("MMMM yyyy", culture));
@@ -17,9 +17,9 @@
     var tasksByDay = tasks
         .SelectMany(task =>
         {
+            var startDate = DateOnly.FromDateTime(task.PlannedStartAt.ToLocalTime().Date);
             var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
-            var durationDays = Math.Max(1, (int)Math.Ceiling(Math.Max(task.ProductionDurationHours, 1) / 24m));
-            var startDate = endDate.AddDays(-(durationDays - 1));
+            var durationDays = Math.Max(1, endDate.DayNumber - startDate.DayNumber + 1);
 
             return Enumerable.Range(0, durationDays)
                 .Select(offset => new
@@ -145,13 +145,14 @@
                             foreach (var item in dayTasks)
                             {
                                 var task = item.Task;
-                                var durationDays = Math.Max(1, (int)Math.Ceiling(Math.Max(task.ProductionDurationHours, 1) / 24m));
-                                var rangeLabel = durationDays <= 1
-                                    ? $"{task.ProductionDurationHours} hora(s)"
+                                var startAt = task.PlannedStartAt.ToLocalTime();
+                                var endAt = task.PlannedAt.ToLocalTime();
+                                var rangeLabel = item.IsStart && item.IsEnd
+                                    ? $"{startAt:HH\\:mm} - {endAt:HH\\:mm}"
                                     : item.IsStart
-                                        ? $"Inicio - {durationDays} dias"
+                                        ? $"Inicio {startAt:HH\\:mm}"
                                         : item.IsEnd
-                                            ? "Entrega planejada"
+                                            ? $"Fim {endAt:HH\\:mm}"
                                             : "Em produção";
 
                                 <div class="calendar-task status-border-@task.Status.ToLowerInvariant()">
@@ -160,7 +161,7 @@
                                         <span class="calendar-task-range">@rangeLabel</span>
                                         <strong>@task.OrderReference</strong>
                                         <span>@task.ItemDescription</span>
-                                        <span>@task.Quantity unidade(s) - prazo @task.PlannedAt.ToLocalTime().ToString("dd/MM HH:mm")</span>
+                                        <span>@task.Quantity unidade(s) - @task.ProductionDurationHours hora(s)</span>
                                     </div>
                                     <form asp-action="Advance" method="post" class="calendar-task-actions">
                                         <input type="hidden" name="id" value="@task.Id" />

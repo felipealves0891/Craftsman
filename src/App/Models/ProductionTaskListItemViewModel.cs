@@ -10,6 +10,7 @@ public sealed record ProductionTaskListItemViewModel(
     int Quantity,
     int ProductionDurationHours,
     string Status,
+    DateTimeOffset PlannedStartAt,
     DateTimeOffset PlannedAt,
     DateTimeOffset? StartedAt,
     DateTimeOffset? CompletedAt,

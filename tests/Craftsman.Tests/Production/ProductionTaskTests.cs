@@ -12,11 +12,24 @@ public sealed class ProductionTaskTests
         var orderItemId = Guid.NewGuid();
         var productId = Guid.NewGuid();
 
-        var task = new ProductionTask(Guid.NewGuid(), orderId, orderItemId, productId, 2);
+        var plannedStartAt = new DateTimeOffset(2026, 5, 10, 8, 0, 0, TimeSpan.Zero);
+        var plannedAt = new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero);
+        var task = new ProductionTask(
+            Guid.NewGuid(),
+            orderId,
+            orderItemId,
+            productId,
+            2,
+            4,
+            plannedStartAt: plannedStartAt,
+            plannedAt: plannedAt);
 
         Assert.Equal(orderId, task.OrderId);
         Assert.Equal(orderItemId, task.OrderItemId);
         Assert.Equal(productId, task.ProductId);
+        Assert.Equal(4, task.ProductionDurationHours);
+        Assert.Equal(plannedStartAt, task.PlannedStartAt);
+        Assert.Equal(plannedAt, task.PlannedAt);
         Assert.Equal(ProductionTaskStatus.Planned, task.Status);
         Assert.Contains(task.DomainEvents, domainEvent => domainEvent is ProductionPlannedEvent);
     }

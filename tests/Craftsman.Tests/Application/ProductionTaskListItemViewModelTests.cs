@@ -25,6 +25,7 @@ public sealed class ProductionTaskListItemViewModelTests
             1,
             status,
             DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
             null,
             null);
 

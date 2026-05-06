@@ -17,12 +17,18 @@ public sealed class ProductionTaskConfiguration : IEntityTypeConfiguration<Produ
         builder.Property(task => task.OrderItemId).HasColumnName("order_item_id").IsRequired();
         builder.Property(task => task.ProductId).HasColumnName("product_id").IsRequired();
         builder.Property(task => task.Quantity).HasColumnName("quantity").IsRequired();
+        builder.Property(task => task.ProductionDurationHours)
+            .HasColumnName("production_duration_hours")
+            .HasDefaultValue(1)
+            .IsRequired();
         builder.Property(task => task.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
+        builder.Property(task => task.PlannedStartAt).HasColumnName("planned_start_at").IsRequired();
         builder.Property(task => task.PlannedAt).HasColumnName("planned_at").IsRequired();
         builder.Property(task => task.StartedAt).HasColumnName("started_at");
         builder.Property(task => task.CompletedAt).HasColumnName("completed_at");
 
         builder.HasIndex(task => task.OrderId);
         builder.HasIndex(task => task.Status);
+        builder.HasIndex(task => task.PlannedStartAt);
     }
 }

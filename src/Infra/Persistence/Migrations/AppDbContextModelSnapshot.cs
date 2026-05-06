@@ -429,9 +429,19 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("planned_at");
 
+                    b.Property<DateTimeOffset>("PlannedStartAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("planned_start_at");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
                         .HasColumnName("product_id");
+
+                    b.Property<int>("ProductionDurationHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("production_duration_hours");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer")
@@ -450,6 +460,8 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("PlannedStartAt");
 
                     b.HasIndex("Status");
 

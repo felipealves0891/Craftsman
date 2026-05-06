@@ -79,10 +79,10 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         {
             var start = plannedDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             var end = plannedDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            query = query.Where(task => task.PlannedAt >= start && task.PlannedAt < end);
+            query = query.Where(task => task.PlannedStartAt < end && task.PlannedAt >= start);
         }
 
-        var entities = await query.OrderByDescending(task => task.PlannedAt).ToListAsync(cancellationToken);
+        var entities = await query.OrderBy(task => task.PlannedStartAt).ToListAsync(cancellationToken);
 
         return entities.Select(ToModel).ToList().AsReadOnly();
     }
@@ -95,7 +95,9 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
             entity.OrderItemId,
             entity.ProductId,
             entity.Quantity,
+            entity.ProductionDurationHours,
             Enum.Parse<ProductionTaskStatus>(entity.Status),
+            entity.PlannedStartAt,
             entity.PlannedAt,
             entity.StartedAt,
             entity.CompletedAt,
@@ -116,7 +118,9 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         entity.OrderItemId = productionTask.OrderItemId;
         entity.ProductId = productionTask.ProductId;
         entity.Quantity = productionTask.Quantity;
+        entity.ProductionDurationHours = productionTask.ProductionDurationHours;
         entity.Status = productionTask.Status.ToString();
+        entity.PlannedStartAt = productionTask.PlannedStartAt;
         entity.PlannedAt = productionTask.PlannedAt;
         entity.StartedAt = productionTask.StartedAt;
         entity.CompletedAt = productionTask.CompletedAt;

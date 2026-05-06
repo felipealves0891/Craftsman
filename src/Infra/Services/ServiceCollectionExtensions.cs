@@ -62,6 +62,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRawMaterialRepository, RawMaterialRepository>();
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
         services.AddScoped<IProductionTaskRepository, ProductionTaskRepository>();
+        services.AddSingleton(configuration
+            .GetSection(ProductionScheduleOptions.SectionName)
+            .Get<ProductionScheduleOptions>() ?? new ProductionScheduleOptions());
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<IFinancialSettlementRepository, FinancialSettlementRepository>();
         services.AddScoped<InventoryService>();
