@@ -64,7 +64,7 @@
                     </div>
                     <div class="col-md-4 form-group">
                         <label asp-for="ShippingDate" class="form-label"></label>
-                        <input asp-for="ShippingDate" type="date" class="form-control" />
+                        <input asp-for="ShippingDate" type="date" min="@DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd")" class="form-control" />
                         <span asp-validation-for="ShippingDate" class="text-danger"></span>
                     </div>
                 </div>

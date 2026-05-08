@@ -3,6 +3,7 @@ using Craftsman.Domain.Finance.Entities;
 using Craftsman.Domain.Finance.Repositories;
 using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Repositories;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Craftsman.Tests.Finance;
 
@@ -13,7 +14,12 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
     {
         var orderId = Guid.NewGuid();
         var repository = new FakeFinancialSettlementRepository(new FinancialSettlement(Guid.NewGuid(), orderId, 10, 3, 0));
-        var handler = new DeliveryConfirmedSettlementHandler(new FakeSettlementCalculator(), repository, new FakeUnitOfWork(), new FakeDomainEventPublisher());
+        var handler = new DeliveryConfirmedSettlementHandler(
+            NullLogger<DeliveryConfirmedSettlementHandler>.Instance,
+            new FakeSettlementCalculator(),
+            repository,
+            new FakeUnitOfWork(),
+            new FakeDomainEventPublisher());
 
         await handler.HandleAsync(new DeliveryConfirmedEvent(Guid.NewGuid(), orderId, DateTimeOffset.UtcNow));
 

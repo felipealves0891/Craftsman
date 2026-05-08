@@ -9,6 +9,7 @@ namespace Craftsman.App.Services;
 
 public sealed class ProductCatalogAppService
 {
+    private readonly ILogger<ProductCatalogAppService> logger;
     private readonly IProductMappingRepository productMappingRepository;
     private readonly ProductMappingService productMappingService;
     private readonly IProductRepository productRepository;
@@ -20,13 +21,15 @@ public sealed class ProductCatalogAppService
         IProductMappingRepository productMappingRepository,
         IRawMaterialRepository rawMaterialRepository,
         ProductMappingService productMappingService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<ProductCatalogAppService> logger)
     {
         this.productRepository = productRepository;
         this.productMappingRepository = productMappingRepository;
         this.rawMaterialRepository = rawMaterialRepository;
         this.productMappingService = productMappingService;
         this.unitOfWork = unitOfWork;
+        this.logger = logger;
     }
 
     public async Task<IReadOnlyCollection<ProductListItemViewModel>> ListProductsAsync(CancellationToken cancellationToken = default)
@@ -123,9 +126,13 @@ public sealed class ProductCatalogAppService
 
     public async Task SaveBillOfMaterialsAsync(BillOfMaterialsInputModel input, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Saving bill of materials for product: {ProductId}", input.ProductId);
+
         var product = await productRepository.GetByIdAsync(input.ProductId, cancellationToken)
             ?? throw new InvalidOperationException("Produto nao encontrado.");
 
+        logger.LogInformation("Found product: {ProductId}", product.Id);
+        
         var items = input.Items
             .Where(item => item.RawMaterialId.HasValue || item.QuantityPerUnit > 0)
             .Select(item => new BillOfMaterialsItem(
@@ -133,7 +140,12 @@ public sealed class ProductCatalogAppService
                 item.QuantityPerUnit))
             .ToList();
 
+        logger.LogInformation("Found bill of materials for product {ProductId}: {ItemCount} items", product.Id, items.Count);
+
         product.ReplaceBillOfMaterials(items);
+
+        logger.LogInformation("Replacing bill of materials for product {ProductId}", product.Id);
+        
         await productRepository.UpdateAsync(product, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

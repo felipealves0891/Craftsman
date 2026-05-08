@@ -27,6 +27,18 @@ public sealed class OrderTests
         Assert.Contains("expected Shipped", exception.Message);
     }
 
+    [Fact]
+    public void Shipping_date_must_be_future_in_utc_when_informed()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "MAN-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Caneca", 1, new Money(20, "BRL"))],
+            shippingDate: DateOnly.FromDateTime(DateTime.UtcNow)));
+
+        Assert.Contains("future", exception.Message);
+    }
+
     private static Order CreateOrder()
     {
         return new Order(

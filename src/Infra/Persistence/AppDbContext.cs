@@ -24,6 +24,8 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     public DbSet<PersistedDomainEventEntity> DomainEvents => Set<PersistedDomainEventEntity>();
 
+    public DbSet<DomainEventHandlerExecutionEntity> DomainEventHandlerExecutions => Set<DomainEventHandlerExecutionEntity>();
+
     public DbSet<AuditLogEntity> AuditLogs => Set<AuditLogEntity>();
 
     public DbSet<OrderEntity> Orders => Set<OrderEntity>();

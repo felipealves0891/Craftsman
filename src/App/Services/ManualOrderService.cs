@@ -54,6 +54,11 @@ public sealed class ManualOrderService
             throw new InvalidOperationException("Data de envio e obrigatoria.");
         }
 
+        if (input.ShippingDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
+        {
+            throw new InvalidOperationException("Data de envio deve ser futura em UTC.");
+        }
+
         var source = await orderSourceCatalogRepository.GetByNameAsync(input.Source, cancellationToken)
             ?? throw new InvalidOperationException("Origem nao encontrada.");
 

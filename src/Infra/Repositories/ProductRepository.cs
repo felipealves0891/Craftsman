@@ -61,28 +61,28 @@ public sealed class ProductRepository : IProductRepository
             .FirstOrDefaultAsync(existing => existing.Id == product.Id, cancellationToken);
 
         if (entity is null)
-        {
             throw new InvalidOperationException($"Product '{product.Id}' was not found.");
-        }
-        else
+        
+        entity.Name = product.Name;
+        entity.Status = product.Status.ToString();
+        entity.ProductionDurationHours = product.ProductionDurationHours;
+        entity.HourlyRate = product.HourlyRate;
+
+        dbContext.BillOfMaterialsItems.RemoveRange(entity.BillOfMaterials);
+        entity.BillOfMaterials.Clear();
+
+        foreach (var item in product.BillOfMaterials)
         {
-            entity.Name = product.Name;
-            entity.Status = product.Status.ToString();
-            entity.ProductionDurationHours = product.ProductionDurationHours;
-            entity.HourlyRate = product.HourlyRate;
-            entity.BillOfMaterials.Clear();
-            foreach (var item in product.BillOfMaterials)
+            entity.BillOfMaterials.Add(new BillOfMaterialsItemEntity
             {
-                entity.BillOfMaterials.Add(new BillOfMaterialsItemEntity
-                {
-                    Id = Guid.NewGuid(),
-                    ProductId = product.Id,
-                    RawMaterialId = item.RawMaterialId,
-                    QuantityPerUnit = item.QuantityPerUnit
-                });
-            }
+                Id = Guid.NewGuid(),
+                ProductId = product.Id,
+                RawMaterialId = item.RawMaterialId,
+                QuantityPerUnit = item.QuantityPerUnit
+            });
         }
 
+        await dbContext.BillOfMaterialsItems.AddRangeAsync(entity.BillOfMaterials, cancellationToken);
         cache?.RemoveByPrefix("product-catalog:");
     }
 

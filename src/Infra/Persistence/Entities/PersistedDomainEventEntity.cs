@@ -15,4 +15,6 @@ public sealed class PersistedDomainEventEntity : IPersistenceEntity<Guid>
     public string? UserName { get; set; }
 
     public string? CorrelationId { get; set; }
+
+    public List<DomainEventHandlerExecutionEntity> HandlerExecutions { get; set; } = [];
 }

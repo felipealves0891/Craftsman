@@ -17,7 +17,18 @@
         <h1>Apuração financeira</h1>
         <p>Confira receita, custos e margem por pedido dentro do período selecionado.</p>
     </div>
+    <a asp-action="Pending" class="btn btn-outline-primary">Pendencias</a>
 </section>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
 
 <form method="get" class="filter-panel">
     <div class="form-group">

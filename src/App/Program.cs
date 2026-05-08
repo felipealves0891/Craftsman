@@ -79,8 +79,6 @@ if (app.Environment.IsDevelopment())
 
     var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
     await identitySeeder.SeedAsync();
-
-    //await DevelopmentDataSeeder.SeedAsync(dbContext);
 }
 else
 {

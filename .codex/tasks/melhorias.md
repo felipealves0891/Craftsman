@@ -63,3 +63,9 @@ Alerta de Estoque baixo:
     3. Quando a quantidade no estoque for igual ou abaixo da quantidade minima alertar no envio para produção
     4. Quando for critico apresentar na tela de entrada e no sino de notificações
 
+-------------------------------------------
+
+1. **Domain Events** devem ter **confirmação** de execução e **tratativa de erro**.
+2. O campo **Data de Envio** da entidade **Pedido** deve obrigatoriamento ser sempre no futuro
+3. Handler **DeliveryConfirmedSettlementHandler** não esta sendo invocado
+4. Deve ser possivel gerar **apuração financeira** manualmente

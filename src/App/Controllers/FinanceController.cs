@@ -30,4 +30,28 @@ public sealed class FinanceController : Controller
 
         return settlement is null ? NotFound() : View(settlement);
     }
+
+    public async Task<IActionResult> Pending(CancellationToken cancellationToken)
+    {
+        var pending = await financeAppService.ListPendingAsync(cancellationToken);
+        return View(pending);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Generate(Guid orderId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await financeAppService.GenerateAsync(orderId, cancellationToken);
+            TempData["Success"] = "Apuracao financeira gerada.";
+            return RedirectToAction(nameof(Details), new { orderId });
+        }
+        catch (InvalidOperationException exception)
+        {
+            TempData["Error"] = exception.Message;
+            return RedirectToAction(nameof(Pending));
+        }
+    }
 }

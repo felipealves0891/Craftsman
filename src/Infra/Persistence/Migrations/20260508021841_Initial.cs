@@ -336,6 +336,32 @@ namespace Craftsman.Infra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "domain_event_handler_executions",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    domain_event_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    event_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    handler_name = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    attempt_count = table.Column<int>(type: "integer", nullable: false),
+                    last_error = table.Column<string>(type: "text", nullable: true),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    started_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    completed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_domain_event_handler_executions", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_domain_event_handler_executions_domain_events_domain_event_~",
+                        column: x => x.domain_event_id,
+                        principalTable: "domain_events",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "order_items",
                 columns: table => new
                 {
@@ -482,6 +508,16 @@ namespace Craftsman.Infra.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_domain_event_handler_executions_domain_event_id",
+                table: "domain_event_handler_executions",
+                column: "domain_event_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_domain_event_handler_executions_status",
+                table: "domain_event_handler_executions",
+                column: "status");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_financial_settlements_calculated_at",
                 table: "financial_settlements",
                 column: "calculated_at");
@@ -581,7 +617,7 @@ namespace Craftsman.Infra.Persistence.Migrations
                 name: "bill_of_materials_items");
 
             migrationBuilder.DropTable(
-                name: "domain_events");
+                name: "domain_event_handler_executions");
 
             migrationBuilder.DropTable(
                 name: "financial_settlements");
@@ -612,6 +648,9 @@ namespace Craftsman.Infra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "domain_events");
 
             migrationBuilder.DropTable(
                 name: "orders");

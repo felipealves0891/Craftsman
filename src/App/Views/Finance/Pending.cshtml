@@ -1,0 +1,71 @@
+@model IReadOnlyCollection<Craftsman.App.Models.FinancialSettlementPendingViewModel>
+
+@{
+    ViewData["Title"] = "Pendencias financeiras";
+}
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Financeiro</span>
+        <h1>Pendencias financeiras</h1>
+        <p>Pedidos entregues que ainda nao possuem apuracao financeira.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Voltar</a>
+</section>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Origem</th>
+                    <th>Referencia</th>
+                    <th>Entregue em</th>
+                    <th class="text-right">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <strong>Nenhuma pendencia encontrada</strong>
+                                <span>Todos os pedidos entregues possuem apuracao financeira.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var pending in Model)
+                    {
+                        <tr>
+                            <td><strong>@pending.OrderId</strong></td>
+                            <td>@pending.Source</td>
+                            <td>@pending.ExternalOrderId</td>
+                            <td>@(pending.DeliveredAt?.ToLocalTime().ToString("g") ?? "-")</td>
+                            <td class="text-right">
+                                <form asp-action="Generate" method="post" class="d-inline">
+                                    <input type="hidden" name="orderId" value="@pending.OrderId" />
+                                    <button type="submit" class="btn btn-sm btn-primary">Gerar apuracao</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

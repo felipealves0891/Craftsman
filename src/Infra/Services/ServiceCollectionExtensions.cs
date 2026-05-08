@@ -132,14 +132,10 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ShippingService>();
         services.AddScoped<ProductMappingService>();
-        services.AddScoped<IDomainEventPublisher, InMemoryDomainEventPublisher>();
-        services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, DomainEventPersistenceHandler<OrderNormalizedEvent>>();
+        services.AddScoped<IDomainEventPublisher, PersistentDomainEventPublisher>();
+        services.AddScoped<DomainEventRetryService>();
         services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, OrderNormalizedProductionPlannerHandler>();
-        services.AddScoped<IDomainEventHandler<ProductionPlannedEvent>, DomainEventPersistenceHandler<ProductionPlannedEvent>>();
-        services.AddScoped<IDomainEventHandler<ShipmentCreatedEvent>, DomainEventPersistenceHandler<ShipmentCreatedEvent>>();
-        services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DomainEventPersistenceHandler<DeliveryConfirmedEvent>>();
         services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DeliveryConfirmedSettlementHandler>();
-        services.AddScoped<IDomainEventHandler<FinancialSettlementCalculatedEvent>, DomainEventPersistenceHandler<FinancialSettlementCalculatedEvent>>();
         services.AddSingleton<IApplicationCache, MemoryApplicationCache>();
 
         return services;

@@ -50,11 +50,12 @@ public sealed class ManualOperationsTests
             unitOfWork,
             new RecordingDomainEventPublisher());
 
+        var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
         var orderId = await service.CreateAsync(new ManualOrderInputModel
         {
             Source = "WhatsApp",
             Reference = "MAN-001",
-            ShippingDate = new DateOnly(2026, 5, 3),
+            ShippingDate = shippingDate,
             Items =
             [
                 new ManualOrderItemInputModel
@@ -72,7 +73,7 @@ public sealed class ManualOperationsTests
         Assert.NotNull(loaded);
         Assert.Equal("WhatsApp", loaded.Origin.Source);
         Assert.Equal("MAN-001", loaded.Origin.ExternalOrderId);
-        Assert.Equal(new DateOnly(2026, 5, 3), loaded.ShippingDate);
+        Assert.Equal(shippingDate, loaded.ShippingDate);
         Assert.Single(loaded.Items);
     }
 
@@ -116,6 +117,32 @@ public sealed class ManualOperationsTests
     }
 
     [Fact]
+    public async Task Manual_order_service_requires_future_shipping_date_in_utc()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        var service = CreateManualOrderService(dbContext);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-PAST-DATE",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 1,
+                    UnitPriceAmount = 10
+                }
+            ]
+        }));
+
+        Assert.Contains("futura", exception.Message);
+    }
+
+    [Fact]
     public async Task Manual_order_service_plans_production_when_items_have_internal_products()
     {
         await using var dbContext = CreateDbContext();
@@ -154,7 +181,7 @@ public sealed class ManualOperationsTests
         {
             Source = "Manual",
             Reference = "MAN-PROD-001",
-            ShippingDate = new DateOnly(2026, 5, 4),
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
             Items =
             [
                 new ManualOrderItemInputModel
@@ -251,7 +278,8 @@ public sealed class ManualOperationsTests
             mappingRepository,
             rawMaterialRepository,
             new ProductMappingService(mappingRepository),
-            new UnitOfWork(dbContext));
+            new UnitOfWork(dbContext),
+            NullLogger<ProductCatalogAppService>.Instance);
 
         var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
         await rawMaterialRepository.AddAsync(material);
@@ -280,7 +308,8 @@ public sealed class ManualOperationsTests
             mappingRepository,
             rawMaterialRepository,
             new ProductMappingService(mappingRepository),
-            new UnitOfWork(dbContext));
+            new UnitOfWork(dbContext),
+            NullLogger<ProductCatalogAppService>.Instance);
 
         var productId = await service.SaveProductAsync(new ProductInputModel
         {

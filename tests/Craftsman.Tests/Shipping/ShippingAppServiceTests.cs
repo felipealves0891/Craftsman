@@ -23,7 +23,7 @@ public sealed class ShippingAppServiceTests
             Guid.NewGuid(),
             new OrderOrigin("Manual", "PED-001"),
             [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 2, new Money(25, "BRL"))],
-            shippingDate: new DateOnly(2026, 5, 10));
+            shippingDate: new DateOnly(2027, 5, 10));
         var deliveredOrder = new Order(
             Guid.NewGuid(),
             new OrderOrigin("Manual", "PED-002"),
@@ -41,7 +41,7 @@ public sealed class ShippingAppServiceTests
         Assert.Equal(availableOrder.Id, order.Id);
         Assert.Equal("Manual", order.Source);
         Assert.Equal("PED-001", order.ExternalOrderId);
-        Assert.Equal(new DateOnly(2026, 5, 10), order.ShippingDate);
+        Assert.Equal(new DateOnly(2027, 5, 10), order.ShippingDate);
         var item = Assert.Single(order.Items);
         Assert.Equal("Bolsa", item.Description);
         Assert.Equal(2, item.Quantity);

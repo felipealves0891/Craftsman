@@ -20,7 +20,7 @@ public sealed class ProductionPlannerTests
         var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
         var product = new Product(Guid.NewGuid(), "Bolsa", productionDurationHours: 2, billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 2)]);
         var orderItem = new OrderItem(Guid.NewGuid(), "EXT-1", "Bolsa externa", 2, new Money(50, "BRL"), product.Id);
-        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), [orderItem], shippingDate: new DateOnly(2026, 5, 10));
+        var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), [orderItem], shippingDate: new DateOnly(2027, 5, 10));
 
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
@@ -41,8 +41,8 @@ public sealed class ProductionPlannerTests
         Assert.Equal(order.Id, productionTask.OrderId);
         Assert.Equal(product.Id, productionTask.ProductId);
         Assert.Equal(4, productionTask.ProductionDurationHours);
-        Assert.Equal(new DateTimeOffset(2026, 5, 10, 10, 0, 0, TimeSpan.Zero), productionTask.PlannedStartAt);
-        Assert.Equal(new DateTimeOffset(2026, 5, 10, 14, 0, 0, TimeSpan.Zero), productionTask.PlannedAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 10, 10, 0, 0, TimeSpan.Zero), productionTask.PlannedStartAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 10, 14, 0, 0, TimeSpan.Zero), productionTask.PlannedAt);
         Assert.Equal(6, await stockMovementRepository.GetBalanceAsync(rawMaterial.Id));
     }
 
@@ -57,15 +57,15 @@ public sealed class ProductionPlannerTests
             new OrderOrigin("Manual", "M-1"),
             [new OrderItem(Guid.NewGuid(), "KIT", "Kit", 3, new Money(30, "BRL"), product.Id)],
             createdAt: new DateTimeOffset(2026, 5, 1, 10, 0, 0, TimeSpan.Zero),
-            shippingDate: new DateOnly(2026, 5, 10));
+            shippingDate: new DateOnly(2027, 5, 10));
         var (planner, stockMovementRepository) = await CreatePlannerAsync(dbContext, rawMaterial, product, 10);
 
         var task = Assert.Single(await planner.PlanAsync(order));
         await dbContext.SaveChangesAsync();
 
         Assert.Equal(6, task.ProductionDurationHours);
-        Assert.Equal(new DateTimeOffset(2026, 5, 10, 8, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
-        Assert.Equal(new DateTimeOffset(2026, 5, 10, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 10, 8, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 10, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
         Assert.Equal(7, await stockMovementRepository.GetBalanceAsync(rawMaterial.Id));
     }
 
@@ -79,7 +79,7 @@ public sealed class ProductionPlannerTests
             Guid.NewGuid(),
             new OrderOrigin("Manual", "M-2"),
             [new OrderItem(Guid.NewGuid(), "CAR", "Carteira", 1, new Money(80, "BRL"), product.Id)],
-            shippingDate: new DateOnly(2026, 5, 10));
+            shippingDate: new DateOnly(2027, 5, 10));
         var (planner, _) = await CreatePlannerAsync(dbContext, rawMaterial, product, 10);
         var existingTask = new ProductionTask(
             Guid.NewGuid(),
@@ -88,15 +88,15 @@ public sealed class ProductionPlannerTests
             product.Id,
             1,
             6,
-            plannedStartAt: new DateTimeOffset(2026, 5, 10, 8, 0, 0, TimeSpan.Zero),
-            plannedAt: new DateTimeOffset(2026, 5, 10, 14, 0, 0, TimeSpan.Zero));
+            plannedStartAt: new DateTimeOffset(2027, 5, 10, 8, 0, 0, TimeSpan.Zero),
+            plannedAt: new DateTimeOffset(2027, 5, 10, 14, 0, 0, TimeSpan.Zero));
         await new ProductionTaskRepository(dbContext).AddAsync(existingTask);
         await dbContext.SaveChangesAsync();
 
         var task = Assert.Single(await planner.PlanAsync(order));
 
-        Assert.Equal(new DateTimeOffset(2026, 5, 9, 12, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
-        Assert.Equal(new DateTimeOffset(2026, 5, 9, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 9, 12, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 9, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
     }
 
     [Fact]
@@ -109,13 +109,13 @@ public sealed class ProductionPlannerTests
             Guid.NewGuid(),
             new OrderOrigin("Manual", "M-3"),
             [new OrderItem(Guid.NewGuid(), "CX", "Caixa", 1, new Money(100, "BRL"), product.Id)],
-            shippingDate: new DateOnly(2026, 5, 10));
+            shippingDate: new DateOnly(2027, 5, 10));
         var (planner, _) = await CreatePlannerAsync(dbContext, rawMaterial, product, 10, new ProductionScheduleOptions());
 
         var task = Assert.Single(await planner.PlanAsync(order));
 
-        Assert.Equal(new DateTimeOffset(2026, 5, 9, 13, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
-        Assert.Equal(new DateTimeOffset(2026, 5, 10, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 9, 13, 0, 0, TimeSpan.Zero), task.PlannedStartAt);
+        Assert.Equal(new DateTimeOffset(2027, 5, 10, 14, 0, 0, TimeSpan.Zero), task.PlannedAt);
     }
 
     [Fact]

@@ -124,6 +124,64 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.ToTable("bill_of_materials_items", (string)null);
                 });
 
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.DomainEventHandlerExecutionEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DomainEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("domain_event_id");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("event_name");
+
+                    b.Property<string>("HandlerName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("handler_name");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainEventId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("domain_event_handler_executions", (string)null);
+                });
+
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.FinancialSettlementEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -859,6 +917,17 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.DomainEventHandlerExecutionEntity", b =>
+                {
+                    b.HasOne("Craftsman.Infra.Persistence.Entities.PersistedDomainEventEntity", "DomainEvent")
+                        .WithMany("HandlerExecutions")
+                        .HasForeignKey("DomainEventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DomainEvent");
+                });
+
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderItemEntity", b =>
                 {
                     b.HasOne("Craftsman.Infra.Persistence.Entities.OrderEntity", "Order")
@@ -946,6 +1015,11 @@ namespace Craftsman.Infra.Persistence.Migrations
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderEntity", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.PersistedDomainEventEntity", b =>
+                {
+                    b.Navigation("HandlerExecutions");
                 });
 
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.ProductEntity", b =>
