@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Craftsman.Infra.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -113,16 +113,28 @@ namespace Craftsman.Infra.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "order_sources",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_order_sources", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "orders",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     source = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     external_order_id = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    customer_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    customer_email = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: true),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    shipping_date = table.Column<DateOnly>(type: "date", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -138,7 +150,9 @@ namespace Craftsman.Infra.Persistence.Migrations
                     order_item_id = table.Column<Guid>(type: "uuid", nullable: false),
                     product_id = table.Column<Guid>(type: "uuid", nullable: false),
                     quantity = table.Column<int>(type: "integer", nullable: false),
+                    production_duration_hours = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    planned_start_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     planned_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     started_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     completed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
@@ -155,8 +169,8 @@ namespace Craftsman.Infra.Persistence.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    production_duration_days = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
-                    barcode = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true)
+                    production_duration_hours = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
+                    hourly_rate = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m)
                 },
                 constraints: table =>
                 {
@@ -170,7 +184,9 @@ namespace Craftsman.Infra.Persistence.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     unit_of_measure = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
+                    status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    minimum_stock_level = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    critical_stock_level = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -482,6 +498,12 @@ namespace Craftsman.Infra.Persistence.Migrations
                 column: "order_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_order_sources_name",
+                table: "order_sources",
+                column: "name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_orders_source_external_order_id",
                 table: "orders",
                 columns: new[] { "source", "external_order_id" },
@@ -502,6 +524,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                 name: "IX_production_tasks_order_id",
                 table: "production_tasks",
                 column: "order_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_production_tasks_planned_start_at",
+                table: "production_tasks",
+                column: "planned_start_at");
 
             migrationBuilder.CreateIndex(
                 name: "IX_production_tasks_status",
@@ -561,6 +588,9 @@ namespace Craftsman.Infra.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "order_items");
+
+            migrationBuilder.DropTable(
+                name: "order_sources");
 
             migrationBuilder.DropTable(
                 name: "product_mappings");

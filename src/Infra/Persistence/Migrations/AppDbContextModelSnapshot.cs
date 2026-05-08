@@ -475,12 +475,6 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
                     b.Property<decimal?>("CriticalStockLevel")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
@@ -490,6 +484,12 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("minimum_stock_level");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
                     b.Property<string>("Status")
                         .IsRequired()

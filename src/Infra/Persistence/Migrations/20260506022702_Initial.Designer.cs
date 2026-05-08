@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Craftsman.Infra.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260430205235_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260506022702_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -194,22 +194,15 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("CustomerEmail")
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("customer_email");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("customer_name");
-
                     b.Property<string>("ExternalOrderId")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)")
                         .HasColumnName("external_order_id");
+
+                    b.Property<DateOnly?>("ShippingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("shipping_date");
 
                     b.Property<string>("Source")
                         .IsRequired()
@@ -280,6 +273,31 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.ToTable("order_items", (string)null);
                 });
 
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderSourceEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("order_sources", (string)null);
+                });
+
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.PersistedDomainEventEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -328,10 +346,12 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Barcode")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("barcode");
+                    b.Property<decimal>("HourlyRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("hourly_rate");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -339,11 +359,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
 
-                    b.Property<int>("ProductionDurationDays")
+                    b.Property<int>("ProductionDurationHours")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1)
-                        .HasColumnName("production_duration_days");
+                        .HasColumnName("production_duration_hours");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -412,9 +432,19 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("planned_at");
 
+                    b.Property<DateTimeOffset>("PlannedStartAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("planned_start_at");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid")
                         .HasColumnName("product_id");
+
+                    b.Property<int>("ProductionDurationHours")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("production_duration_hours");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer")
@@ -434,6 +464,8 @@ namespace Craftsman.Infra.Persistence.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("PlannedStartAt");
+
                     b.HasIndex("Status");
 
                     b.ToTable("production_tasks", (string)null);
@@ -445,6 +477,16 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<decimal?>("CriticalStockLevel")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("critical_stock_level");
+
+                    b.Property<decimal?>("MinimumStockLevel")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("minimum_stock_level");
 
                     b.Property<string>("Name")
                         .IsRequired()
