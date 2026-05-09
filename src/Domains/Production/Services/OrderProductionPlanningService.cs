@@ -36,7 +36,9 @@ public sealed class OrderProductionPlanningService
 
     public async Task<bool> TryPlanAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
+        logger.LogInformation("Start planning production for order<{0}>.", orderId);
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
+
         if (order is null || order.Items.Any(item => item.ProductId is null))
         {
             logger.LogWarning("Order<{0}> not found or has items without product ID.", orderId);
@@ -61,6 +63,7 @@ public sealed class OrderProductionPlanningService
             return false;
         }
 
+        logger.LogInformation("Found {0} production tasks for order<{1}>.", productionTasks.Count, orderId);
         foreach (var productionTask in productionTasks)
         {
             await productionTaskRepository.AddAsync(productionTask, cancellationToken);
@@ -75,8 +78,10 @@ public sealed class OrderProductionPlanningService
 
         if (order.Status == OrderStatus.Normalized)
         {
+            logger.LogInformation("Marking order<{0}> as ready for production.", orderId);
             order.MarkReadyForProduction();
             await orderRepository.UpdateAsync(order, cancellationToken);
+            logger.LogInformation("Order<{0}> is normalized, marking as ready for production.", orderId);
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

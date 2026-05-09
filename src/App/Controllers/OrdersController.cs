@@ -71,15 +71,18 @@ public sealed class OrdersController : Controller
     {
         var stockAlerts = await stockAlertAppService.ListAlertsForOrderAsync(id, cancellationToken);
         var planned = await productionPlanningService.TryPlanAsync(id, cancellationToken);
+
         await auditService.RecordAsync(
             AuditAction.SendToProduction,
             "Order",
             id.ToString(),
             after: new { Planned = planned },
             cancellationToken: cancellationToken);
+
         TempData[planned ? "Success" : "Error"] = planned
             ? "Pedido enviado para producao."
             : "Pedido nao pode ser enviado para producao. Verifique vinculos, estoque e tarefas ja existentes.";
+            
         if (stockAlerts.Count > 0)
         {
             TempData["StockAlerts"] = string.Join(
