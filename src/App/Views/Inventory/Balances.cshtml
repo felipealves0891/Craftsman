@@ -2,68 +2,22 @@
 
 @{
     ViewData["Title"] = "Saldos";
+
+    static string AlertMarkup(Craftsman.Domain.Inventory.Entities.StockAlertLevel alertLevel, decimal? reachedLimit) => alertLevel switch
+    {
+        Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical => $"<span class=\"badge badge-danger\">Critico</span> <span class=\"small text-muted\">limite {reachedLimit}</span>",
+        Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning => $"<span class=\"badge badge-warning\">Aviso</span> <span class=\"small text-muted\">limite {reachedLimit}</span>",
+        _ => "<span class=\"text-muted\">Normal</span>"
+    };
+
+    var balances = Model
+        .Select(balance => new InventoryBalancesPage.BalanceRow(
+            balance.RawMaterialId,
+            balance.RawMaterialName,
+            balance.Balance.ToString(),
+            balance.UnitOfMeasure,
+            AlertMarkup(balance.AlertLevel, balance.ReachedLimit)))
+        .ToArray();
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Estoque</span>
-        <h1>Saldos de estoque</h1>
-        <p>Consulte rapidamente a disponibilidade de cada matéria-prima.</p>
-    </div>
-    <a asp-action="Index" class="btn btn-outline-secondary">Voltar para matérias-primas</a>
-</section>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Matéria-prima</th>
-                    <th>Saldo</th>
-                    <th>Alerta</th>
-                    <th class="text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="4">
-                            <div class="empty-state">
-                                <strong>Nenhum saldo registrado</strong>
-                                <span>Cadastre matérias-primas e movimentos para acompanhar o estoque.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var balance in Model)
-                    {
-                        <tr>
-                            <td><strong>@balance.RawMaterialName</strong></td>
-                            <td>@balance.Balance @balance.UnitOfMeasure</td>
-                            <td>
-                                @if (balance.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical)
-                                {
-                                    <span class="badge badge-danger">Critico</span>
-                                    <span class="small text-muted">limite @balance.ReachedLimit</span>
-                                }
-                                else if (balance.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning)
-                                {
-                                    <span class="badge badge-warning">Aviso</span>
-                                    <span class="small text-muted">limite @balance.ReachedLimit</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Normal</span>
-                                }
-                            </td>
-                            <td class="text-right"><a asp-action="History" asp-route-id="@balance.RawMaterialId" class="btn btn-sm btn-outline-primary">Histórico</a></td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(InventoryBalancesPage)" render-mode="Static" param-Balances="@balances" />

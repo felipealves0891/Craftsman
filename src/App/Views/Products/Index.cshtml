@@ -2,65 +2,16 @@
 
 @{
     ViewData["Title"] = "Produtos";
+    var products = Model
+        .Select(product => new ProductsIndexPage.ProductRow(
+            product.Id,
+            product.Name,
+            product.Status.ToString(),
+            product.Status.ToString().ToLowerInvariant(),
+            product.ProductionDurationHours,
+            product.HourlyRate.ToString("C"),
+            product.BillOfMaterialsItems))
+        .ToArray();
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Catalogo</span>
-        <h1>Produtos</h1>
-        <p>Organize produtos internos, mapeamentos externos e fichas tecnicas de producao.</p>
-    </div>
-    <div class="page-actions">
-        <a asp-action="Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
-        <a asp-action="Create" class="btn btn-primary">Novo produto</a>
-    </div>
-</section>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Status</th>
-                    <th>Producao</th>
-                    <th>Valor por hora</th>
-                    <th>Ficha tecnica</th>
-                    <th class="text-right">Acoes</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <strong>Nenhum produto cadastrado</strong>
-                                <span>Crie um produto para montar ficha tecnica e vincular itens importados.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var product in Model)
-                    {
-                        <tr>
-                            <td><strong>@product.Name</strong></td>
-                            <td><span class="status-badge status-@product.Status.ToString().ToLowerInvariant()">@product.Status</span></td>
-                            <td>@product.ProductionDurationHours hora(s)</td>
-                            <td>@product.HourlyRate.ToString("C")</td>
-                            <td>@product.BillOfMaterialsItems item(ns)</td>
-                            <td class="text-right">
-                                <div class="table-actions">
-                                    <a asp-action="BillOfMaterials" asp-route-id="@product.Id" class="btn btn-sm btn-outline-secondary">Ficha tecnica</a>
-                                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-sm btn-outline-primary">Editar</a>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(ProductsIndexPage)" render-mode="Static" param-Products="@products" />

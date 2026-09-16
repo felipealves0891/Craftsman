@@ -1,12 +1,14 @@
 @using Craftsman.Domain.Production.Entities
+@using Craftsman.UI.Components.Shared
 @using System.Globalization
 @model IReadOnlyCollection<Craftsman.App.Models.ProductionTaskListItemViewModel>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
-    ViewData["Title"] = "Agenda de produção";
+    ViewData["Title"] = "Agenda de producao";
     var culture = CultureInfo.GetCultureInfo("pt-BR");
     var tasks = Model.OrderBy(task => task.PlannedStartAt.ToLocalTime()).ToList();
-    DateOnly? selectedDate = ViewBag.PlannedDate is DateOnly plannedDate ? plannedDate : null;
+    DateOnly? selectedDate = ViewBag.PlannedDate is DateOnly plannedDateDateOnly ? plannedDateDateOnly : null;
     var referenceDate = selectedDate?.ToDateTime(TimeOnly.MinValue)
         ?? tasks.FirstOrDefault()?.PlannedStartAt.ToLocalTime().Date
         ?? DateTime.Today;
@@ -39,148 +41,75 @@
         .Distinct()
         .Count();
 
-    string StatusLabel(ProductionTaskStatus status) => status switch
+    static string StatusLabel(ProductionTaskStatus status) => status switch
     {
         ProductionTaskStatus.Planned => "Planejada",
-        ProductionTaskStatus.InProduction => "Em produção",
-        ProductionTaskStatus.Completed => "Concluída",
+        ProductionTaskStatus.InProduction => "Em producao",
+        ProductionTaskStatus.Completed => "Concluida",
         ProductionTaskStatus.Cancelled => "Cancelada",
         _ => status.ToString()
     };
 
-    string StatusLabelText(string status) => status switch
+    static string StatusLabelText(string status) => status switch
     {
         nameof(ProductionTaskStatus.Planned) => "Planejada",
-        nameof(ProductionTaskStatus.InProduction) => "Em produção",
-        nameof(ProductionTaskStatus.Completed) => "Concluída",
+        nameof(ProductionTaskStatus.InProduction) => "Em producao",
+        nameof(ProductionTaskStatus.Completed) => "Concluida",
         nameof(ProductionTaskStatus.Cancelled) => "Cancelada",
         _ => status
     };
+
+    var statusOptions = Enum.GetValues<ProductionTaskStatus>()
+        .Select(status => new SelectOption(status.ToString(), StatusLabel(status), ViewBag.Status == status))
+        .ToArray();
+    var days = Enumerable.Range(1, daysInMonth)
+        .Select(day =>
+        {
+            var currentDate = DateOnly.FromDateTime(new DateTime(monthStart.Year, monthStart.Month, day));
+            var hasTasks = tasksByDay.TryGetValue(currentDate, out var dayTasks);
+            var dayClass = currentDate == today ? "calendar-day today" : "calendar-day";
+            var taskRows = (hasTasks && dayTasks is not null ? dayTasks : [])
+                .Select(item =>
+                {
+                    var task = item.Task;
+                    var startAt = task.PlannedStartAt.ToLocalTime();
+                    var endAt = task.PlannedAt.ToLocalTime();
+                    var rangeLabel = item.IsStart && item.IsEnd
+                        ? $"{startAt:HH\\:mm} - {endAt:HH\\:mm}"
+                        : item.IsStart
+                            ? $"Inicio {startAt:HH\\:mm}"
+                            : item.IsEnd
+                                ? $"Fim {endAt:HH\\:mm}"
+                                : "Em producao";
+
+                    return new ProductionIndexPage.ProductionTaskRow(
+                        task.Id,
+                        StatusLabelText(task.Status),
+                        task.Status.ToLowerInvariant(),
+                        rangeLabel,
+                        task.OrderReference,
+                        task.ItemDescription,
+                        task.Quantity,
+                        task.ProductionDurationHours,
+                        task.CanStart,
+                        task.CanComplete,
+                        task.CanCancel);
+                })
+                .ToArray();
+
+            return new ProductionIndexPage.CalendarDay(day, dayClass, taskRows);
+        })
+        .ToArray();
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var plannedDate = selectedDate?.ToString("yyyy-MM-dd");
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Execução</span>
-        <h1>Agenda de produção</h1>
-        <p>Filtre tarefas planejadas e avance cada pedido conforme o trabalho evolui.</p>
-    </div>
-</section>
-
-<form method="get" class="filter-panel">
-    <div class="form-group">
-        <label for="status" class="form-label">Status</label>
-        <select id="status" name="status" class="form-select">
-            <option value="">Todos</option>
-            @foreach (var status in Enum.GetValues<ProductionTaskStatus>())
-            {
-                <option value="@status" selected="@(ViewBag.Status == status)">@StatusLabel(status)</option>
-            }
-        </select>
-    </div>
-    <div class="form-group">
-        <label for="plannedDate" class="form-label">Data planejada</label>
-        <input id="plannedDate" type="date" name="plannedDate" value="@ViewBag.PlannedDate" class="form-control" />
-    </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
-    </div>
-</form>
-
-<section class="production-calendar">
-    <div class="calendar-toolbar">
-        <div>
-            <span class="eyebrow">Calendário</span>
-            <h2>@monthTitle</h2>
-        </div>
-        <div class="calendar-summary">
-            <strong>@visibleTaskCount</strong>
-            <span>tarefas no mês</span>
-        </div>
-    </div>
-
-    @if (!tasks.Any())
-    {
-        <div class="empty-state">
-            <strong>Nenhuma tarefa encontrada</strong>
-            <span>Ajuste os filtros ou aguarde novos pedidos prontos para produção.</span>
-        </div>
-    }
-    else
-    {
-        <div class="calendar-weekdays" aria-hidden="true">
-            <span>Seg</span>
-            <span>Ter</span>
-            <span>Qua</span>
-            <span>Qui</span>
-            <span>Sex</span>
-            <span>Sáb</span>
-            <span>Dom</span>
-        </div>
-
-        <div class="calendar-grid">
-            @for (var i = 0; i < leadingBlankDays; i++)
-            {
-                <div class="calendar-day calendar-day-muted"></div>
-            }
-
-            @for (var day = 1; day <= daysInMonth; day++)
-            {
-                var currentDate = DateOnly.FromDateTime(new DateTime(monthStart.Year, monthStart.Month, day));
-                var hasTasks = tasksByDay.TryGetValue(currentDate, out var dayTasks);
-                var dayTaskCount = dayTasks?.Count ?? 0;
-                var dayClass = currentDate == today ? "calendar-day today" : "calendar-day";
-
-                <article class="@dayClass">
-                    <header class="calendar-day-header">
-                        <strong>@day</strong>
-                        @if (dayTaskCount > 0)
-                        {
-                            <span>@dayTaskCount tarefa(s)</span>
-                        }
-                    </header>
-
-                    <div class="calendar-day-tasks">
-                        @if (hasTasks && dayTasks is not null)
-                        {
-                            foreach (var item in dayTasks)
-                            {
-                                var task = item.Task;
-                                var startAt = task.PlannedStartAt.ToLocalTime();
-                                var endAt = task.PlannedAt.ToLocalTime();
-                                var rangeLabel = item.IsStart && item.IsEnd
-                                    ? $"{startAt:HH\\:mm} - {endAt:HH\\:mm}"
-                                    : item.IsStart
-                                        ? $"Inicio {startAt:HH\\:mm}"
-                                        : item.IsEnd
-                                            ? $"Fim {endAt:HH\\:mm}"
-                                            : "Em produção";
-
-                                <div class="calendar-task status-border-@task.Status.ToLowerInvariant()">
-                                    <div class="calendar-task-main">
-                                        <span class="status-badge status-@task.Status.ToLowerInvariant()">@StatusLabelText(task.Status)</span>
-                                        <span class="calendar-task-range">@rangeLabel</span>
-                                        <strong>@task.OrderReference</strong>
-                                        <span>@task.ItemDescription</span>
-                                        <span>@task.Quantity unidade(s) - @task.ProductionDurationHours hora(s)</span>
-                                    </div>
-                                    <form asp-action="Advance" method="post" class="calendar-task-actions">
-                                        <input type="hidden" name="id" value="@task.Id" />
-                                        <button type="submit" name="action" value="start" class="btn btn-sm btn-outline-primary" title="Iniciar" aria-label="Iniciar" disabled="@(!task.CanStart)">
-                                            <i class="fas fa-play" aria-hidden="true"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="complete" class="btn btn-sm btn-outline-success" title="Concluir" aria-label="Concluir" disabled="@(!task.CanComplete)">
-                                            <i class="fas fa-check" aria-hidden="true"></i>
-                                        </button>
-                                        <button type="submit" name="action" value="cancel" class="btn btn-sm btn-outline-danger" title="Cancelar" aria-label="Cancelar" disabled="@(!task.CanCancel)">
-                                            <i class="fas fa-times" aria-hidden="true"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            }
-                        }
-                    </div>
-                </article>
-            }
-        </div>
-    }
-</section>
+<component type="typeof(ProductionIndexPage)" render-mode="Static"
+           param-StatusOptions="@statusOptions"
+           param-PlannedDate="@plannedDate"
+           param-MonthTitle="@monthTitle"
+           param-VisibleTaskCount="@visibleTaskCount"
+           param-HasTasks="@tasks.Any()"
+           param-LeadingBlankDays="@leadingBlankDays"
+           param-RequestVerificationToken="@requestVerificationToken"
+           param-Days="@days" />

@@ -1,0 +1,81 @@
+@using Craftsman.UI.Components.Shared
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Pedido @ExternalOrderId</span>
+        <h1>Vincular produtos internos</h1>
+        <p>@Source</p>
+    </div>
+    <a href="/Orders/Details/@OrderId" class="btn btn-outline-secondary">Voltar</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Item externo</th>
+                    <th>Descricao</th>
+                    <th>Quantidade</th>
+                    <th>Produto atual</th>
+                    <th>Novo produto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Items)
+                {
+                    <tr>
+                        <td>@item.ExternalItemId</td>
+                        <td>@item.Description</td>
+                        <td>@item.Quantity</td>
+                        <td>@item.ProductId</td>
+                        <td>
+                            <form action="/ManualOrders/LinkItem" method="post" class="product-link-form">
+                                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                                <input type="hidden" name="orderId" value="@OrderId" />
+                                <input type="hidden" name="itemId" value="@item.Id" />
+                                <input type="search" class="form-control product-link-filter" placeholder="Filtrar" aria-label="Filtrar produtos internos" />
+                                <select name="productId" class="form-select">
+                                    @foreach (var product in Products)
+                                    {
+                                        <option value="@product.Value" selected="@product.Selected">@product.Text</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-primary">Vincular</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('input', (event) => {
+        if (!event.target.classList.contains('product-link-filter')) return;
+        const form = event.target.closest('.product-link-form');
+        const select = form.querySelector('select');
+        const query = event.target.value.trim().toLowerCase();
+        [...select.options].forEach((option) => {
+            option.hidden = query.length > 0 && !option.text.toLowerCase().includes(query);
+        });
+    });
+</script>
+
+@code {
+    [Parameter] public Guid OrderId { get; set; }
+    [Parameter] public string Source { get; set; } = string.Empty;
+    [Parameter] public string ExternalOrderId { get; set; } = string.Empty;
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyCollection<LinkItemRow> Items { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<SelectOption> Products { get; set; } = [];
+
+    public sealed record LinkItemRow(Guid Id, string ExternalItemId, string Description, int Quantity, string ProductId);
+}

@@ -11,16 +11,29 @@ public static class DevelopmentDataSeeder
 
     public static async Task SeedAsync(AppDbContext dbContext, CancellationToken cancellationToken = default)
     {
+        Console.WriteLine("Start SeedOrderSourcesAsync");
         await SeedOrderSourcesAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedOrderSourcesAsync");
+        Console.WriteLine("Start SeedRawMaterialsAsync");
         await SeedRawMaterialsAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedRawMaterialsAsync");
+        Console.WriteLine("Start SeedProductsAsync");
         await SeedProductsAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedProductsAsync");
+        Console.WriteLine("Start SeedBillOfMaterialsAsync");
         await SeedBillOfMaterialsAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedBillOfMaterialsAsync");
+        Console.WriteLine("Start SeedProductMappingsAsync");
         await SeedProductMappingsAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedProductMappingsAsync");
+        Console.WriteLine("Start SeedInitialStockAsync");
         await SeedInitialStockAsync(dbContext, cancellationToken);
+        Console.WriteLine("End SeedInitialStockAsync");
     }
 
     private static async Task SeedOrderSourcesAsync(AppDbContext dbContext, CancellationToken cancellationToken)
     {
+        
         var existingNames = await dbContext.OrderSources
             .Select(source => source.Name)
             .ToListAsync(cancellationToken);

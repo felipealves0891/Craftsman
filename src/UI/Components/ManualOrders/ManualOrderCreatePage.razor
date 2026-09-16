@@ -1,0 +1,269 @@
+@using Craftsman.UI.Components.Shared
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Novo Pedido</span>
+        <h1>Novo pedido</h1>
+        <p>Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.</p>
+    </div>
+    <a href="/Orders" class="btn btn-outline-secondary">Voltar para pedidos</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(SuccessMessage))
+{
+    <div class="alert alert-success">@SuccessMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<form action="/ManualOrders/CreateSource" method="post" class="form-panel row g-3 mb-4">
+    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+    <div class="col-md-9">
+        <label for="Name" class="form-label">Nova origem</label>
+        <input id="Name" name="Name" class="form-control" placeholder="Ex.: WhatsApp" />
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-outline-primary w-100">Adicionar origem</button>
+    </div>
+</form>
+
+<form action="/ManualOrders/Create" method="post" id="manual-order-form">
+    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+
+    <div class="manual-order-layout">
+        <div class="manual-order-main">
+            <section class="form-panel manual-order-section">
+                <div class="section-title">
+                    <span class="section-step">1</span>
+                    <div>
+                        <h2>Dados do pedido</h2>
+                        <p>Identifique a origem e a referencia usada internamente.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="Source" class="form-label">Origem</label>
+                        <select id="Source" name="Source" class="form-select">
+                            <option value="">Selecione</option>
+                            @foreach (var source in OrderSources)
+                            {
+                                <option value="@source.Value" selected="@source.Selected">@source.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="Reference" class="form-label">Referencia manual</label>
+                        <input id="Reference" name="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Reference" />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="ShippingDate" class="form-label">Data de envio</label>
+                        <input id="ShippingDate" name="ShippingDate" type="date" min="@MinimumShippingDate" value="@ShippingDate" class="form-control" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-panel manual-order-section">
+                <div class="section-toolbar manual-items-toolbar">
+                    <div class="section-title">
+                        <span class="section-step">2</span>
+                        <div>
+                            <h2>Itens do pedido</h2>
+                            <p>Adicione os produtos vendidos e vincule ao catalogo interno quando possivel.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary" id="add-order-item">
+                        <i class="fas fa-plus fa-sm mr-1"></i>Adicionar item
+                    </button>
+                </div>
+
+                <div class="manual-items-list" id="order-items-body">
+                    @for (var i = 0; i < Items.Count; i++)
+                    {
+                        var item = Items.ElementAt(i);
+                        <div class="order-item-row manual-item-card">
+                            <div class="manual-item-header">
+                                <div>
+                                    <span class="manual-item-kicker">Item <span data-item-number>@(i + 1)</span></span>
+                                    <strong data-item-title>Novo item</strong>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>
+                                    <i class="fas fa-trash-alt fa-sm mr-1"></i>Remover
+                                </button>
+                            </div>
+
+                            <div class="manual-item-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="Items_@(i)__ExternalItemId">Codigo externo</label>
+                                    <input id="Items_@(i)__ExternalItemId" name="Items[@i].ExternalItemId" value="@item.ExternalItemId" class="form-control" placeholder="SKU, codigo ou referencia" data-item-field />
+                                </div>
+                                <div class="form-group manual-item-description">
+                                    <label class="form-label" for="Items_@(i)__Description">Descricao</label>
+                                    <input id="Items_@(i)__Description" name="Items[@i].Description" value="@item.Description" class="form-control" placeholder="Produto vendido" data-item-field data-description-field />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="Items_@(i)__Quantity">Quantidade</label>
+                                    <input id="Items_@(i)__Quantity" name="Items[@i].Quantity" value="@item.Quantity" class="form-control" data-item-field data-quantity-field />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="Items_@(i)__UnitPriceAmount">Valor unitario</label>
+                                    <input id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
+                                </div>
+                                <div class="form-group manual-item-product">
+                                    <label class="form-label" for="Items_@(i)__ProductId">Produto interno</label>
+                                    <div class="product-picker">
+                                        <input type="search" class="form-control product-filter" placeholder="Filtrar produtos" aria-label="Filtrar produtos internos" />
+                                        <select id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
+                                            <option value="">Sem vinculo</option>
+                                            @foreach (var product in Products)
+                                            {
+                                                <option value="@product.Value" selected="@(product.Value == item.ProductId)">@product.Text</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="manual-item-total">
+                                    <span>Total do item</span>
+                                    <strong data-item-total>R$ 0,00</strong>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <aside class="manual-order-summary">
+            <div class="summary-card">
+                <span class="eyebrow">Resumo</span>
+                <dl>
+                    <div>
+                        <dt>Itens preenchidos</dt>
+                        <dd id="manual-order-item-count">0</dd>
+                    </div>
+                    <div>
+                        <dt>Total estimado</dt>
+                        <dd id="manual-order-total">R$ 0,00</dd>
+                    </div>
+                </dl>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-save fa-sm mr-1"></i>Salvar pedido
+                </button>
+                <a href="/Orders" class="btn btn-outline-secondary btn-block">Cancelar</a>
+            </div>
+        </aside>
+    </div>
+</form>
+
+<script>
+    (() => {
+        const body = document.getElementById('order-items-body');
+        const addButton = document.getElementById('add-order-item');
+        const itemCount = document.getElementById('manual-order-item-count');
+        const orderTotal = document.getElementById('manual-order-total');
+        if (!body || !addButton || !itemCount || !orderTotal) {
+            return;
+        }
+        const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+        const parseNumber = (value) => {
+            const normalized = value.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+            const parsed = Number.parseFloat(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        };
+        const updateIndexes = () => {
+            [...body.querySelectorAll('.order-item-row')].forEach((row, index) => {
+                row.querySelector('[data-item-number]').textContent = index + 1;
+                row.querySelectorAll('input, select').forEach((field) => {
+                    if (field.name) field.name = field.name.replace(/Items\[\d+\]/, `Items[${index}]`);
+                    if (field.id) field.id = field.id.replace(/Items_\d+__/, `Items_${index}__`);
+                });
+            });
+        };
+        const rowHasValue = (row) => [...row.querySelectorAll('[data-item-field]')].some((field) => field.tagName === 'SELECT' ? field.value !== '' : field.value.trim() !== '' && field.value !== '0');
+        const updateSummary = () => {
+            let filledItems = 0;
+            let total = 0;
+            [...body.querySelectorAll('.order-item-row')].forEach((row) => {
+                const description = row.querySelector('[data-description-field]').value.trim();
+                const quantity = parseNumber(row.querySelector('[data-quantity-field]').value);
+                const price = parseNumber(row.querySelector('[data-price-field]').value);
+                const rowTotal = quantity * price;
+                row.querySelector('[data-item-total]').textContent = currency.format(rowTotal);
+                row.querySelector('[data-item-title]').textContent = description || 'Novo item';
+                if (rowHasValue(row)) {
+                    filledItems += 1;
+                    total += rowTotal;
+                }
+            });
+            itemCount.textContent = filledItems;
+            orderTotal.textContent = currency.format(total);
+        };
+        const clearRow = (row) => {
+            row.querySelectorAll('input').forEach((field) => field.value = '');
+            row.querySelectorAll('select').forEach((field) => field.selectedIndex = 0);
+            row.querySelectorAll('option').forEach((option) => option.hidden = false);
+            row.querySelector('[data-item-title]').textContent = 'Novo item';
+            row.querySelector('[data-item-total]').textContent = currency.format(0);
+        };
+        const addRow = () => {
+            const currentRows = body.querySelectorAll('.order-item-row');
+            const clone = currentRows[currentRows.length - 1].cloneNode(true);
+            clearRow(clone);
+            body.appendChild(clone);
+            updateIndexes();
+            updateSummary();
+        };
+        const ensureBlankLastRow = () => {
+            const rows = body.querySelectorAll('.order-item-row');
+            if (rowHasValue(rows[rows.length - 1])) addRow();
+        };
+        const filterProducts = (input) => {
+            const select = input.closest('.product-picker').querySelector('select');
+            const query = input.value.trim().toLowerCase();
+            [...select.options].forEach((option) => {
+                option.hidden = option.value !== '' && query.length > 0 && !option.text.toLowerCase().includes(query);
+            });
+        };
+        body.addEventListener('input', (event) => {
+            if (event.target.classList.contains('product-filter')) {
+                filterProducts(event.target);
+                return;
+            }
+            ensureBlankLastRow();
+            updateSummary();
+        });
+        body.addEventListener('change', () => {
+            ensureBlankLastRow();
+            updateSummary();
+        });
+        body.addEventListener('click', (event) => {
+            const removeButton = event.target.closest('[data-remove-item]');
+            if (!removeButton) return;
+            const rows = body.querySelectorAll('.order-item-row');
+            const row = removeButton.closest('.order-item-row');
+            if (rows.length === 1) clearRow(row); else row.remove();
+            updateIndexes();
+            updateSummary();
+        });
+        addButton.addEventListener('click', addRow);
+        updateIndexes();
+        updateSummary();
+    })();
+</script>
+
+@code {
+    [Parameter] public IReadOnlyCollection<SelectOption> Products { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<SelectOption> OrderSources { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<ManualOrderItemRow> Items { get; set; } = [];
+    [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public string Reference { get; set; } = string.Empty;
+    [Parameter] public string? ShippingDate { get; set; }
+    [Parameter] public string MinimumShippingDate { get; set; } = string.Empty;
+    [Parameter] public string? SuccessMessage { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    public sealed record ManualOrderItemRow(string? ExternalItemId, string Description, int Quantity, string UnitPriceAmount, string? ProductId);
+}

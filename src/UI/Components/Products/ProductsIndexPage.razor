@@ -1,0 +1,74 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Catalogo</span>
+        <h1>Produtos</h1>
+        <p>Organize produtos internos, mapeamentos externos e fichas tecnicas de producao.</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Products/Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
+        <a href="/Products/Create" class="btn btn-primary">Novo produto</a>
+    </div>
+</section>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Status</th>
+                    <th>Producao</th>
+                    <th>Valor por hora</th>
+                    <th>Ficha tecnica</th>
+                    <th class="text-right">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Products.Any())
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <strong>Nenhum produto cadastrado</strong>
+                                <span>Crie um produto para montar ficha tecnica e vincular itens importados.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var product in Products)
+                    {
+                        <tr>
+                            <td><strong>@product.Name</strong></td>
+                            <td><span class="status-badge status-@product.StatusCss">@product.Status</span></td>
+                            <td>@product.ProductionDurationHours hora(s)</td>
+                            <td>@product.HourlyRate</td>
+                            <td>@product.BillOfMaterialsItems item(ns)</td>
+                            <td class="text-right">
+                                <div class="table-actions">
+                                    <a href="/Products/BillOfMaterials/@product.Id" class="btn btn-sm btn-outline-secondary">Ficha tecnica</a>
+                                    <a href="/Products/Edit/@product.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<ProductRow> Products { get; set; } = [];
+
+    public sealed record ProductRow(
+        Guid Id,
+        string Name,
+        string Status,
+        string StatusCss,
+        int ProductionDurationHours,
+        string HourlyRate,
+        int BillOfMaterialsItems);
+}

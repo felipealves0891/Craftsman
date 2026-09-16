@@ -18,6 +18,7 @@ builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorComponents();
 builder.Services.AddCraftsmanApplication();
 builder.Services.AddCraftsmanInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();

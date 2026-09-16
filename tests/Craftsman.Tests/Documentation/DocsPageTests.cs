@@ -41,19 +41,29 @@ public sealed class DocsPageTests
     [Fact]
     public void Docs_page_explains_end_to_end_flow_and_required_links()
     {
-        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Docs", "Index.cshtml"));
+        var view = File.ReadAllText(ProjectPath("src", "UI", "Components", "Docs", "DocumentationPage.razor"));
 
         Assert.Contains("Comece por aqui", view);
         Assert.Contains("Checklist inicial de operacao", view);
         Assert.Contains("Fluxo principal", view);
-        Assert.Contains("asp-controller=\"Import\"", view);
-        Assert.Contains("asp-controller=\"ManualOrders\"", view);
-        Assert.Contains("asp-controller=\"Products\"", view);
-        Assert.Contains("asp-action=\"Mappings\"", view);
-        Assert.Contains("asp-controller=\"Inventory\"", view);
-        Assert.Contains("asp-controller=\"Production\"", view);
-        Assert.Contains("asp-controller=\"Shipments\"", view);
-        Assert.Contains("asp-controller=\"Finance\"", view);
+        Assert.Contains("href=\"/Import\"", view);
+        Assert.Contains("href=\"/ManualOrders/Create\"", view);
+        Assert.Contains("href=\"/Products\"", view);
+        Assert.Contains("href=\"/Products/Mappings\"", view);
+        Assert.Contains("href=\"/Inventory\"", view);
+        Assert.Contains("href=\"/Production\"", view);
+        Assert.Contains("href=\"/Shipments\"", view);
+        Assert.Contains("href=\"/Finance\"", view);
+    }
+
+    [Fact]
+    public void Docs_view_imports_shared_ui_component()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Docs", "Index.cshtml"));
+
+        Assert.Contains("ViewData[\"Title\"] = \"Documentacao\"", view);
+        Assert.Contains("typeof(DocumentationPage)", view);
+        Assert.DoesNotContain("Comece por aqui", view);
     }
 
     private static string ProjectPath(params string[] paths)

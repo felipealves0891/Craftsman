@@ -1,75 +1,30 @@
 @model Craftsman.App.Models.OrderDetailViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using Craftsman.UI.Components.Shared
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Vincular itens";
-    var products = ViewBag.Products as List<SelectListItem> ?? [];
+    var products = (ViewBag.Products as List<SelectListItem> ?? [])
+        .Select(product => new SelectOption(product.Value, product.Text, product.Selected))
+        .ToArray();
+    var items = Model.Items
+        .Select(item => new ManualOrderLinkItemsPage.LinkItemRow(
+            item.Id,
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.ProductId?.ToString() ?? "Sem vinculo"))
+        .ToArray();
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var errorMessage = TempData["Error"] as string;
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Pedido @Model.ExternalOrderId</span>
-        <h1>Vincular produtos internos</h1>
-        <p>@Model.Source</p>
-    </div>
-    <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Voltar</a>
-</section>
-
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-
-<div class="table-panel">
-    <div class="table-responsive">
-    <table class="table table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Item externo</th>
-                <th>Descrição</th>
-                <th>Quantidade</th>
-                <th>Produto atual</th>
-                <th>Novo produto</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
-                <tr>
-                    <td>@item.ExternalItemId</td>
-                    <td>@item.Description</td>
-                    <td>@item.Quantity</td>
-                    <td>@(item.ProductId?.ToString() ?? "Sem vínculo")</td>
-                    <td>
-                        <form asp-action="LinkItem" method="post" class="product-link-form">
-                            <input type="hidden" name="orderId" value="@Model.Id" />
-                            <input type="hidden" name="itemId" value="@item.Id" />
-                            <input type="search" class="form-control product-link-filter" placeholder="Filtrar" aria-label="Filtrar produtos internos" />
-                            <select name="productId" class="form-select" asp-items="products"></select>
-                            <button type="submit" class="btn btn-primary">Vincular</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        document.addEventListener('input', (event) => {
-            if (!event.target.classList.contains('product-link-filter')) {
-                return;
-            }
-
-            const form = event.target.closest('.product-link-form');
-            const select = form.querySelector('select');
-            const query = event.target.value.trim().toLowerCase();
-
-            [...select.options].forEach((option) => {
-                option.hidden = query.length > 0 && !option.text.toLowerCase().includes(query);
-            });
-        });
-    </script>
-}
+<component type="typeof(ManualOrderLinkItemsPage)" render-mode="Static"
+           param-OrderId="@Model.Id"
+           param-Source="@Model.Source"
+           param-ExternalOrderId="@Model.ExternalOrderId"
+           param-ErrorMessage="@errorMessage"
+           param-RequestVerificationToken="@requestVerificationToken"
+           param-Items="@items"
+           param-Products="@products" />

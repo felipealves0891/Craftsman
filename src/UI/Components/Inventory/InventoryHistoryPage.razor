@@ -1,0 +1,68 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Estoque</span>
+        <h1>Hist&oacute;rico de estoque</h1>
+        <p>Veja as entradas, sa&iacute;das, custos e refer&ecirc;ncias do material selecionado.</p>
+    </div>
+    <a href="/Inventory/Balances" class="btn btn-outline-secondary">Voltar para saldos</a>
+</section>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Quantidade</th>
+                    <th>Custo unit&aacute;rio</th>
+                    <th>Total</th>
+                    <th>Motivo</th>
+                    <th>Refer&ecirc;ncia</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Movements.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <strong>Nenhum movimento registrado</strong>
+                                <span>Os movimentos aparecer&atilde;o aqui ap&oacute;s entradas ou baixas de estoque.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var movement in Movements)
+                    {
+                        <tr>
+                            <td>@movement.Type</td>
+                            <td>@movement.Quantity</td>
+                            <td>@movement.UnitCostAmount</td>
+                            <td><strong>@movement.TotalCostAmount</strong></td>
+                            <td>@movement.Reason</td>
+                            <td>@movement.BusinessReference</td>
+                            <td>@movement.OccurredAt</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<MovementRow> Movements { get; set; } = [];
+
+    public sealed record MovementRow(
+        string Type,
+        string Quantity,
+        string UnitCostAmount,
+        string TotalCostAmount,
+        string Reason,
+        string BusinessReference,
+        string OccurredAt);
+}

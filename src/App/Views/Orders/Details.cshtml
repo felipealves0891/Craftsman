@@ -1,172 +1,45 @@
 @model Craftsman.App.Models.OrderDetailViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Pedido";
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var items = Model.Items
+        .Select(item => new OrderDetailsPage.OrderItemRow(
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.ProductId?.ToString() ?? "Sem vinculo"))
+        .ToArray();
+    var productionTasks = Model.ProductionTasks
+        .Select(task => new OrderDetailsPage.ProductionTaskRow(
+            task.Id,
+            task.ProductId,
+            task.Quantity,
+            task.Status))
+        .ToArray();
+    var shipments = Model.Shipments
+        .Select(shipment => new OrderDetailsPage.ShipmentRow(
+            shipment.TrackingCode,
+            shipment.Status,
+            shipment.CreatedAt.ToLocalTime().ToString("g")))
+        .ToArray();
+    var shippingDate = Model.ShippingDate?.ToString("dd/MM/yyyy") ?? "-";
+    var successMessage = TempData["Success"] as string;
+    var errorMessage = TempData["Error"] as string;
+    var stockAlertsMessage = TempData["StockAlerts"] as string;
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">@Model.Source</span>
-        <h1>Pedido @Model.ExternalOrderId</h1>
-        <p>@Model.Status</p>
-    </div>
-    <div class="page-actions">
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
-        @if (!Model.ProductionTasks.Any())
-        {
-            <form asp-action="SendToProduction" asp-route-id="@Model.Id" method="post">
-                <button type="submit" class="btn btn-primary">Enviar para produção</button>
-            </form>
-        }
-    </div>
-</section>
-
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-
-@if (TempData["StockAlerts"] is string stockAlerts)
-{
-    <div class="alert alert-warning">@stockAlerts</div>
-}
-
-<div class="metric-row mb-4">
-    <div class="metric-card metric-card-with-icon">
-        <span class="metric-icon text-center" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7" /></svg>
-        </span>
-        <div>
-            <span>Origem</span>
-            <strong>@Model.Source</strong>
-        </div>
-    </div>
-    <div class="metric-card metric-card-with-icon">
-        <span class="metric-icon text-center" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" /></svg>
-        </span>
-        <div>
-            <span>Data de envio</span>
-            <strong>@(Model.ShippingDate?.ToString("dd/MM/yyyy") ?? "-")</strong>
-        </div>
-    </div>
-    <div class="metric-card metric-card-with-icon">
-        <span class="metric-icon text-center" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6" /></svg>
-        </span>
-        <div>
-            <span>Status</span>
-            <strong>@Model.Status</strong>
-        </div>
-    </div>
-</div>
-
-<ul class="nav nav-tabs order-tabs" id="order-detail-tabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="items-tab" data-toggle="tab" data-target="#items-panel" type="button" role="tab" aria-controls="items-panel" aria-selected="true">
-            Itens
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="production-tab" data-toggle="tab" data-target="#production-panel" type="button" role="tab" aria-controls="production-panel" aria-selected="false">
-            Produção
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="shipments-tab" data-toggle="tab" data-target="#shipments-panel" type="button" role="tab" aria-controls="shipments-panel" aria-selected="false">
-            Envios
-        </button>
-    </li>
-</ul>
-
-<div class="tab-content order-tab-content">
-    <section class="tab-pane fade show active" id="items-panel" role="tabpanel" aria-labelledby="items-tab" tabindex="0">
-        <div class="section-toolbar">
-            <h2>Itens</h2>
-            <a asp-controller="ManualOrders" asp-action="LinkItems" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Vincular produtos internos</a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Item externo</th>
-                        <th>Descrição</th>
-                        <th>Quantidade</th>
-                        <th>Produto interno</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Items)
-                    {
-                        <tr>
-                            <td>@item.ExternalItemId</td>
-                            <td>@item.Description</td>
-                            <td>@item.Quantity</td>
-                            <td>@(item.ProductId?.ToString() ?? "Sem vínculo")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="tab-pane fade" id="production-panel" role="tabpanel" aria-labelledby="production-tab" tabindex="0">
-        <h2>Produção</h2>
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Tarefa</th>
-                        <th>Produto</th>
-                        <th>Quantidade</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var task in Model.ProductionTasks)
-                    {
-                        <tr>
-                            <td>@task.Id</td>
-                            <td>@task.ProductId</td>
-                            <td>@task.Quantity</td>
-                            <td>@task.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="tab-pane fade" id="shipments-panel" role="tabpanel" aria-labelledby="shipments-tab" tabindex="0">
-        <div class="section-toolbar">
-            <h2>Envios</h2>
-            <a asp-controller="Shipments" asp-action="Create" asp-route-orderId="@Model.Id" class="btn btn-outline-secondary">Criar envio</a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Rastreio</th>
-                        <th>Status</th>
-                        <th>Criado em</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var shipment in Model.Shipments)
-                    {
-                        <tr>
-                            <td>@shipment.TrackingCode</td>
-                            <td>@shipment.Status</td>
-                            <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </section>
-</div>
+<component type="typeof(OrderDetailsPage)" render-mode="Static"
+           param-OrderId="@Model.Id"
+           param-Source="@Model.Source"
+           param-ExternalOrderId="@Model.ExternalOrderId"
+           param-Status="@Model.Status"
+           param-ShippingDate="@shippingDate"
+           param-SuccessMessage="@successMessage"
+           param-ErrorMessage="@errorMessage"
+           param-StockAlertsMessage="@stockAlertsMessage"
+           param-RequestVerificationToken="@requestVerificationToken"
+           param-Items="@items"
+           param-ProductionTasks="@productionTasks"
+           param-Shipments="@shipments" />

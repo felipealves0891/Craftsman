@@ -1,0 +1,111 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800">Documenta&ccedil;&atilde;o</h1>
+        <p class="mb-0 text-gray-600">Fluxo operacional do pedido ate a revisao financeira.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Comece por aqui</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    O Craftsman organiza a operacao a partir do pedido. Cada pedido entra por importacao ou cadastro manual,
+                    seus itens sao vinculados ao catalogo interno, a ficha tecnica define consumo de materia-prima e tempo,
+                    o estoque confirma viabilidade, a producao executa as tarefas, o envio acompanha a entrega e o financeiro
+                    revisa custo, receita e margem depois da conclusao.
+                </p>
+                <p class="mb-0">
+                    A ordem abaixo evita retrabalho: primeiro garanta que o pedido e os produtos estejam claros, depois valide
+                    ficha tecnica e estoque antes de movimentar producao, envio e financeiro.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Fluxo principal</h2>
+            </div>
+            <div class="card-body">
+                <ol class="mb-0">
+                    <li class="mb-3">
+                        <strong>Importar ou criar pedido.</strong>
+                        Use a <a href="/Import">importa&ccedil;&atilde;o de pedidos</a>
+                        para trazer vendas externas, ou cadastre um
+                        <a href="/ManualOrders/Create">novo pedido</a> quando a venda nasceu fora das integracoes.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Mapear itens para produtos internos.</strong>
+                        Revise os <a href="/Orders">pedidos</a>, cadastre ou ajuste
+                        <a href="/Products">produtos</a> e mantenha
+                        <a href="/Products/Mappings">mapeamentos</a> para que itens externos apontem para o produto correto.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Configurar ficha tecnica.</strong>
+                        No cadastro do produto, a ficha tecnica informa quais materias-primas entram na producao e permite que o planejamento
+                        calcule consumo e duracao antes de enviar o pedido para a agenda.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Garantir estoque.</strong>
+                        Acompanhe <a href="/Inventory">materias-primas</a>,
+                        <a href="/Inventory/Balances">saldos</a> e
+                        <a href="/Inventory/Movements">movimentos de estoque</a> antes de iniciar tarefas planejadas.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Enviar para producao.</strong>
+                        Com produto, ficha tecnica e estoque prontos, envie o pedido para a
+                        <a href="/Production">agenda de produ&ccedil;&atilde;o</a> e acompanhe inicio, conclusao ou cancelamento das tarefas.
+                    </li>
+                    <li class="mb-3">
+                        <strong>Acompanhar envio.</strong>
+                        Depois da producao, registre e atualize
+                        <a href="/Shipments">envios</a> para refletir transporte, tentativa de entrega e entrega concluida.
+                    </li>
+                    <li>
+                        <strong>Revisar financeiro.</strong>
+                        Quando a entrega e confirmada, use o
+                        <a href="/Finance">financeiro</a> para conferir receita, custos apurados e margem.
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Checklist inicial de operacao</h2>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Pedidos importados ou cadastrados sem duplicidade.</li>
+                    <li>Itens vinculados aos produtos internos corretos.</li>
+                    <li>Produtos com ficha tecnica e tempo de producao definidos.</li>
+                    <li>Materias-primas cadastradas com saldo suficiente.</li>
+                    <li>Tarefas planejadas acompanhadas na agenda de producao.</li>
+                    <li>Envios atualizados ate a entrega.</li>
+                    <li>Financeiro revisado com custo real e margem.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h2 class="h6 m-0 font-weight-bold text-primary">Atalhos</h2>
+            </div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" href="/Import">Pedidos/importa&ccedil;&atilde;o</a>
+                <a class="list-group-item list-group-item-action" href="/ManualOrders/Create">Novo Pedido</a>
+                <a class="list-group-item list-group-item-action" href="/Products">Produtos</a>
+                <a class="list-group-item list-group-item-action" href="/Products/Mappings">Mapeamentos</a>
+                <a class="list-group-item list-group-item-action" href="/Inventory">Mat&eacute;rias-primas/estoque</a>
+                <a class="list-group-item list-group-item-action" href="/Production">Produ&ccedil;&atilde;o</a>
+                <a class="list-group-item list-group-item-action" href="/Shipments">Envios</a>
+                <a class="list-group-item list-group-item-action" href="/Finance">Financeiro</a>
+            </div>
+        </div>
+    </div>
+</div>

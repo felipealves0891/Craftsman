@@ -1,0 +1,114 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Operacao</span>
+        <h1>Pedidos</h1>
+        <p>Importe pedidos externos, acompanhe a carteira e crie pedidos manuais quando necessario.</p>
+    </div>
+    <div class="page-actions">
+        <form action="/Orders/Import" method="post">
+            <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+            <button type="submit" class="btn btn-outline-secondary">Importar pedidos</button>
+        </form>
+        <a href="/ManualOrders/Create" class="btn btn-primary">Novo pedido</a>
+    </div>
+</section>
+
+@if (LastImport is not null)
+{
+    <div class="metric-row mb-4">
+        <div class="metric-card">
+            <span>Importados</span>
+            <strong>@LastImport.ImportedCount</strong>
+        </div>
+        <div class="metric-card">
+            <span>Ignorados</span>
+            <strong>@LastImport.SkippedCount</strong>
+        </div>
+        <div class="metric-card">
+            <span>Falhas</span>
+            <strong>@LastImport.Failures.Count</strong>
+        </div>
+    </div>
+
+    @if (LastImport.Failures.Count > 0)
+    {
+        <div class="alert alert-danger">
+            <strong>Falhas na importacao</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var failure in LastImport.Failures)
+                {
+                    <li>@failure</li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Origem</th>
+                    <th>Pedido externo</th>
+                    <th>Data de envio</th>
+                    <th>Status</th>
+                    <th>Itens</th>
+                    <th>Criado em</th>
+                    <th class="text-right">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Orders.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <strong>Nenhum pedido na carteira</strong>
+                                <span>Importe pedidos ou crie um pedido manual para comecar.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var order in Orders)
+                    {
+                        <tr>
+                            <td>@order.Source</td>
+                            <td><strong>@order.ExternalOrderId</strong></td>
+                            <td>@order.ShippingDate</td>
+                            <td><span class="status-badge status-@order.StatusCss">@order.StatusLabel</span></td>
+                            <td>@order.ItemCount</td>
+                            <td>@order.CreatedAt</td>
+                            <td class="text-right"><a href="/Orders/Details/@order.Id" class="btn btn-sm btn-outline-primary">Detalhes</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<OrderRow> Orders { get; set; } = [];
+
+    [Parameter]
+    public ImportSummary? LastImport { get; set; }
+
+    [Parameter]
+    public string RequestVerificationToken { get; set; } = string.Empty;
+
+    public sealed record OrderRow(
+        Guid Id,
+        string Source,
+        string ExternalOrderId,
+        string ShippingDate,
+        string StatusLabel,
+        string StatusCss,
+        int ItemCount,
+        string CreatedAt);
+
+    public sealed record ImportSummary(int ImportedCount, int SkippedCount, IReadOnlyCollection<string> Failures);
+}

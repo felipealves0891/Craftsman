@@ -1,0 +1,104 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Financeiro</span>
+        <h1>Apura&ccedil;&atilde;o financeira</h1>
+        <p>Confira receita, custos e margem por pedido dentro do per&iacute;odo selecionado.</p>
+    </div>
+    <a href="/Finance/Pending" class="btn btn-outline-primary">Pendencias</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(SuccessMessage))
+{
+    <div class="alert alert-success">@SuccessMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<form method="get" class="filter-panel">
+    <div class="form-group">
+        <label for="from" class="form-label">De</label>
+        <input id="from" type="date" name="from" value="@From" class="form-control" />
+    </div>
+    <div class="form-group">
+        <label for="to" class="form-label">At&eacute;</label>
+        <input id="to" type="date" name="to" value="@To" class="form-control" />
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Receita</th>
+                    <th>Custos</th>
+                    <th>Margem</th>
+                    <th>Status</th>
+                    <th>Calculado em</th>
+                    <th class="text-right">A&ccedil;&otilde;es</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Settlements.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <strong>Nenhuma apura&ccedil;&atilde;o encontrada</strong>
+                                <span>Ajuste o per&iacute;odo ou aguarde entregas confirmadas para calcular margem.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var settlement in Settlements)
+                    {
+                        <tr>
+                            <td><strong>@settlement.OrderId</strong></td>
+                            <td>@settlement.RevenueAmount</td>
+                            <td>@settlement.TotalCostAmount</td>
+                            <td><strong>@settlement.MarginAmount</strong></td>
+                            <td><span class="status-badge status-@settlement.StatusCss">@settlement.StatusLabel</span></td>
+                            <td>@settlement.CalculatedAt</td>
+                            <td class="text-right"><a href="/Finance/Details?orderId=@settlement.OrderId" class="btn btn-sm btn-outline-primary">Detalhes</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<SettlementRow> Settlements { get; set; } = [];
+
+    [Parameter]
+    public string? From { get; set; }
+
+    [Parameter]
+    public string? To { get; set; }
+
+    [Parameter]
+    public string? SuccessMessage { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    public sealed record SettlementRow(
+        Guid OrderId,
+        string RevenueAmount,
+        string TotalCostAmount,
+        string MarginAmount,
+        string StatusLabel,
+        string StatusCss,
+        string CalculatedAt);
+}

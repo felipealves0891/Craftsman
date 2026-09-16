@@ -1,107 +1,41 @@
 @model Craftsman.App.Models.OrdersIndexViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Pedidos";
 
-    string StatusLabel(object status) => status.ToString() switch
+    static string StatusLabel(object status) => status.ToString() switch
     {
         "Normalized" => "Normalizado",
-        "ReadyForProduction" => "Pronto para produção",
-        "InProduction" => "Em produção",
+        "ReadyForProduction" => "Pronto para producao",
+        "InProduction" => "Em producao",
         "Shipped" => "Enviado",
         "Delivered" => "Entregue",
         "Cancelled" => "Cancelado",
         _ => status.ToString() ?? "-"
     };
+
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var orders = Model.Orders
+        .Select(order => new OrdersIndexPage.OrderRow(
+            order.Id,
+            order.Source,
+            order.ExternalOrderId,
+            order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-",
+            StatusLabel(order.Status),
+            order.Status.ToString().ToLowerInvariant(),
+            order.ItemCount,
+            order.CreatedAt.ToLocalTime().ToString("g")))
+        .ToArray();
+    var lastImport = Model.LastImport is null
+        ? null
+        : new OrdersIndexPage.ImportSummary(
+            Model.LastImport.ImportedCount,
+            Model.LastImport.SkippedCount,
+            Model.LastImport.Failures);
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Operação</span>
-        <h1>Pedidos</h1>
-        <p>Importe pedidos externos, acompanhe a carteira e crie pedidos manuais quando necessário.</p>
-    </div>
-    <div class="page-actions">
-        <form asp-action="Import" method="post">
-            <button type="submit" class="btn btn-outline-secondary">Importar pedidos</button>
-        </form>
-        <a asp-controller="ManualOrders" asp-action="Create" class="btn btn-primary">Novo pedido</a>
-    </div>
-</section>
-
-@if (Model.LastImport is not null)
-{
-    <div class="metric-row mb-4">
-        <div class="metric-card">
-            <span>Importados</span>
-            <strong>@Model.LastImport.ImportedCount</strong>
-        </div>
-        <div class="metric-card">
-            <span>Ignorados</span>
-            <strong>@Model.LastImport.SkippedCount</strong>
-        </div>
-        <div class="metric-card">
-            <span>Falhas</span>
-            <strong>@Model.LastImport.Failures.Count</strong>
-        </div>
-    </div>
-
-    @if (Model.LastImport.Failures.Count > 0)
-    {
-        <div class="alert alert-danger">
-            <strong>Falhas na importação</strong>
-            <ul class="mb-0 mt-2">
-                @foreach (var failure in Model.LastImport.Failures)
-                {
-                    <li>@failure</li>
-                }
-            </ul>
-        </div>
-    }
-}
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Origem</th>
-                    <th>Pedido externo</th>
-                    <th>Data de envio</th>
-                    <th>Status</th>
-                    <th>Itens</th>
-                    <th>Criado em</th>
-                    <th class="text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Orders.Any())
-                {
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <strong>Nenhum pedido na carteira</strong>
-                                <span>Importe pedidos ou crie um pedido manual para começar.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var order in Model.Orders)
-                    {
-                        <tr>
-                            <td>@order.Source</td>
-                            <td><strong>@order.ExternalOrderId</strong></td>
-                            <td>@(order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-")</td>
-                            <td><span class="status-badge status-@order.Status.ToString().ToLowerInvariant()">@StatusLabel(order.Status)</span></td>
-                            <td>@order.ItemCount</td>
-                            <td>@order.CreatedAt.ToLocalTime().ToString("g")</td>
-                            <td class="text-right"><a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">Detalhes</a></td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(OrdersIndexPage)" render-mode="Static"
+           param-Orders="@orders"
+           param-LastImport="@lastImport"
+           param-RequestVerificationToken="@requestVerificationToken" />

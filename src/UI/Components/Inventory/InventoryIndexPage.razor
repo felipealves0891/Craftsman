@@ -1,0 +1,73 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Cat&aacute;logo</span>
+        <h1>Mat&eacute;rias-primas</h1>
+        <p>Gerencie insumos, unidades de medida e disponibilidade para produ&ccedil;&atilde;o.</p>
+    </div>
+    <div class="page-actions">
+        <a href="/Inventory/Balances" class="btn btn-outline-secondary">Saldos</a>
+        <a href="/Inventory/Movements" class="btn btn-outline-secondary">Movimentos</a>
+        <a href="/Inventory/CreateMaterial" class="btn btn-primary">Nova mat&eacute;ria-prima</a>
+    </div>
+</section>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Unidade</th>
+                    <th>Status</th>
+                    <th>Minimo</th>
+                    <th>Critico</th>
+                    <th>Alerta</th>
+                    <th class="text-right">A&ccedil;&otilde;es</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Materials.Any())
+                {
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <strong>Nenhuma mat&eacute;ria-prima cadastrada</strong>
+                                <span>Cadastre o primeiro insumo antes de registrar movimentos de estoque.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var material in Materials)
+                    {
+                        <tr>
+                            <td><strong>@material.Name</strong></td>
+                            <td>@material.UnitOfMeasure</td>
+                            <td><span class="status-badge status-@material.StatusCss">@material.Status</span></td>
+                            <td>@material.MinimumStockLevel</td>
+                            <td>@material.CriticalStockLevel</td>
+                            <td>@((MarkupString)material.AlertMarkup)</td>
+                            <td class="text-right"><a href="/Inventory/EditMaterial/@material.Id" class="btn btn-sm btn-outline-primary">Editar</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<MaterialRow> Materials { get; set; } = [];
+
+    public sealed record MaterialRow(
+        Guid Id,
+        string Name,
+        string UnitOfMeasure,
+        string Status,
+        string StatusCss,
+        string MinimumStockLevel,
+        string CriticalStockLevel,
+        string AlertMarkup);
+}

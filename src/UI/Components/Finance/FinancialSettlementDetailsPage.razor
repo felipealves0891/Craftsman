@@ -1,0 +1,46 @@
+<h1>Acerto financeiro</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Pedido</dt>
+    <dd class="col-sm-9">@OrderId</dd>
+    <dt class="col-sm-3">Receita</dt>
+    <dd class="col-sm-9">@RevenueAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo de produ&ccedil;&atilde;o</dt>
+    <dd class="col-sm-9">@ProductionCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo de envio</dt>
+    <dd class="col-sm-9">@ShippingCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Custo total</dt>
+    <dd class="col-sm-9">@TotalCostAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Margem</dt>
+    <dd class="col-sm-9">@MarginAmount.ToString("C")</dd>
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Status</dd>
+    <dt class="col-sm-3">Calculado em</dt>
+    <dd class="col-sm-9">@CalculatedAt.ToLocalTime().ToString("g")</dd>
+</dl>
+
+@code {
+    [Parameter]
+    public Guid OrderId { get; set; }
+
+    [Parameter]
+    public decimal RevenueAmount { get; set; }
+
+    [Parameter]
+    public decimal ProductionCostAmount { get; set; }
+
+    [Parameter]
+    public decimal ShippingCostAmount { get; set; }
+
+    [Parameter]
+    public decimal TotalCostAmount { get; set; }
+
+    [Parameter]
+    public decimal MarginAmount { get; set; }
+
+    [Parameter]
+    public string Status { get; set; } = string.Empty;
+
+    [Parameter]
+    public DateTimeOffset CalculatedAt { get; set; }
+}

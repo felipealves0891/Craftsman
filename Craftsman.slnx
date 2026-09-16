@@ -8,6 +8,9 @@
   <Folder Name="/src/Infra/">
     <Project Path="src/Infra/Craftsman.Infra.csproj" />
   </Folder>
+  <Folder Name="/src/UI/">
+    <Project Path="src/UI/Craftsman.UI.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Craftsman.Tests/Craftsman.Tests.csproj" />
   </Folder>

@@ -1,0 +1,60 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Estoque</span>
+        <h1>Saldos de estoque</h1>
+        <p>Consulte rapidamente a disponibilidade de cada mat&eacute;ria-prima.</p>
+    </div>
+    <a href="/Inventory" class="btn btn-outline-secondary">Voltar para mat&eacute;rias-primas</a>
+</section>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Mat&eacute;ria-prima</th>
+                    <th>Saldo</th>
+                    <th>Alerta</th>
+                    <th class="text-right">A&ccedil;&otilde;es</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Balances.Any())
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <strong>Nenhum saldo registrado</strong>
+                                <span>Cadastre mat&eacute;rias-primas e movimentos para acompanhar o estoque.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var balance in Balances)
+                    {
+                        <tr>
+                            <td><strong>@balance.RawMaterialName</strong></td>
+                            <td>@balance.Balance @balance.UnitOfMeasure</td>
+                            <td>@((MarkupString)balance.AlertMarkup)</td>
+                            <td class="text-right"><a href="/Inventory/History/@balance.RawMaterialId" class="btn btn-sm btn-outline-primary">Hist&oacute;rico</a></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<BalanceRow> Balances { get; set; } = [];
+
+    public sealed record BalanceRow(
+        Guid RawMaterialId,
+        string RawMaterialName,
+        string Balance,
+        string UnitOfMeasure,
+        string AlertMarkup);
+}

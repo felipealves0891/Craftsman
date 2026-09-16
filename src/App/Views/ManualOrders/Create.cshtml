@@ -1,305 +1,43 @@
 @model Craftsman.App.Models.ManualOrderInputModel
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using Craftsman.UI.Components.Shared
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Novo pedido";
-    var products = ViewBag.Products as List<SelectListItem> ?? [];
-    var orderSources = ViewBag.OrderSources as List<SelectListItem> ?? [];
+    var products = (ViewBag.Products as List<SelectListItem> ?? [])
+        .Select(product => new SelectOption(product.Value, product.Text, product.Selected))
+        .ToArray();
+    var orderSources = (ViewBag.OrderSources as List<SelectListItem> ?? [])
+        .Select(source => new SelectOption(source.Value, source.Text, source.Selected || source.Value == Model.Source))
+        .ToArray();
+    var items = Model.Items
+        .Select(item => new ManualOrderCreatePage.ManualOrderItemRow(
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.UnitPriceAmount.ToString("N2"),
+            item.ProductId?.ToString()))
+        .ToArray();
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var reference = Model.Reference ?? Guid.NewGuid().ToString()[..8];
+    var shippingDate = Model.ShippingDate?.ToString("yyyy-MM-dd");
+    var minimumShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd");
+    var successMessage = TempData["Success"] as string;
+    var errorMessage = TempData["Error"] as string;
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Novo Pedido</span>
-        <h1>Novo pedido</h1>
-        <p>Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.</p>
-    </div>
-    <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-secondary">Voltar para pedidos</a>
-</section>
-
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-
-<form asp-action="CreateSource" method="post" class="form-panel row g-3 mb-4">
-    <div class="col-md-9">
-        <label for="Name" class="form-label">Nova origem</label>
-        <input id="Name" name="Name" class="form-control" placeholder="Ex.: WhatsApp" />
-    </div>
-    <div class="col-md-3 d-flex align-items-end">
-        <button type="submit" class="btn btn-outline-primary w-100">Adicionar origem</button>
-    </div>
-</form>
-
-<form asp-action="Create" method="post" id="manual-order-form">
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-    <div class="manual-order-layout">
-        <div class="manual-order-main">
-            <section class="form-panel manual-order-section">
-                <div class="section-title">
-                    <span class="section-step">1</span>
-                    <div>
-                        <h2>Dados do pedido</h2>
-                        <p>Identifique a origem e a referencia usada internamente.</p>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-4 form-group">
-                        <label asp-for="Source" class="form-label"></label>
-                        <select asp-for="Source" asp-items="orderSources" class="form-select">
-                            <option value="">Selecione</option>
-                        </select>
-                        <span asp-validation-for="Source" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label asp-for="Reference" class="form-label"></label>
-                        <input asp-for="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Guid.NewGuid().ToString()[..8]" />
-                    </div>
-                    <div class="col-md-4 form-group">
-                        <label asp-for="ShippingDate" class="form-label"></label>
-                        <input asp-for="ShippingDate" type="date" min="@DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd")" class="form-control" />
-                        <span asp-validation-for="ShippingDate" class="text-danger"></span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="form-panel manual-order-section">
-                <div class="section-toolbar manual-items-toolbar">
-                    <div class="section-title">
-                        <span class="section-step">2</span>
-                        <div>
-                            <h2>Itens do pedido</h2>
-                            <p>Adicione os produtos vendidos e vincule ao catalogo interno quando possivel.</p>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-outline-primary" id="add-order-item">
-                        <i class="fas fa-plus fa-sm mr-1"></i>Adicionar item
-                    </button>
-                </div>
-
-                <div class="manual-items-list" id="order-items-body">
-                    @for (var i = 0; i < Model.Items.Count; i++)
-                    {
-                        <div class="order-item-row manual-item-card">
-                            <div class="manual-item-header">
-                                <div>
-                                    <span class="manual-item-kicker">Item <span data-item-number>@(i + 1)</span></span>
-                                    <strong data-item-title>Novo item</strong>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>
-                                    <i class="fas fa-trash-alt fa-sm mr-1"></i>Remover
-                                </button>
-                            </div>
-
-                            <div class="manual-item-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Codigo externo</label>
-                                    <input asp-for="Items[i].ExternalItemId" class="form-control" placeholder="SKU, codigo ou referencia" data-item-field />
-                                </div>
-                                <div class="form-group manual-item-description">
-                                    <label class="form-label">Descricao</label>
-                                    <input asp-for="Items[i].Description" class="form-control" placeholder="Produto vendido" data-item-field data-description-field />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Quantidade</label>
-                                    <input asp-for="Items[i].Quantity" class="form-control" data-item-field data-quantity-field />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Valor unitario</label>
-                                    <input asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
-                                </div>
-                                <div class="form-group manual-item-product">
-                                    <label class="form-label">Produto interno</label>
-                                    <div class="product-picker">
-                                        <input type="search" class="form-control product-filter" placeholder="Filtrar produtos" aria-label="Filtrar produtos internos" />
-                                        <select asp-for="Items[i].ProductId" asp-items="products" class="form-select" data-item-field>
-                                            <option value="">Sem vinculo</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="manual-item-total">
-                                    <span>Total do item</span>
-                                    <strong data-item-total>R$ 0,00</strong>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-            </section>
-        </div>
-
-        <aside class="manual-order-summary">
-            <div class="summary-card">
-                <span class="eyebrow">Resumo</span>
-                <dl>
-                    <div>
-                        <dt>Itens preenchidos</dt>
-                        <dd id="manual-order-item-count">0</dd>
-                    </div>
-                    <div>
-                        <dt>Total estimado</dt>
-                        <dd id="manual-order-total">R$ 0,00</dd>
-                    </div>
-                </dl>
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fas fa-save fa-sm mr-1"></i>Salvar pedido
-                </button>
-                <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-secondary btn-block">Cancelar</a>
-            </div>
-        </aside>
-    </div>
-</form>
+<component type="typeof(ManualOrderCreatePage)" render-mode="Static"
+           param-Products="@products"
+           param-OrderSources="@orderSources"
+           param-Items="@items"
+           param-RequestVerificationToken="@requestVerificationToken"
+           param-Reference="@reference"
+           param-ShippingDate="@shippingDate"
+           param-MinimumShippingDate="@minimumShippingDate"
+           param-SuccessMessage="@successMessage"
+           param-ErrorMessage="@errorMessage" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            const body = document.getElementById('order-items-body');
-            const addButton = document.getElementById('add-order-item');
-            const itemCount = document.getElementById('manual-order-item-count');
-            const orderTotal = document.getElementById('manual-order-total');
-            const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-
-            const parseNumber = (value) => {
-                const normalized = value.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
-                const parsed = Number.parseFloat(normalized);
-                return Number.isFinite(parsed) ? parsed : 0;
-            };
-
-            const updateIndexes = () => {
-                [...body.querySelectorAll('.order-item-row')].forEach((row, index) => {
-                    row.querySelector('[data-item-number]').textContent = index + 1;
-
-                    row.querySelectorAll('input, select').forEach((field) => {
-                        if (field.name) {
-                            field.name = field.name.replace(/Items\[\d+\]/, `Items[${index}]`);
-                        }
-
-                        if (field.id) {
-                            field.id = field.id.replace(/Items_\d+__/, `Items_${index}__`);
-                        }
-                    });
-                });
-            };
-
-            const rowHasValue = (row) => {
-                return [...row.querySelectorAll('[data-item-field]')].some((field) => {
-                    if (field.tagName === 'SELECT') {
-                        return field.value !== '';
-                    }
-
-                    return field.value.trim() !== '' && field.value !== '0';
-                });
-            };
-
-            const updateSummary = () => {
-                let filledItems = 0;
-                let total = 0;
-
-                [...body.querySelectorAll('.order-item-row')].forEach((row) => {
-                    const description = row.querySelector('[data-description-field]').value.trim();
-                    const quantity = parseNumber(row.querySelector('[data-quantity-field]').value);
-                    const price = parseNumber(row.querySelector('[data-price-field]').value);
-                    const rowTotal = quantity * price;
-                    const title = row.querySelector('[data-item-title]');
-
-                    row.querySelector('[data-item-total]').textContent = currency.format(rowTotal);
-                    title.textContent = description || 'Novo item';
-
-                    if (rowHasValue(row)) {
-                        filledItems += 1;
-                        total += rowTotal;
-                    }
-                });
-
-                itemCount.textContent = filledItems;
-                orderTotal.textContent = currency.format(total);
-            };
-
-            const clearRow = (row) => {
-                row.querySelectorAll('input').forEach((field) => field.value = '');
-                row.querySelectorAll('select').forEach((field) => field.selectedIndex = 0);
-                row.querySelectorAll('option').forEach((option) => option.hidden = false);
-                row.querySelector('[data-item-title]').textContent = 'Novo item';
-                row.querySelector('[data-item-total]').textContent = currency.format(0);
-            };
-
-            const addRow = () => {
-                const currentRows = body.querySelectorAll('.order-item-row');
-                const clone = currentRows[currentRows.length - 1].cloneNode(true);
-                clearRow(clone);
-                body.appendChild(clone);
-                updateIndexes();
-                updateSummary();
-            };
-
-            const ensureBlankLastRow = () => {
-                const rows = body.querySelectorAll('.order-item-row');
-                const lastRow = rows[rows.length - 1];
-                if (rowHasValue(lastRow)) {
-                    addRow();
-                }
-            };
-
-            const filterProducts = (input) => {
-                const picker = input.closest('.product-picker');
-                const select = picker.querySelector('select');
-                const query = input.value.trim().toLowerCase();
-
-                [...select.options].forEach((option) => {
-                    if (option.value === '') {
-                        option.hidden = false;
-                        return;
-                    }
-
-                    option.hidden = query.length > 0 && !option.text.toLowerCase().includes(query);
-                });
-            };
-
-            body.addEventListener('input', (event) => {
-                if (event.target.classList.contains('product-filter')) {
-                    filterProducts(event.target);
-                    return;
-                }
-
-                ensureBlankLastRow();
-                updateSummary();
-            });
-
-            body.addEventListener('change', () => {
-                ensureBlankLastRow();
-                updateSummary();
-            });
-
-            body.addEventListener('click', (event) => {
-                const removeButton = event.target.closest('[data-remove-item]');
-                if (!removeButton) {
-                    return;
-                }
-
-                const rows = body.querySelectorAll('.order-item-row');
-                const row = removeButton.closest('.order-item-row');
-
-                if (rows.length === 1) {
-                    clearRow(row);
-                } else {
-                    row.remove();
-                }
-
-                updateIndexes();
-                updateSummary();
-            });
-
-            addButton.addEventListener('click', addRow);
-            updateIndexes();
-            updateSummary();
-        })();
-    </script>
 }

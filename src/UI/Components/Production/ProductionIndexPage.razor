@@ -1,0 +1,136 @@
+@using Craftsman.UI.Components.Shared
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Execucao</span>
+        <h1>Agenda de producao</h1>
+        <p>Filtre tarefas planejadas e avance cada pedido conforme o trabalho evolui.</p>
+    </div>
+</section>
+
+<form method="get" class="filter-panel">
+    <div class="form-group">
+        <label for="status" class="form-label">Status</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">Todos</option>
+            @foreach (var status in StatusOptions)
+            {
+                <option value="@status.Value" selected="@status.Selected">@status.Text</option>
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="plannedDate" class="form-label">Data planejada</label>
+        <input id="plannedDate" type="date" name="plannedDate" value="@PlannedDate" class="form-control" />
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
+    </div>
+</form>
+
+<section class="production-calendar">
+    <div class="calendar-toolbar">
+        <div>
+            <span class="eyebrow">Calendario</span>
+            <h2>@MonthTitle</h2>
+        </div>
+        <div class="calendar-summary">
+            <strong>@VisibleTaskCount</strong>
+            <span>tarefas no mes</span>
+        </div>
+    </div>
+
+    @if (!HasTasks)
+    {
+        <div class="empty-state">
+            <strong>Nenhuma tarefa encontrada</strong>
+            <span>Ajuste os filtros ou aguarde novos pedidos prontos para producao.</span>
+        </div>
+    }
+    else
+    {
+        <div class="calendar-weekdays" aria-hidden="true">
+            <span>Seg</span>
+            <span>Ter</span>
+            <span>Qua</span>
+            <span>Qui</span>
+            <span>Sex</span>
+            <span>Sab</span>
+            <span>Dom</span>
+        </div>
+
+        <div class="calendar-grid">
+            @for (var i = 0; i < LeadingBlankDays; i++)
+            {
+                <div class="calendar-day calendar-day-muted"></div>
+            }
+
+            @foreach (var day in Days)
+            {
+                <article class="@day.CssClass">
+                    <header class="calendar-day-header">
+                        <strong>@day.DayNumber</strong>
+                        @if (day.Tasks.Count > 0)
+                        {
+                            <span>@day.Tasks.Count tarefa(s)</span>
+                        }
+                    </header>
+
+                    <div class="calendar-day-tasks">
+                        @foreach (var task in day.Tasks)
+                        {
+                            <div class="calendar-task status-border-@task.StatusCss">
+                                <div class="calendar-task-main">
+                                    <span class="status-badge status-@task.StatusCss">@task.StatusLabel</span>
+                                    <span class="calendar-task-range">@task.RangeLabel</span>
+                                    <strong>@task.OrderReference</strong>
+                                    <span>@task.ItemDescription</span>
+                                    <span>@task.Quantity unidade(s) - @task.ProductionDurationHours hora(s)</span>
+                                </div>
+                                <form action="/Production/Advance" method="post" class="calendar-task-actions">
+                                    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                                    <input type="hidden" name="id" value="@task.Id" />
+                                    <button type="submit" name="action" value="start" class="btn btn-sm btn-outline-primary" title="Iniciar" aria-label="Iniciar" disabled="@(!task.CanStart)">
+                                        <i class="fas fa-play" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="complete" class="btn btn-sm btn-outline-success" title="Concluir" aria-label="Concluir" disabled="@(!task.CanComplete)">
+                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="cancel" class="btn btn-sm btn-outline-danger" title="Cancelar" aria-label="Cancelar" disabled="@(!task.CanCancel)">
+                                        <i class="fas fa-times" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public IReadOnlyCollection<SelectOption> StatusOptions { get; set; } = [];
+    [Parameter] public string? PlannedDate { get; set; }
+    [Parameter] public string MonthTitle { get; set; } = string.Empty;
+    [Parameter] public int VisibleTaskCount { get; set; }
+    [Parameter] public bool HasTasks { get; set; }
+    [Parameter] public int LeadingBlankDays { get; set; }
+    [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyCollection<CalendarDay> Days { get; set; } = [];
+
+    public sealed record CalendarDay(int DayNumber, string CssClass, IReadOnlyCollection<ProductionTaskRow> Tasks);
+
+    public sealed record ProductionTaskRow(
+        Guid Id,
+        string StatusLabel,
+        string StatusCss,
+        string RangeLabel,
+        string OrderReference,
+        string ItemDescription,
+        int Quantity,
+        int ProductionDurationHours,
+        bool CanStart,
+        bool CanComplete,
+        bool CanCancel);
+}

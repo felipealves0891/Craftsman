@@ -1,0 +1,85 @@
+@using Craftsman.UI.Components.Shared
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Execucao</span>
+        <h1>Envios</h1>
+        <p>Acompanhe rastreios e atualize o status de entrega dos pedidos.</p>
+    </div>
+    <a href="/Shipments/Create" class="btn btn-primary"><i class="fas fa-plus fa-sm mr-1"></i>Criar envio</a>
+</section>
+
+<form method="get" class="filter-panel">
+    <div class="form-group">
+        <label for="status" class="form-label">Status</label>
+        <select id="status" name="status" class="form-select">
+            <option value="">Todos</option>
+            @foreach (var status in StatusOptions)
+            {
+                <option value="@status.Value" selected="@status.Selected">@status.Text</option>
+            }
+        </select>
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Rastreio</th>
+                    <th>Status</th>
+                    <th>Criado em</th>
+                    <th class="text-right">Acoes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Shipments.Any())
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <strong>Nenhum envio encontrado</strong>
+                                <span>Crie um envio quando houver um pedido pronto para despachar.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var shipment in Shipments)
+                    {
+                        <tr>
+                            <td><strong>@shipment.OrderId</strong></td>
+                            <td>@shipment.TrackingCode</td>
+                            <td><span class="status-badge status-@shipment.StatusCss">@shipment.StatusLabel</span></td>
+                            <td>@shipment.CreatedAt</td>
+                            <td class="text-right">
+                                <form action="/Shipments/UpdateStatus" method="post" class="table-actions justify-content-end">
+                                    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                                    <input type="hidden" name="id" value="@shipment.Id" />
+                                    <button type="submit" name="status" value="InTransit" class="btn btn-sm btn-outline-primary">Em transito</button>
+                                    <button type="submit" name="status" value="DeliveryAttempted" class="btn btn-sm btn-outline-warning">Tentativa</button>
+                                    <button type="submit" name="status" value="Delivered" class="btn btn-sm btn-outline-success">Entregar</button>
+                                    <button type="submit" name="status" value="Cancelled" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyCollection<SelectOption> StatusOptions { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
+    [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+
+    public sealed record ShipmentRow(Guid Id, Guid OrderId, string? TrackingCode, string StatusLabel, string StatusCss, string CreatedAt);
+}

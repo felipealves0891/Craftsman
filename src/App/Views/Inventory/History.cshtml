@@ -1,60 +1,17 @@
 @model IReadOnlyCollection<Craftsman.App.Models.StockMovementViewModel>
 
 @{
-    ViewData["Title"] = "Histórico de estoque";
+    ViewData["Title"] = "Historico de estoque";
+    var movements = Model
+        .Select(movement => new InventoryHistoryPage.MovementRow(
+            movement.Type.ToString(),
+            movement.Quantity.ToString(),
+            movement.UnitCostAmount.ToString("C"),
+            movement.TotalCostAmount.ToString("C"),
+            movement.Reason,
+            movement.BusinessReference ?? string.Empty,
+            movement.OccurredAt.ToLocalTime().ToString("g")))
+        .ToArray();
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Estoque</span>
-        <h1>Histórico de estoque</h1>
-        <p>Veja as entradas, saídas, custos e referências do material selecionado.</p>
-    </div>
-    <a asp-action="Balances" class="btn btn-outline-secondary">Voltar para saldos</a>
-</section>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Quantidade</th>
-                    <th>Custo unitário</th>
-                    <th>Total</th>
-                    <th>Motivo</th>
-                    <th>Referência</th>
-                    <th>Data</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <strong>Nenhum movimento registrado</strong>
-                                <span>Os movimentos aparecerão aqui após entradas ou baixas de estoque.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var movement in Model)
-                    {
-                        <tr>
-                            <td>@movement.Type</td>
-                            <td>@movement.Quantity</td>
-                            <td>@movement.UnitCostAmount.ToString("C")</td>
-                            <td><strong>@movement.TotalCostAmount.ToString("C")</strong></td>
-                            <td>@movement.Reason</td>
-                            <td>@movement.BusinessReference</td>
-                            <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(InventoryHistoryPage)" render-mode="Static" param-Movements="@movements" />

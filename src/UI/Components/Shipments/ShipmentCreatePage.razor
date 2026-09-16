@@ -1,0 +1,160 @@
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Envios</span>
+        <h1>Criar envio</h1>
+        <p>Informe o pedido e o codigo de rastreio para iniciar o acompanhamento da entrega.</p>
+    </div>
+    <a href="/Shipments" class="btn btn-outline-secondary">Voltar para envios</a>
+</section>
+
+<form action="/Shipments/Create" method="post" class="form-panel narrow-form">
+    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+    <div class="form-group">
+        <label class="form-label">Pedido</label>
+        <input id="OrderId" name="OrderId" value="@OrderId" type="hidden" data-selected-order-id />
+        <div class="selected-order-panel">
+            <div>
+                <span class="text-muted small">Pedido selecionado</span>
+                <strong data-selected-order-name>@SelectedOrderText</strong>
+            </div>
+            <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#orderSelectionModal" data-order-modal-trigger>
+                Selecionar pedido
+            </button>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="TrackingCode" class="form-label">Codigo de rastreio</label>
+        <input id="TrackingCode" name="TrackingCode" value="@TrackingCode" class="form-control" />
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar envio</button>
+        <a href="/Shipments" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+<div class="modal fade" id="orderSelectionModal" tabindex="-1" role="dialog" aria-labelledby="orderSelectionModalLabel" aria-hidden="true" data-shipment-order-modal>
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="orderSelectionModalLabel">Selecionar pedido</h2>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="orderSelectionSearch" class="form-label">Buscar pedido</label>
+                    <input id="orderSelectionSearch" type="search" class="form-control" placeholder="Origem, referencia ou item" data-order-search />
+                </div>
+
+                @if (AvailableOrders.Count == 0)
+                {
+                    <div class="empty-state">
+                        <strong>Nenhum pedido disponivel</strong>
+                        <span>Nao ha pedidos disponiveis para criar envio no momento.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="order-selection-list">
+                        @foreach (var order in AvailableOrders)
+                        {
+                            <article class="order-selection-item" data-order-option data-order-search-text="@order.SearchText">
+                                <div class="order-selection-summary">
+                                    <div>
+                                        <span class="eyebrow">@order.Source</span>
+                                        <h3>@order.ExternalOrderId</h3>
+                                        <dl class="order-selection-meta">
+                                            <div>
+                                                <dt>Status</dt>
+                                                <dd>@order.Status</dd>
+                                            </div>
+                                            <div>
+                                                <dt>Data de envio</dt>
+                                                <dd>@order.ShippingDate</dd>
+                                            </div>
+                                            <div>
+                                                <dt>Itens</dt>
+                                                <dd>@order.Items.Count</dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+                                    <button type="button" class="btn btn-primary" data-order-select data-order-id="@order.Id" data-order-name="@order.DisplayName">Selecionar</button>
+                                </div>
+
+                                <div class="table-responsive" data-order-items>
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Descricao</th>
+                                                <th>Quantidade</th>
+                                                <th>Valor unitario</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in order.Items)
+                                            {
+                                                <tr>
+                                                    <td>@item.ExternalItemId</td>
+                                                    <td>@item.Description</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>@item.UnitPrice</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var selectedOrderId = document.querySelector('[data-selected-order-id]');
+        var selectedOrderName = document.querySelector('[data-selected-order-name]');
+        var searchField = document.querySelector('[data-order-search]');
+        var options = Array.prototype.slice.call(document.querySelectorAll('[data-order-option]'));
+        document.querySelectorAll('[data-order-select]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                selectedOrderId.value = button.getAttribute('data-order-id');
+                selectedOrderName.textContent = button.getAttribute('data-order-name');
+                $('#orderSelectionModal').modal('hide');
+            });
+        });
+        if (searchField) {
+            searchField.addEventListener('input', function () {
+                var term = searchField.value.trim().toLowerCase();
+                options.forEach(function (option) {
+                    var text = option.getAttribute('data-order-search-text') || '';
+                    option.classList.toggle('d-none', term.length > 0 && text.indexOf(term) === -1);
+                });
+            });
+        }
+    })();
+</script>
+
+@code {
+    [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public Guid? OrderId { get; set; }
+    [Parameter] public string? TrackingCode { get; set; }
+    [Parameter] public string SelectedOrderText { get; set; } = "Nenhum pedido selecionado";
+    [Parameter] public IReadOnlyCollection<OrderSelectionRow> AvailableOrders { get; set; } = [];
+
+    public sealed record OrderSelectionRow(
+        Guid Id,
+        string Source,
+        string ExternalOrderId,
+        string Status,
+        string ShippingDate,
+        string DisplayName,
+        string SearchText,
+        IReadOnlyCollection<OrderSelectionItemRow> Items);
+
+    public sealed record OrderSelectionItemRow(string ExternalItemId, string Description, int Quantity, string UnitPrice);
+}

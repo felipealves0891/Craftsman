@@ -25,6 +25,7 @@ public sealed class IdentitySeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        logger.LogWarning("Start seeding roles...");
         foreach (var role in new[] { ApplicationRoles.Admin, ApplicationRoles.Operador, ApplicationRoles.Consulta })
         {
             if (!await roleManager.RoleExistsAsync(role))
@@ -43,6 +44,7 @@ public sealed class IdentitySeeder
             return;
         }
 
+        logger.LogWarning("Start seeding user...");
         var admin = await userManager.FindByEmailAsync(options.AdminEmail);
         if (admin is null)
         {
@@ -60,6 +62,7 @@ public sealed class IdentitySeeder
             }
         }
 
+        logger.LogWarning("Start seeding apply roles...");
         if (!await userManager.IsInRoleAsync(admin, ApplicationRoles.Admin))
         {
             var addRoleResult = await userManager.AddToRoleAsync(admin, ApplicationRoles.Admin);

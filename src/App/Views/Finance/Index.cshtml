@@ -3,89 +3,33 @@
 @{
     ViewData["Title"] = "Financeiro";
 
-    string StatusLabel(object status) => status.ToString() switch
+    static string StatusLabel(object status) => status.ToString() switch
     {
         "Calculated" => "Calculado",
         "Failed" => "Falhou",
         _ => status.ToString() ?? "-"
     };
+
+    var settlements = Model
+        .Select(settlement => new FinanceIndexPage.SettlementRow(
+            settlement.OrderId,
+            settlement.RevenueAmount.ToString("C"),
+            settlement.TotalCostAmount.ToString("C"),
+            settlement.MarginAmount.ToString("C"),
+            StatusLabel(settlement.Status),
+            settlement.Status.ToString().ToLowerInvariant(),
+            settlement.CalculatedAt.ToLocalTime().ToString("g")))
+        .ToArray();
+
+    var successMessage = TempData["Success"] as string;
+    var errorMessage = TempData["Error"] as string;
+    var from = ViewBag.From is DateOnly fromDate ? fromDate.ToString("yyyy-MM-dd") : null;
+    var to = ViewBag.To is DateOnly toDate ? toDate.ToString("yyyy-MM-dd") : null;
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Financeiro</span>
-        <h1>Apuração financeira</h1>
-        <p>Confira receita, custos e margem por pedido dentro do período selecionado.</p>
-    </div>
-    <a asp-action="Pending" class="btn btn-outline-primary">Pendencias</a>
-</section>
-
-@if (TempData["Success"] is string success)
-{
-    <div class="alert alert-success">@success</div>
-}
-
-@if (TempData["Error"] is string error)
-{
-    <div class="alert alert-danger">@error</div>
-}
-
-<form method="get" class="filter-panel">
-    <div class="form-group">
-        <label for="from" class="form-label">De</label>
-        <input id="from" type="date" name="from" value="@ViewBag.From" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="to" class="form-label">Até</label>
-        <input id="to" type="date" name="to" value="@ViewBag.To" class="form-control" />
-    </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
-    </div>
-</form>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Pedido</th>
-                    <th>Receita</th>
-                    <th>Custos</th>
-                    <th>Margem</th>
-                    <th>Status</th>
-                    <th>Calculado em</th>
-                    <th class="text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <strong>Nenhuma apuração encontrada</strong>
-                                <span>Ajuste o período ou aguarde entregas confirmadas para calcular margem.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var settlement in Model)
-                    {
-                        <tr>
-                            <td><strong>@settlement.OrderId</strong></td>
-                            <td>@settlement.RevenueAmount.ToString("C")</td>
-                            <td>@settlement.TotalCostAmount.ToString("C")</td>
-                            <td><strong>@settlement.MarginAmount.ToString("C")</strong></td>
-                            <td><span class="status-badge status-@settlement.Status.ToString().ToLowerInvariant()">@StatusLabel(settlement.Status)</span></td>
-                            <td>@settlement.CalculatedAt.ToLocalTime().ToString("g")</td>
-                            <td class="text-right"><a asp-action="Details" asp-route-orderId="@settlement.OrderId" class="btn btn-sm btn-outline-primary">Detalhes</a></td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(FinanceIndexPage)" render-mode="Static"
+           param-Settlements="@settlements"
+           param-From="@from"
+           param-To="@to"
+           param-SuccessMessage="@successMessage"
+           param-ErrorMessage="@errorMessage" />

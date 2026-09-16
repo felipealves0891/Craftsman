@@ -2,76 +2,25 @@
 
 @{
     ViewData["Title"] = "Estoque";
+
+    static string AlertMarkup(string? alertLevel) => alertLevel switch
+    {
+        "Critical" => "<span class=\"badge badge-danger\">Critico</span>",
+        "Warning" => "<span class=\"badge badge-warning\">Aviso</span>",
+        _ => "<span class=\"text-muted\">Normal</span>"
+    };
+
+    var materials = Model
+        .Select(material => new InventoryIndexPage.MaterialRow(
+            material.Id,
+            material.Name,
+            material.UnitOfMeasure,
+            material.Status.ToString(),
+            material.Status.ToString().ToLowerInvariant(),
+            material.MinimumStockLevel?.ToString() ?? "-",
+            material.CriticalStockLevel?.ToString() ?? "-",
+            AlertMarkup(material.AlertLevel.ToString())))
+        .ToArray();
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Catálogo</span>
-        <h1>Matérias-primas</h1>
-        <p>Gerencie insumos, unidades de medida e disponibilidade para produção.</p>
-    </div>
-    <div class="page-actions">
-        <a asp-action="Balances" class="btn btn-outline-secondary">Saldos</a>
-        <a asp-action="Movements" class="btn btn-outline-secondary">Movimentos</a>
-        <a asp-action="CreateMaterial" class="btn btn-primary">Nova matéria-prima</a>
-    </div>
-</section>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Unidade</th>
-                    <th>Status</th>
-                    <th>Minimo</th>
-                    <th>Critico</th>
-                    <th>Alerta</th>
-                    <th class="text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <strong>Nenhuma matéria-prima cadastrada</strong>
-                                <span>Cadastre o primeiro insumo antes de registrar movimentos de estoque.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var material in Model)
-                    {
-                        <tr>
-                            <td><strong>@material.Name</strong></td>
-                            <td>@material.UnitOfMeasure</td>
-                            <td><span class="status-badge status-@material.Status.ToString().ToLowerInvariant()">@material.Status</span></td>
-                            <td>@(material.MinimumStockLevel?.ToString() ?? "-")</td>
-                            <td>@(material.CriticalStockLevel?.ToString() ?? "-")</td>
-                            <td>
-                                @if (material.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical)
-                                {
-                                    <span class="badge badge-danger">Critico</span>
-                                }
-                                else if (material.AlertLevel == Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning)
-                                {
-                                    <span class="badge badge-warning">Aviso</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Normal</span>
-                                }
-                            </td>
-                            <td class="text-right"><a asp-action="EditMaterial" asp-route-id="@material.Id" class="btn btn-sm btn-outline-primary">Editar</a></td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(InventoryIndexPage)" render-mode="Static" param-Materials="@materials" />

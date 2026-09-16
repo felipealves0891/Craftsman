@@ -1,101 +1,47 @@
 @using Craftsman.Domain.Shipping.Entities
+@using Craftsman.UI.Components.Shared
 @model IReadOnlyCollection<Craftsman.App.Models.ShipmentListItemViewModel>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
     ViewData["Title"] = "Envios";
 
-    string StatusLabel(ShipmentStatus status) => status switch
+    static string StatusLabel(ShipmentStatus status) => status switch
     {
         ShipmentStatus.Created => "Criado",
-        ShipmentStatus.InTransit => "Em trânsito",
+        ShipmentStatus.InTransit => "Em transito",
         ShipmentStatus.DeliveryAttempted => "Tentativa de entrega",
         ShipmentStatus.Delivered => "Entregue",
         ShipmentStatus.Cancelled => "Cancelado",
         _ => status.ToString()
     };
 
-    string StatusLabelText(string status) => status switch
+    static string StatusLabelText(string status) => status switch
     {
         nameof(ShipmentStatus.Created) => "Criado",
-        nameof(ShipmentStatus.InTransit) => "Em trânsito",
+        nameof(ShipmentStatus.InTransit) => "Em transito",
         nameof(ShipmentStatus.DeliveryAttempted) => "Tentativa de entrega",
         nameof(ShipmentStatus.Delivered) => "Entregue",
         nameof(ShipmentStatus.Cancelled) => "Cancelado",
         _ => status
     };
+
+    var statusOptions = Enum.GetValues<ShipmentStatus>()
+        .Select(status => new SelectOption(status.ToString(), StatusLabel(status), ViewBag.Status == status))
+        .ToArray();
+    var shipments = Model
+        .Select(shipment => new ShipmentsIndexPage.ShipmentRow(
+            shipment.Id,
+            shipment.OrderId,
+            shipment.TrackingCode,
+            StatusLabelText(shipment.Status),
+            shipment.Status.ToLowerInvariant(),
+            shipment.CreatedAt.ToLocalTime().ToString("g")))
+        .ToArray();
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
 }
 
-<section class="page-heading">
-    <div>
-        <span class="eyebrow">Execução</span>
-        <h1>Envios</h1>
-        <p>Acompanhe rastreios e atualize o status de entrega dos pedidos.</p>
-    </div>
-    <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus fa-sm mr-1"></i>Criar envio</a>
-</section>
-
-<form method="get" class="filter-panel">
-    <div class="form-group">
-        <label for="status" class="form-label">Status</label>
-        <select id="status" name="status" class="form-select">
-            <option value="">Todos</option>
-            @foreach (var status in Enum.GetValues<ShipmentStatus>())
-            {
-                <option value="@status" selected="@(ViewBag.Status == status)">@StatusLabel(status)</option>
-            }
-        </select>
-    </div>
-    <div class="filter-actions">
-        <button type="submit" class="btn btn-secondary"><i class="fas fa-filter fa-sm mr-1"></i>Filtrar</button>
-    </div>
-</form>
-
-<div class="table-panel">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Pedido</th>
-                    <th>Rastreio</th>
-                    <th>Status</th>
-                    <th>Criado em</th>
-                    <th class="text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!Model.Any())
-                {
-                    <tr>
-                        <td colspan="5">
-                            <div class="empty-state">
-                                <strong>Nenhum envio encontrado</strong>
-                                <span>Crie um envio quando houver um pedido pronto para despachar.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var shipment in Model)
-                    {
-                        <tr>
-                            <td><strong>@shipment.OrderId</strong></td>
-                            <td>@shipment.TrackingCode</td>
-                            <td><span class="status-badge status-@shipment.Status.ToLowerInvariant()">@StatusLabelText(shipment.Status)</span></td>
-                            <td>@shipment.CreatedAt.ToLocalTime().ToString("g")</td>
-                            <td class="text-right">
-                                <form asp-action="UpdateStatus" method="post" class="table-actions justify-content-end">
-                                    <input type="hidden" name="id" value="@shipment.Id" />
-                                    <button type="submit" name="status" value="@ShipmentStatus.InTransit" class="btn btn-sm btn-outline-primary">Em trânsito</button>
-                                    <button type="submit" name="status" value="@ShipmentStatus.DeliveryAttempted" class="btn btn-sm btn-outline-warning">Tentativa</button>
-                                    <button type="submit" name="status" value="@ShipmentStatus.Delivered" class="btn btn-sm btn-outline-success">Entregar</button>
-                                    <button type="submit" name="status" value="@ShipmentStatus.Cancelled" class="btn btn-sm btn-outline-danger">Cancelar</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<component type="typeof(ShipmentsIndexPage)" render-mode="Static"
+           param-StatusOptions="@statusOptions"
+           param-Shipments="@shipments"
+           param-RequestVerificationToken="@requestVerificationToken" />
