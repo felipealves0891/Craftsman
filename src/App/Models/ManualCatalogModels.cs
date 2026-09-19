@@ -59,9 +59,9 @@ public sealed class BillOfMaterialsItemInputModel
     [Display(Name = "Materia-prima")]
     public Guid? RawMaterialId { get; set; }
 
-    [Range(0, double.MaxValue)]
+    [Range(0, int.MaxValue)]
     [Display(Name = "Quantidade por unidade")]
-    public decimal QuantityPerUnit { get; set; }
+    public int QuantityPerUnit { get; set; }
 }
 
 public sealed class ProductMappingInputModel

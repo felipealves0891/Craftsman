@@ -2,15 +2,15 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    ViewData["Title"] = "Ficha técnica";
+    ViewData["Title"] = "Ficha tecnica";
     var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
 }
 
 <section class="page-heading">
     <div>
         <span class="eyebrow">Produtos</span>
-        <h1>Ficha técnica</h1>
-        <p>Defina as matérias-primas e quantidades consumidas por unidade produzida.</p>
+        <h1>Ficha t&eacute;cnica</h1>
+        <p>Defina as mat&eacute;rias-primas e quantidades consumidas por unidade produzida.</p>
     </div>
     <a asp-action="Index" class="btn btn-outline-secondary">Voltar para produtos</a>
 </section>
@@ -22,11 +22,12 @@
     <table class="table align-middle">
         <thead>
             <tr>
-                <th>Matéria-prima</th>
+                <th>Mat&eacute;ria-prima</th>
                 <th>Quantidade por unidade</th>
+                <th class="text-right">A&ccedil;&otilde;es</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody data-bill-of-materials-items>
             @for (var i = 0; i < Model.Items.Count; i++)
             {
                 <tr>
@@ -35,12 +36,81 @@
                             <option value="">Selecione</option>
                         </select>
                     </td>
-                    <td><input asp-for="Items[i].QuantityPerUnit" type="text" inputmode="decimal" class="form-control" data-decimal-input /></td>
+                    <td>
+                        <input asp-for="Items[i].QuantityPerUnit" type="text" inputmode="numeric" pattern="[0-9]*" step="1" class="form-control" />
+                        <span asp-validation-for="Items[i].QuantityPerUnit" class="text-danger"></span>
+                    </td>
+                    <td class="text-right">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-add-bill-of-materials-row title="Adicionar mat&eacute;ria-prima" aria-label="Adicionar mat&eacute;ria-prima">
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <button type="submit" class="btn btn-primary">Salvar ficha técnica</button>
+    <button type="submit" class="btn btn-primary">Salvar ficha t&eacute;cnica</button>
     <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const tableBody = document.querySelector('[data-bill-of-materials-items]');
+            if (!tableBody) {
+                return;
+            }
+
+            const addButtons = () => tableBody.querySelectorAll('[data-add-bill-of-materials-row]');
+
+            const updateAddButtons = () => {
+                const buttons = addButtons();
+                buttons.forEach((button, index) => {
+                    button.classList.toggle('d-none', index !== buttons.length - 1);
+                });
+            };
+
+            const updateField = (field, index) => {
+                field.name = field.name.replace(/Items\[\d+\]/, `Items[${index}]`);
+                field.id = field.id.replace(/Items_\d+__/, `Items_${index}__`);
+            };
+
+            const updateValidationMessage = (message, index) => {
+                const target = message.getAttribute('data-valmsg-for');
+                if (target) {
+                    message.setAttribute('data-valmsg-for', target.replace(/Items\[\d+\]/, `Items[${index}]`));
+                }
+
+                message.textContent = '';
+                message.classList.remove('field-validation-error');
+                message.classList.add('field-validation-valid');
+            };
+
+            tableBody.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-add-bill-of-materials-row]');
+                if (!button) {
+                    return;
+                }
+
+                const sourceRow = button.closest('tr');
+                const newRow = sourceRow.cloneNode(true);
+                const rowIndex = tableBody.querySelectorAll('tr').length;
+
+                newRow.querySelectorAll('select, input').forEach((field) => {
+                    updateField(field, rowIndex);
+                    field.value = '';
+                });
+                newRow.querySelectorAll('[data-valmsg-for]').forEach((message) => {
+                    updateValidationMessage(message, rowIndex);
+                });
+
+                tableBody.appendChild(newRow);
+                updateAddButtons();
+            });
+
+            updateAddButtons();
+        })();
+    </script>
+}

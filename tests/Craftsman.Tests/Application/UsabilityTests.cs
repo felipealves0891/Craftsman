@@ -3,15 +3,35 @@ namespace Craftsman.Tests.Application;
 public sealed class UsabilityTests
 {
     [Fact]
-    public void Decimal_editable_fields_use_text_inputs_with_decimal_keyboard()
+    public void Quantity_editable_fields_use_text_inputs_with_numeric_keyboard()
     {
         var movementsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Inventory", "Movements.cshtml"));
         var billOfMaterialsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Products", "BillOfMaterials.cshtml"));
 
-        Assert.Contains("asp-for=\"Quantity\" type=\"text\" inputmode=\"decimal\"", movementsView);
-        Assert.Contains("asp-for=\"Items[i].QuantityPerUnit\" type=\"text\" inputmode=\"decimal\"", billOfMaterialsView);
-        Assert.Contains("data-decimal-input", movementsView);
-        Assert.Contains("data-decimal-input", billOfMaterialsView);
+        Assert.Contains("asp-for=\"Quantity\" type=\"text\" inputmode=\"numeric\"", movementsView);
+        Assert.Contains("data-numeric-input", movementsView);
+        Assert.Contains("asp-for=\"Items[i].QuantityPerUnit\" type=\"text\" inputmode=\"numeric\"", billOfMaterialsView);
+        Assert.Contains("pattern=\"[0-9]*\"", billOfMaterialsView);
+        Assert.Contains("step=\"1\"", billOfMaterialsView);
+        Assert.DoesNotContain("asp-for=\"Items[i].QuantityPerUnit\" type=\"text\" inputmode=\"decimal\"", billOfMaterialsView);
+    }
+
+    [Fact]
+    public void Bill_of_materials_quantity_uses_integer_input_and_dynamic_add_button()
+    {
+        var billOfMaterialsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Products", "BillOfMaterials.cshtml"));
+
+        Assert.Contains("data-add-bill-of-materials-row", billOfMaterialsView);
+        Assert.Contains("fa-plus", billOfMaterialsView);
+        Assert.Contains("Items[${index}]", billOfMaterialsView);
+    }
+
+    [Fact]
+    public void Bill_of_materials_quantity_input_model_uses_integer_quantity()
+    {
+        Assert.Equal(typeof(int), typeof(Craftsman.App.Models.BillOfMaterialsItemInputModel)
+            .GetProperty(nameof(Craftsman.App.Models.BillOfMaterialsItemInputModel.QuantityPerUnit))
+            ?.PropertyType);
     }
 
     [Fact]

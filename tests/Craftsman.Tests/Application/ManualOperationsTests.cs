@@ -297,6 +297,51 @@ public sealed class ManualOperationsTests
     }
 
     [Fact]
+    public async Task Product_catalog_service_saves_more_than_five_bill_of_materials_items()
+    {
+        await using var dbContext = CreateDbContext();
+        var productRepository = new ProductRepository(dbContext);
+        var mappingRepository = new ProductMappingRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var service = new ProductCatalogAppService(
+            productRepository,
+            mappingRepository,
+            rawMaterialRepository,
+            new ProductMappingService(mappingRepository),
+            new UnitOfWork(dbContext),
+            NullLogger<ProductCatalogAppService>.Instance);
+
+        var materials = Enumerable.Range(1, 6)
+            .Select(index => new RawMaterial(Guid.NewGuid(), $"Material {index}", "un"))
+            .ToList();
+
+        foreach (var material in materials)
+        {
+            await rawMaterialRepository.AddAsync(material);
+        }
+
+        var productId = await service.SaveProductAsync(new ProductInputModel { Name = "Kit" });
+
+        await service.SaveBillOfMaterialsAsync(new BillOfMaterialsInputModel
+        {
+            ProductId = productId,
+            Items = materials
+                .Select((material, index) => new BillOfMaterialsItemInputModel
+                {
+                    RawMaterialId = material.Id,
+                    QuantityPerUnit = index + 1
+                })
+                .ToList()
+        });
+
+        var product = await productRepository.GetByIdAsync(productId);
+
+        Assert.NotNull(product);
+        Assert.Equal(6, product!.BillOfMaterials.Count);
+        Assert.Equal([1, 2, 3, 4, 5, 6], product.BillOfMaterials.Select(item => (int)item.QuantityPerUnit));
+    }
+
+    [Fact]
     public async Task Product_catalog_service_saves_updates_production_hours_and_hourly_rate()
     {
         await using var dbContext = CreateDbContext();

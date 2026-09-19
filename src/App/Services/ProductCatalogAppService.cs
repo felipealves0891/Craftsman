@@ -111,7 +111,7 @@ public sealed class ProductCatalogAppService
                 .Select(item => new BillOfMaterialsItemInputModel
                 {
                     RawMaterialId = item.RawMaterialId,
-                    QuantityPerUnit = item.QuantityPerUnit
+                    QuantityPerUnit = (int)item.QuantityPerUnit
                 })
                 .ToList()
         };
