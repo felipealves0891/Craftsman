@@ -634,12 +634,12 @@ a.card:hover {
   align-items: end;
   display: grid;
   gap: .75rem;
-  grid-template-columns: minmax(130px, .8fr) minmax(220px, 1.4fr) minmax(110px, .55fr) minmax(130px, .65fr);
+  grid-template-columns: minmax(220px, 1.4fr) minmax(110px, .55fr) minmax(130px, .65fr);
 }
 
 .manual-item-description,
 .manual-item-product {
-  grid-column: span 2;
+  grid-column: span 3;
 }
 
 .manual-item-total {

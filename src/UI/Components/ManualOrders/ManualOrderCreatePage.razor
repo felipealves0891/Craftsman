@@ -96,13 +96,19 @@
                             </div>
 
                             <div class="manual-item-grid">
-                                <div class="form-group">
-                                    <label class="form-label" for="Items_@(i)__ExternalItemId">Codigo externo</label>
-                                    <input id="Items_@(i)__ExternalItemId" name="Items[@i].ExternalItemId" value="@item.ExternalItemId" class="form-control" placeholder="SKU, codigo ou referencia" data-item-field />
+                                <div class="form-group manual-item-product">
+                                    <label class="form-label" for="Items_@(i)__ProductId">Produto interno</label>
+                                    <select id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
+                                        <option value="">Sem vinculo</option>
+                                        @foreach (var product in Products)
+                                        {
+                                            <option value="@product.Value" selected="@(product.Value == item.ProductId)">@product.Text</option>
+                                        }
+                                    </select>
                                 </div>
                                 <div class="form-group manual-item-description">
-                                    <label class="form-label" for="Items_@(i)__Description">Descricao</label>
-                                    <input id="Items_@(i)__Description" name="Items[@i].Description" value="@item.Description" class="form-control" placeholder="Produto vendido" data-item-field data-description-field />
+                                    <label class="form-label" for="Items_@(i)__Description">Observacao</label>
+                                    <textarea id="Items_@(i)__Description" name="Items[@i].Description" class="form-control" rows="3" placeholder="Observacoes do item vendido" data-item-field data-description-field>@item.Description</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__Quantity">Quantidade</label>
@@ -111,20 +117,7 @@
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__UnitPriceAmount">Valor unitario</label>
                                     <input id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
-                                </div>
-                                <div class="form-group manual-item-product">
-                                    <label class="form-label" for="Items_@(i)__ProductId">Produto interno</label>
-                                    <div class="product-picker">
-                                        <input type="search" class="form-control product-filter" placeholder="Filtrar produtos" aria-label="Filtrar produtos internos" />
-                                        <select id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
-                                            <option value="">Sem vinculo</option>
-                                            @foreach (var product in Products)
-                                            {
-                                                <option value="@product.Value" selected="@(product.Value == item.ProductId)">@product.Text</option>
-                                            }
-                                        </select>
-                                    </div>
-                                </div>
+                                </div>                                
                                 <div class="manual-item-total">
                                     <span>Total do item</span>
                                     <strong data-item-total>R$ 0,00</strong>
@@ -176,9 +169,13 @@
         const updateIndexes = () => {
             [...body.querySelectorAll('.order-item-row')].forEach((row, index) => {
                 row.querySelector('[data-item-number]').textContent = index + 1;
-                row.querySelectorAll('input, select').forEach((field) => {
+                row.querySelectorAll('input, select, textarea').forEach((field) => {
                     if (field.name) field.name = field.name.replace(/Items\[\d+\]/, `Items[${index}]`);
                     if (field.id) field.id = field.id.replace(/Items_\d+__/, `Items_${index}__`);
+                });
+                row.querySelectorAll('label').forEach((label) => {
+                    const fieldId = label.getAttribute('for');
+                    if (fieldId) label.setAttribute('for', fieldId.replace(/Items_\d+__/, `Items_${index}__`));
                 });
             });
         };
@@ -203,8 +200,8 @@
         };
         const clearRow = (row) => {
             row.querySelectorAll('input').forEach((field) => field.value = '');
+            row.querySelectorAll('textarea').forEach((field) => field.value = '');
             row.querySelectorAll('select').forEach((field) => field.selectedIndex = 0);
-            row.querySelectorAll('option').forEach((option) => option.hidden = false);
             row.querySelector('[data-item-title]').textContent = 'Novo item';
             row.querySelector('[data-item-total]').textContent = currency.format(0);
         };
@@ -220,18 +217,7 @@
             const rows = body.querySelectorAll('.order-item-row');
             if (rowHasValue(rows[rows.length - 1])) addRow();
         };
-        const filterProducts = (input) => {
-            const select = input.closest('.product-picker').querySelector('select');
-            const query = input.value.trim().toLowerCase();
-            [...select.options].forEach((option) => {
-                option.hidden = option.value !== '' && query.length > 0 && !option.text.toLowerCase().includes(query);
-            });
-        };
         body.addEventListener('input', (event) => {
-            if (event.target.classList.contains('product-filter')) {
-                filterProducts(event.target);
-                return;
-            }
             ensureBlankLastRow();
             updateSummary();
         });

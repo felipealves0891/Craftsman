@@ -47,7 +47,7 @@ public sealed class Order
         Origin = origin;
         Status = status;
         CreatedAt = createdAt ?? DateTimeOffset.UtcNow;
-        if (shippingDate is not null && shippingDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
+        if (createdAt is null && shippingDate is not null && shippingDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
         {
             throw new ArgumentException("Shipping date must be in the future.", nameof(shippingDate));
         }

@@ -85,6 +85,20 @@ public sealed class SharedInterfaceViewTests
         Assert.Contains("param-RequestVerificationToken", shipmentView);
     }
 
+    [Fact]
+    public void Manual_order_item_form_uses_observation_textarea_and_full_width_product_select()
+    {
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "ManualOrders", "ManualOrderCreatePage.razor"));
+        var styles = File.ReadAllText(ProjectPath("src", "App", "wwwroot", "css", "site.css"));
+
+        Assert.DoesNotContain("Items[@i].ExternalItemId", component);
+        Assert.DoesNotContain("product-filter", component);
+        Assert.Contains("Observacao", component);
+        Assert.Contains("<textarea id=\"Items_@(i)__Description\" name=\"Items[@i].Description\"", component);
+        Assert.Contains(".manual-item-product", styles);
+        Assert.Contains("grid-column: span 3;", styles);
+    }
+
     private static string ProjectPath(params string[] paths)
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
