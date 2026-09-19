@@ -3,6 +3,7 @@ using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Repositories;
+using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
 
 namespace Craftsman.App.Services;
@@ -74,6 +75,7 @@ public sealed class ProductionScheduleService
         {
             case "start":
                 task.Start();
+                await StartOrderProductionAsync(task.OrderId, cancellationToken);
                 break;
             case "complete":
                 task.Complete();
@@ -87,6 +89,25 @@ public sealed class ProductionScheduleService
 
         await productionTaskRepository.UpdateAsync(task, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task StartOrderProductionAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
+            ?? throw new InvalidOperationException("Order related to production task was not found.");
+
+        if (order.Status == OrderStatus.InProduction)
+        {
+            return;
+        }
+
+        if (order.Status != OrderStatus.ReadyForProduction)
+        {
+            throw new InvalidOperationException($"Order cannot start production from status {order.Status}.");
+        }
+
+        order.StartProduction();
+        await orderRepository.UpdateAsync(order, cancellationToken);
     }
 
     public static ProductionTaskListItemViewModel ToViewModel(

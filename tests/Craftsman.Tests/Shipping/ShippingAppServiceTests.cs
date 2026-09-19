@@ -73,6 +73,78 @@ public sealed class ShippingAppServiceTests
     }
 
     [Fact]
+    public async Task Updating_shipment_to_in_transit_marks_order_as_shipped()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-SHIP-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.InProduction);
+        var shipment = new Shipment(Guid.NewGuid(), order.Id, "TRACK-1");
+
+        await orderRepository.AddAsync(order);
+        await shipmentRepository.AddAsync(shipment);
+        await dbContext.SaveChangesAsync();
+        var service = CreateShippingAppService(dbContext);
+
+        await service.UpdateStatusAsync(shipment.Id, ShipmentStatus.InTransit);
+
+        var loaded = await orderRepository.GetByIdAsync(order.Id);
+        Assert.Equal(OrderStatus.Shipped, loaded?.Status);
+    }
+
+    [Fact]
+    public async Task Updating_shipment_to_in_transit_rejects_order_outside_production()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-SHIP-BLOCKED"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.ReadyForProduction);
+        var shipment = new Shipment(Guid.NewGuid(), order.Id, "TRACK-1");
+
+        await orderRepository.AddAsync(order);
+        await shipmentRepository.AddAsync(shipment);
+        await dbContext.SaveChangesAsync();
+        var service = CreateShippingAppService(dbContext);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UpdateStatusAsync(shipment.Id, ShipmentStatus.InTransit));
+
+        Assert.Contains("cannot be shipped", exception.Message);
+    }
+
+    [Fact]
+    public async Task Updating_shipment_to_delivered_marks_order_as_delivered()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-DELIVERED-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.Shipped);
+        var shipment = new Shipment(Guid.NewGuid(), order.Id, "TRACK-1", ShipmentStatus.InTransit);
+
+        await orderRepository.AddAsync(order);
+        await shipmentRepository.AddAsync(shipment);
+        await dbContext.SaveChangesAsync();
+        var service = CreateShippingAppService(dbContext);
+
+        await service.UpdateStatusAsync(shipment.Id, ShipmentStatus.Delivered);
+
+        var loaded = await orderRepository.GetByIdAsync(order.Id);
+        Assert.Equal(OrderStatus.Delivered, loaded?.Status);
+    }
+
+    [Fact]
     public async Task Create_shipment_rejects_missing_or_unavailable_order()
     {
         await using var dbContext = CreateDbContext();
@@ -90,7 +162,11 @@ public sealed class ShippingAppServiceTests
         return new ShippingAppService(
             shipmentRepository,
             CreateOrderQueryService(dbContext),
-            new ShippingService(shipmentRepository, new UnitOfWork(dbContext), new NoOpDomainEventPublisher()));
+            new ShippingService(
+                shipmentRepository,
+                new OrderRepository(dbContext),
+                new UnitOfWork(dbContext),
+                new NoOpDomainEventPublisher()));
     }
 
     private static OrderQueryService CreateOrderQueryService(AppDbContext dbContext)

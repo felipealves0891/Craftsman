@@ -4,6 +4,8 @@ using Craftsman.Domain.Events;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.ProductCatalog.Repositories;
+using Craftsman.Domain.Sales.Entities;
+using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Domain.Shipping.Services;
@@ -21,13 +23,20 @@ public sealed class EfCoreConcurrencyExceptionTests
     {
         await using var dbContext = CreateDbContext();
         var productionTaskRepository = new ProductionTaskRepository(dbContext);
-        var task = new ProductionTask(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1);
+        var orderRepository = new OrderRepository(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PROD-CONCURRENCY"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.ReadyForProduction);
+        var task = new ProductionTask(Guid.NewGuid(), order.Id, Guid.NewGuid(), Guid.NewGuid(), 1);
         var service = new ProductionScheduleService(
             productionTaskRepository,
             new EmptyProductRepository(),
-            new EmptyOrderRepository(),
+            orderRepository,
             new UnitOfWork(dbContext));
 
+        await orderRepository.AddAsync(order);
         await productionTaskRepository.AddAsync(task);
         await dbContext.SaveChangesAsync();
 
@@ -39,6 +48,8 @@ public sealed class EfCoreConcurrencyExceptionTests
         Assert.NotNull(persisted);
         Assert.Equal(ProductionTaskStatus.InProduction, persisted.Status);
         Assert.NotNull(persisted.StartedAt);
+        var persistedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.Equal(OrderStatus.InProduction, persistedOrder?.Status);
     }
 
     [Fact]
@@ -77,9 +88,16 @@ public sealed class EfCoreConcurrencyExceptionTests
     {
         await using var dbContext = CreateDbContext();
         var repository = new ShipmentRepository(dbContext);
-        var service = new ShippingService(repository, new UnitOfWork(dbContext), new NoOpDomainEventPublisher());
-        var shipment = new Shipment(Guid.NewGuid(), Guid.NewGuid(), "TRACK-1");
+        var orderRepository = new OrderRepository(dbContext);
+        var service = new ShippingService(repository, orderRepository, new UnitOfWork(dbContext), new NoOpDomainEventPublisher());
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "SHIP-CONCURRENCY"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.InProduction);
+        var shipment = new Shipment(Guid.NewGuid(), order.Id, "TRACK-1");
 
+        await orderRepository.AddAsync(order);
         await repository.AddAsync(shipment);
         await dbContext.SaveChangesAsync();
 
@@ -91,6 +109,8 @@ public sealed class EfCoreConcurrencyExceptionTests
         Assert.NotNull(persisted);
         Assert.Equal(ShipmentStatus.InTransit, persisted.Status);
         Assert.NotNull(persisted.ShippedAt);
+        var persistedOrder = await orderRepository.GetByIdAsync(order.Id);
+        Assert.Equal(OrderStatus.Shipped, persistedOrder?.Status);
     }
 
     [Fact]
