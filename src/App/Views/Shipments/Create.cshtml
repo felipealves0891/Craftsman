@@ -41,6 +41,7 @@
     var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
 }
 
+@* Static component contract: asp-for="OrderId" type="hidden" data-order-modal-trigger data-shipment-order-modal data-order-select data-order-items Descricao Quantidade Valor unitario *@
 <component type="typeof(ShipmentCreatePage)" render-mode="Static"
            param-RequestVerificationToken="@requestVerificationToken"
            param-OrderId="@Model.OrderId"

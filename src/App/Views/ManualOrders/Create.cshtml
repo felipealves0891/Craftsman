@@ -27,6 +27,7 @@
     var errorMessage = TempData["Error"] as string;
 }
 
+@* Static component contract: asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" data-currency-input *@
 <component type="typeof(ManualOrderCreatePage)" render-mode="Static"
            param-Products="@products"
            param-OrderSources="@orderSources"

@@ -46,7 +46,7 @@
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Quantity" class="form-label"></label>
-            <input asp-for="Quantity" type="text" inputmode="decimal" class="form-control" data-decimal-input />
+            <input asp-for="Quantity" type="text" inputmode="numeric" class="form-control" data-numeric-input />
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="UnitCostAmount" class="form-label"></label>
@@ -97,7 +97,7 @@
                         <tr>
                             <td><strong>@movement.RawMaterialName</strong></td>
                             <td>@movement.Type</td>
-                            <td>@movement.Quantity</td>
+                            <td>@movement.Quantity.ToString("#")</td>
                             <td>@movement.UnitCostAmount.ToString("C")</td>
                             <td><strong>@movement.TotalCostAmount.ToString("C")</strong></td>
                             <td>@movement.Reason</td>

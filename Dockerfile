@@ -1,12 +1,13 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 EXPOSE 8080
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["src/App/Craftsman.csproj", "src/App/"]
 COPY ["src/Domains/Craftsman.Domains.csproj", "src/Domains/"]
 COPY ["src/Infra/Craftsman.Infra.csproj", "src/Infra/"]
+COPY ["src/UI/Craftsman.UI.csproj", "src/UI/"]
 RUN dotnet restore "src/App/Craftsman.csproj"
 COPY . .
 WORKDIR "/src/src/App"
