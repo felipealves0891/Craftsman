@@ -26,6 +26,10 @@
     var minimumShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd");
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
+    var validationSummaryErrors = ViewData.ModelState
+        .SelectMany(entry => entry.Value?.Errors.Select(error => error.ErrorMessage) ?? [])
+        .Where(message => !string.IsNullOrWhiteSpace(message))
+        .ToArray();
     var formAction = isEdit ? $"/ManualOrders/Edit/{Model.Id}" : "/ManualOrders/Create";
     var pageEyebrow = isEdit ? "Editar Pedido" : "Novo Pedido";
     var pageTitle = isEdit ? "Editar pedido" : "Novo pedido";
@@ -50,7 +54,8 @@
            param-ShippingDate="@shippingDate"
            param-MinimumShippingDate="@minimumShippingDate"
            param-SuccessMessage="@successMessage"
-           param-ErrorMessage="@errorMessage" />
+           param-ErrorMessage="@errorMessage"
+           param-ValidationSummaryErrors="@validationSummaryErrors" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

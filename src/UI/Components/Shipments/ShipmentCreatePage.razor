@@ -9,6 +9,17 @@
 
 <form action="/Shipments/Create" method="post" class="form-panel narrow-form">
     <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+    @if (ValidationSummaryErrors.Count > 0)
+    {
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">
+                @foreach (var error in ValidationSummaryErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
     <div class="form-group">
         <label class="form-label">Pedido</label>
         <input id="OrderId" name="OrderId" value="@OrderId" type="hidden" data-selected-order-id />
@@ -21,10 +32,18 @@
                 Selecionar pedido
             </button>
         </div>
+        @foreach (var error in OrderIdErrors)
+        {
+            <span class="text-danger field-validation-error">@error</span>
+        }
     </div>
     <div class="form-group">
         <label for="TrackingCode" class="form-label">Codigo de rastreio</label>
         <input id="TrackingCode" name="TrackingCode" value="@TrackingCode" class="form-control" />
+        @foreach (var error in TrackingCodeErrors)
+        {
+            <span class="text-danger field-validation-error">@error</span>
+        }
     </div>
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">Salvar envio</button>
@@ -145,6 +164,9 @@
     [Parameter] public string? TrackingCode { get; set; }
     [Parameter] public string SelectedOrderText { get; set; } = "Nenhum pedido selecionado";
     [Parameter] public IReadOnlyCollection<OrderSelectionRow> AvailableOrders { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<string> ValidationSummaryErrors { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<string> OrderIdErrors { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<string> TrackingCodeErrors { get; set; } = [];
 
     public sealed record OrderSelectionRow(
         Guid Id,

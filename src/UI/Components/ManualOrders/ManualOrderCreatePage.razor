@@ -19,6 +19,18 @@
     <div class="alert alert-danger">@ErrorMessage</div>
 }
 
+@if (ValidationSummaryErrors.Count > 0)
+{
+    <div class="alert alert-danger" role="alert">
+        <ul class="mb-0">
+            @foreach (var error in ValidationSummaryErrors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
 <form action="/ManualOrders/CreateSource" method="post" class="form-panel row g-3 mb-4">
     <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
     <div class="col-md-9">
@@ -254,6 +266,7 @@
     [Parameter] public string MinimumShippingDate { get; set; } = string.Empty;
     [Parameter] public string? SuccessMessage { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public IReadOnlyCollection<string> ValidationSummaryErrors { get; set; } = [];
 
     public sealed record ManualOrderItemRow(string? ExternalItemId, string Description, int Quantity, string UnitPriceAmount, string? ProductId);
 }

@@ -110,3 +110,28 @@
         </table>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var typeField = document.querySelector('[data-stock-movement-type]');
+            var reasonField = document.querySelector('[data-stock-movement-reason]');
+            var reasonGroup = document.querySelector('[data-stock-movement-reason-group]');
+
+            if (!typeField || !reasonField || !reasonGroup) {
+                return;
+            }
+
+            function syncReasonRequirement() {
+                var isOutbound = typeField.value === 'Outbound';
+                reasonField.required = isOutbound;
+                reasonField.disabled = !isOutbound;
+                reasonGroup.classList.toggle('d-none', !isOutbound);
+            }
+
+            typeField.addEventListener('change', syncReasonRequirement);
+            syncReasonRequirement();
+        })();
+    </script>
+}

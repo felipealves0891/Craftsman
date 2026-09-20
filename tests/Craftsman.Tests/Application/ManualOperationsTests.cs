@@ -1,6 +1,7 @@
 using Craftsman.App.Models;
 using Craftsman.App.Controllers;
 using Craftsman.App.Services;
+using Craftsman.Domain;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Services;
@@ -54,7 +55,7 @@ public sealed class ManualOperationsTests
             new RecordingDomainEventPublisher());
 
         var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "WhatsApp",
             Reference = "MAN-001",
@@ -101,7 +102,7 @@ public sealed class ManualOperationsTests
         await SeedOrderSourceAsync(dbContext, "Manual");
         var service = CreateManualOrderService(dbContext);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new ManualOrderInputModel
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-NO-DATE",
@@ -126,7 +127,7 @@ public sealed class ManualOperationsTests
         await SeedOrderSourceAsync(dbContext, "Manual");
         var service = CreateManualOrderService(dbContext);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(new ManualOrderInputModel
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-PAST-DATE",
@@ -183,7 +184,7 @@ public sealed class ManualOperationsTests
             unitOfWork,
             publisher);
 
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-PROD-001",
@@ -229,7 +230,7 @@ public sealed class ManualOperationsTests
         await dbContext.SaveChangesAsync();
 
         var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-EDIT-001",
@@ -291,7 +292,7 @@ public sealed class ManualOperationsTests
         await dbContext.SaveChangesAsync();
 
         var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-UNLINK-001",
@@ -350,7 +351,7 @@ public sealed class ManualOperationsTests
         await productRepository.AddAsync(product);
         await dbContext.SaveChangesAsync();
 
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-DELETE-001",
@@ -393,7 +394,7 @@ public sealed class ManualOperationsTests
         await dbContext.SaveChangesAsync();
 
         var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
-        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
             Source = "Manual",
             Reference = "MAN-STARTED-001",
@@ -816,6 +817,16 @@ public sealed class ManualOperationsTests
                 NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
             publisher);
+    }
+
+    private static Task<Guid> CreateManualOrderAsync(ManualOrderService service, ManualOrderInputModel input)
+    {
+        return service.CreateAsync(input, CreateLog(input));
+    }
+
+    private static LogData CreateLog(object body)
+    {
+        return new LogData("POST", "/ManualOrders/Create", new Dictionary<string, string>(), body);
     }
 
     private static async Task SeedOrderSourceAsync(AppDbContext dbContext, string name)

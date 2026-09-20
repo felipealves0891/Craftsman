@@ -48,11 +48,6 @@ public sealed class ManualOrdersController : Controller
                     .Where(x => x.Value is not null && x.Value.Errors.Any())
                     .ToDictionary(x => x.Key, x => x.Value);
 
-                var fields = string.Join(", ", ModelState
-                                                    .Where(x => x.Value is not null && x.Value.Errors.Any())
-                                                    .Select(x => x.Key));
-
-                TempData["Error"] = $"Preencha todos os campos obrigatorios! \r\n {fields}";
                 await PopulateFormOptionsAsync(cancellationToken);
                 return View(input);
             }
@@ -67,7 +62,6 @@ public sealed class ManualOrdersController : Controller
             }
             catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
             {
-                TempData["Error"] = "Erro inesperado, tente novamente mais tarde!";
                 log.FinishLogWithError(exception);
                 ModelState.AddModelError(string.Empty, exception.Message);
                 await PopulateFormOptionsAsync(cancellationToken);

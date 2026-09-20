@@ -86,6 +86,67 @@ public sealed class SharedInterfaceViewTests
     }
 
     [Fact]
+    public void Shipment_create_view_passes_model_state_errors_to_static_component()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Shipments", "Create.cshtml"));
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "Shipments", "ShipmentCreatePage.razor"));
+
+        Assert.Contains("ViewData.ModelState", view);
+        Assert.Contains("param-ValidationSummaryErrors", view);
+        Assert.Contains("param-OrderIdErrors", view);
+        Assert.Contains("param-TrackingCodeErrors", view);
+        Assert.Contains("role=\"alert\"", component);
+        Assert.Contains("OrderIdErrors", component);
+        Assert.Contains("TrackingCodeErrors", component);
+        Assert.Contains("field-validation-error", component);
+    }
+
+    [Fact]
+    public void Manual_order_create_view_passes_model_state_errors_to_static_component()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "ManualOrders", "Create.cshtml"));
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "ManualOrders", "ManualOrderCreatePage.razor"));
+        var controller = File.ReadAllText(ProjectPath("src", "App", "Controllers", "ManualOrdersController.cs"));
+
+        Assert.Contains("ViewData.ModelState", view);
+        Assert.Contains("param-ValidationSummaryErrors", view);
+        Assert.Contains("ValidationSummaryErrors", component);
+        Assert.Contains("role=\"alert\"", component);
+        Assert.DoesNotContain("Erro inesperado, tente novamente mais tarde!", controller);
+    }
+
+    [Fact]
+    public void Product_mappings_view_displays_required_field_validation_messages()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Products", "Mappings.cshtml"));
+
+        Assert.Contains("asp-validation-summary=\"ModelOnly\"", view);
+        Assert.Contains("asp-validation-for=\"Source\"", view);
+        Assert.Contains("asp-validation-for=\"ExternalItemId\"", view);
+        Assert.Contains("asp-validation-for=\"ProductId\"", view);
+    }
+
+    [Fact]
+    public void Operational_post_pages_display_backend_errors_from_temp_data()
+    {
+        var productionView = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "Index.cshtml"));
+        var productionComponent = File.ReadAllText(ProjectPath("src", "UI", "Components", "Production", "ProductionIndexPage.razor"));
+        var productionController = File.ReadAllText(ProjectPath("src", "App", "Controllers", "ProductionController.cs"));
+        var shipmentsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Shipments", "Index.cshtml"));
+        var shipmentsComponent = File.ReadAllText(ProjectPath("src", "UI", "Components", "Shipments", "ShipmentsIndexPage.razor"));
+        var shipmentsController = File.ReadAllText(ProjectPath("src", "App", "Controllers", "ShipmentsController.cs"));
+
+        Assert.Contains("TempData[\"Error\"]", productionController);
+        Assert.Contains("TempData[\"Error\"]", shipmentsController);
+        Assert.Contains("TempData[\"Error\"]", productionView);
+        Assert.Contains("TempData[\"Error\"]", shipmentsView);
+        Assert.Contains("param-ErrorMessage", productionView);
+        Assert.Contains("param-ErrorMessage", shipmentsView);
+        Assert.Contains("role=\"alert\"", productionComponent);
+        Assert.Contains("role=\"alert\"", shipmentsComponent);
+    }
+
+    [Fact]
     public void Manual_order_item_form_uses_observation_textarea_and_full_width_product_select()
     {
         var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "ManualOrders", "ManualOrderCreatePage.razor"));

@@ -14,14 +14,17 @@
     <div class="col-md-3">
         <label asp-for="Source" class="form-label"></label>
         <input asp-for="Source" class="form-control" />
+        <span asp-validation-for="Source" class="text-danger"></span>
     </div>
     <div class="col-md-4">
         <label asp-for="ExternalItemId" class="form-label"></label>
         <input asp-for="ExternalItemId" class="form-control" />
+        <span asp-validation-for="ExternalItemId" class="text-danger"></span>
     </div>
     <div class="col-md-3">
         <label asp-for="ProductId" class="form-label"></label>
         <select asp-for="ProductId" asp-items="products" class="form-select"></select>
+        <span asp-validation-for="ProductId" class="text-danger"></span>
     </div>
     <div class="col-md-2 d-flex align-items-end">
         <button type="submit" class="btn btn-primary w-100">Adicionar</button>

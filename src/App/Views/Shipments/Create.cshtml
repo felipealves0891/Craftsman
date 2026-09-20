@@ -39,6 +39,18 @@
         })
         .ToArray();
     var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var validationSummaryErrors = ViewData.ModelState
+        .SelectMany(entry => entry.Value?.Errors.Select(error => error.ErrorMessage) ?? [])
+        .Where(message => !string.IsNullOrWhiteSpace(message))
+        .ToArray();
+    var orderIdErrors = ViewData.ModelState[nameof(CreateShipmentInputModel.OrderId)]?.Errors
+        .Select(error => error.ErrorMessage)
+        .Where(message => !string.IsNullOrWhiteSpace(message))
+        .ToArray() ?? [];
+    var trackingCodeErrors = ViewData.ModelState[nameof(CreateShipmentInputModel.TrackingCode)]?.Errors
+        .Select(error => error.ErrorMessage)
+        .Where(message => !string.IsNullOrWhiteSpace(message))
+        .ToArray() ?? [];
 }
 
 @* Static component contract: asp-for="OrderId" type="hidden" data-order-modal-trigger data-shipment-order-modal data-order-select data-order-items Descricao Quantidade Valor unitario *@
@@ -47,7 +59,10 @@
            param-OrderId="@Model.OrderId"
            param-TrackingCode="@Model.TrackingCode"
            param-SelectedOrderText="@selectedOrderText"
-           param-AvailableOrders="@availableOrders" />
+           param-AvailableOrders="@availableOrders"
+           param-ValidationSummaryErrors="@validationSummaryErrors"
+           param-OrderIdErrors="@orderIdErrors"
+           param-TrackingCodeErrors="@trackingCodeErrors" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
