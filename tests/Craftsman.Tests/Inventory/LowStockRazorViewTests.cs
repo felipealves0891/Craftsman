@@ -67,7 +67,7 @@ public sealed class LowStockRazorViewTests
     {
         var view = ReadView("src/App/Views/Inventory/Movements.cshtml");
 
-        Assert.Contains("GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()", view);
+        Assert.Contains("EnumPresentation.SelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>(Model.Type)", view);
         Assert.Contains(nameof(StockMovementType.Adjustment), Enum.GetNames<StockMovementType>());
     }
 

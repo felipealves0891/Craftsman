@@ -42,7 +42,7 @@
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Type" class="form-label"></label>
-            <select asp-for="Type" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>()" class="form-select" data-stock-movement-type></select>
+            <select asp-for="Type" asp-items="Craftsman.App.Presentation.EnumPresentation.SelectList<Craftsman.Domain.Inventory.Entities.StockMovementType>(Model.Type)" class="form-select" data-stock-movement-type></select>
         </div>
         <div class="col-md-2 form-group">
             <label asp-for="Quantity" class="form-label"></label>
@@ -96,7 +96,7 @@
                     {
                         <tr>
                             <td><strong>@movement.RawMaterialName</strong></td>
-                            <td>@movement.Type</td>
+                            <td>@Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Inventory.Entities.StockMovementType), movement.Type)</td>
                             <td>@movement.Quantity.ToString("#")</td>
                             <td>@movement.UnitCostAmount.ToString("C")</td>
                             <td><strong>@movement.TotalCostAmount.ToString("C")</strong></td>

@@ -3,21 +3,14 @@
 @{
     ViewData["Title"] = "Financeiro";
 
-    static string StatusLabel(object status) => status.ToString() switch
-    {
-        "Calculated" => "Calculado",
-        "Failed" => "Falhou",
-        _ => status.ToString() ?? "-"
-    };
-
     var settlements = Model
         .Select(settlement => new FinanceIndexPage.SettlementRow(
             settlement.OrderId,
             settlement.RevenueAmount.ToString("C"),
             settlement.TotalCostAmount.ToString("C"),
             settlement.MarginAmount.ToString("C"),
-            StatusLabel(settlement.Status),
-            settlement.Status.ToString().ToLowerInvariant(),
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
+            settlement.Status.ToLowerInvariant(),
             settlement.CalculatedAt.ToLocalTime().ToString("g")))
         .ToArray();
 

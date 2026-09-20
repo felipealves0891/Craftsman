@@ -4,17 +4,6 @@
 @{
     ViewData["Title"] = "Pedidos";
 
-    static string StatusLabel(object status) => status.ToString() switch
-    {
-        "Normalized" => "Normalizado",
-        "ReadyForProduction" => "Pronto para producao",
-        "InProduction" => "Em producao",
-        "Shipped" => "Enviado",
-        "Delivered" => "Entregue",
-        "Cancelled" => "Cancelado",
-        _ => status.ToString() ?? "-"
-    };
-
     var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var orders = Model.Orders
         .Select(order => new OrdersIndexPage.OrderRow(
@@ -22,8 +11,8 @@
             order.Source,
             order.ExternalOrderId,
             order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-",
-            StatusLabel(order.Status),
-            order.Status.ToString().ToLowerInvariant(),
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Sales.Entities.OrderStatus), order.Status),
+            order.Status.ToLowerInvariant(),
             order.ItemCount,
             order.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();

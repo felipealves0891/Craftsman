@@ -6,35 +6,17 @@
 @{
     ViewData["Title"] = "Envios";
 
-    static string StatusLabel(ShipmentStatus status) => status switch
-    {
-        ShipmentStatus.Created => "Criado",
-        ShipmentStatus.InTransit => "Em transito",
-        ShipmentStatus.DeliveryAttempted => "Tentativa de entrega",
-        ShipmentStatus.Delivered => "Entregue",
-        ShipmentStatus.Cancelled => "Cancelado",
-        _ => status.ToString()
-    };
-
-    static string StatusLabelText(string status) => status switch
-    {
-        nameof(ShipmentStatus.Created) => "Criado",
-        nameof(ShipmentStatus.InTransit) => "Em transito",
-        nameof(ShipmentStatus.DeliveryAttempted) => "Tentativa de entrega",
-        nameof(ShipmentStatus.Delivered) => "Entregue",
-        nameof(ShipmentStatus.Cancelled) => "Cancelado",
-        _ => status
-    };
-
-    var statusOptions = Enum.GetValues<ShipmentStatus>()
-        .Select(status => new SelectOption(status.ToString(), StatusLabel(status), ViewBag.Status == status))
+    object? statusFilter = ViewBag.Status;
+    var selectedStatus = statusFilter is ShipmentStatus shipmentStatus ? shipmentStatus : (ShipmentStatus?)null;
+    var statusOptions = Craftsman.App.Presentation.EnumPresentation.SelectList(selectedStatus)
+        .Select(status => new SelectOption(status.Value ?? string.Empty, status.Text, status.Selected))
         .ToArray();
     var shipments = Model
         .Select(shipment => new ShipmentsIndexPage.ShipmentRow(
             shipment.Id,
             shipment.OrderId,
             shipment.TrackingCode,
-            StatusLabelText(shipment.Status),
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(ShipmentStatus), shipment.Status),
             shipment.Status.ToLowerInvariant(),
             shipment.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();

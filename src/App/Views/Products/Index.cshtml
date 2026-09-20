@@ -6,8 +6,8 @@
         .Select(product => new ProductsIndexPage.ProductRow(
             product.Id,
             product.Name,
-            product.Status.ToString(),
-            product.Status.ToString().ToLowerInvariant(),
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.ProductCatalog.Entities.ProductStatus), product.Status),
+            product.Status.ToLowerInvariant(),
             product.ProductionDurationHours,
             product.HourlyRate.ToString("C"),
             product.BillOfMaterialsItems))

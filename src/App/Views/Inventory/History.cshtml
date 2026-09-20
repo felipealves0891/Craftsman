@@ -4,7 +4,7 @@
     ViewData["Title"] = "Historico de estoque";
     var movements = Model
         .Select(movement => new InventoryHistoryPage.MovementRow(
-            movement.Type.ToString(),
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Inventory.Entities.StockMovementType), movement.Type),
             movement.Quantity.ToString(),
             movement.UnitCostAmount.ToString("C"),
             movement.TotalCostAmount.ToString("C"),

@@ -15,7 +15,7 @@
                 " ",
                 order.Source,
                 order.ExternalOrderId,
-                order.Status,
+                Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Sales.Entities.OrderStatus), order.Status),
                 order.ShippingDate?.ToString("dd/MM/yyyy") ?? string.Empty,
                 string.Join(" ", order.Items.Select(item => item.Description)))
                 .ToLowerInvariant();
@@ -31,7 +31,7 @@
                 order.Id,
                 order.Source,
                 order.ExternalOrderId,
-                order.Status,
+                Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Sales.Entities.OrderStatus), order.Status),
                 order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-",
                 order.DisplayName,
                 searchText,

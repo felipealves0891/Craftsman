@@ -24,7 +24,7 @@
 
     <div class="mb-3">
         <label asp-for="Status" class="form-label"></label>
-        <select asp-for="Status" asp-items="Html.GetEnumSelectList<Craftsman.Domain.Inventory.Entities.RawMaterialStatus>()" class="form-select"></select>
+        <select asp-for="Status" asp-items="Craftsman.App.Presentation.EnumPresentation.SelectList<Craftsman.Domain.Inventory.Entities.RawMaterialStatus>(Model.Status)" class="form-select"></select>
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
 

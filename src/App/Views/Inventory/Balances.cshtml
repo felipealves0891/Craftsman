@@ -14,7 +14,7 @@
         .Select(balance => new InventoryBalancesPage.BalanceRow(
             balance.RawMaterialId,
             balance.RawMaterialName,
-            balance.Balance.ToString(),
+            balance.Balance.ToString("0"),
             balance.UnitOfMeasure,
             AlertMarkup(balance.AlertLevel, balance.ReachedLimit)))
         .ToArray();

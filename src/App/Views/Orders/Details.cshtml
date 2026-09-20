@@ -16,12 +16,12 @@
             task.Id,
             task.ProductId,
             task.Quantity,
-            task.Status))
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Production.Entities.ProductionTaskStatus), task.Status)))
         .ToArray();
     var shipments = Model.Shipments
         .Select(shipment => new OrderDetailsPage.ShipmentRow(
             shipment.TrackingCode,
-            shipment.Status,
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Shipping.Entities.ShipmentStatus), shipment.Status),
             shipment.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();
     var shippingDate = Model.ShippingDate?.ToString("dd/MM/yyyy") ?? "-";
@@ -34,7 +34,7 @@
            param-OrderId="@Model.Id"
            param-Source="@Model.Source"
            param-ExternalOrderId="@Model.ExternalOrderId"
-           param-Status="@Model.Status"
+           param-Status="@Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Sales.Entities.OrderStatus), Model.Status)"
            param-ShippingDate="@shippingDate"
            param-SuccessMessage="@successMessage"
            param-ErrorMessage="@errorMessage"

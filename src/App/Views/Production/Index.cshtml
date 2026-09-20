@@ -41,26 +41,10 @@
         .Distinct()
         .Count();
 
-    static string StatusLabel(ProductionTaskStatus status) => status switch
-    {
-        ProductionTaskStatus.Planned => "Planejada",
-        ProductionTaskStatus.InProduction => "Em producao",
-        ProductionTaskStatus.Completed => "Concluida",
-        ProductionTaskStatus.Cancelled => "Cancelada",
-        _ => status.ToString()
-    };
-
-    static string StatusLabelText(string status) => status switch
-    {
-        nameof(ProductionTaskStatus.Planned) => "Planejada",
-        nameof(ProductionTaskStatus.InProduction) => "Em producao",
-        nameof(ProductionTaskStatus.Completed) => "Concluida",
-        nameof(ProductionTaskStatus.Cancelled) => "Cancelada",
-        _ => status
-    };
-
-    var statusOptions = Enum.GetValues<ProductionTaskStatus>()
-        .Select(status => new SelectOption(status.ToString(), StatusLabel(status), ViewBag.Status == status))
+    object? statusFilter = ViewBag.Status;
+    var selectedStatus = statusFilter is ProductionTaskStatus productionTaskStatus ? productionTaskStatus : (ProductionTaskStatus?)null;
+    var statusOptions = Craftsman.App.Presentation.EnumPresentation.SelectList(selectedStatus)
+        .Select(status => new SelectOption(status.Value ?? string.Empty, status.Text, status.Selected))
         .ToArray();
     var days = Enumerable.Range(1, daysInMonth)
         .Select(day =>
@@ -84,7 +68,7 @@
 
                     return new ProductionIndexPage.ProductionTaskRow(
                         task.Id,
-                        StatusLabelText(task.Status),
+                        Craftsman.App.Presentation.EnumPresentation.Label(typeof(ProductionTaskStatus), task.Status),
                         task.Status.ToLowerInvariant(),
                         rangeLabel,
                         task.OrderReference,

@@ -11,5 +11,5 @@
            param-ShippingCostAmount="@Model.ShippingCostAmount"
            param-TotalCostAmount="@Model.TotalCostAmount"
            param-MarginAmount="@Model.MarginAmount"
-           param-Status="@Model.Status.ToString()"
+           param-Status="@Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), Model.Status)"
            param-CalculatedAt="@Model.CalculatedAt" />

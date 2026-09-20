@@ -3,11 +3,11 @@
 @{
     ViewData["Title"] = "Estoque";
 
-    static string AlertMarkup(string? alertLevel) => alertLevel switch
+    static string AlertMarkup(Craftsman.Domain.Inventory.Entities.StockAlertLevel? alertLevel) => alertLevel switch
     {
-        "Critical" => "<span class=\"badge badge-danger\">Critico</span>",
-        "Warning" => "<span class=\"badge badge-warning\">Aviso</span>",
-        _ => "<span class=\"text-muted\">Normal</span>"
+        Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical => $"<span class=\"badge badge-danger\">{Craftsman.App.Presentation.EnumPresentation.Label(Craftsman.Domain.Inventory.Entities.StockAlertLevel.Critical)}</span>",
+        Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning => $"<span class=\"badge badge-warning\">{Craftsman.App.Presentation.EnumPresentation.Label(Craftsman.Domain.Inventory.Entities.StockAlertLevel.Warning)}</span>",
+        _ => $"<span class=\"text-muted\">{Craftsman.App.Presentation.EnumPresentation.Label(Craftsman.Domain.Inventory.Entities.StockAlertLevel.Normal)}</span>"
     };
 
     var materials = Model
@@ -15,11 +15,11 @@
             material.Id,
             material.Name,
             material.UnitOfMeasure,
-            material.Status.ToString(),
-            material.Status.ToString().ToLowerInvariant(),
-            material.MinimumStockLevel?.ToString() ?? "-",
-            material.CriticalStockLevel?.ToString() ?? "-",
-            AlertMarkup(material.AlertLevel.ToString())))
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Inventory.Entities.RawMaterialStatus), material.Status),
+            material.Status.ToLowerInvariant(),
+            material.MinimumStockLevel?.ToString("0") ?? "-",
+            material.CriticalStockLevel?.ToString("0") ?? "-",
+            AlertMarkup(material.AlertLevel)))
         .ToArray();
 }
 
