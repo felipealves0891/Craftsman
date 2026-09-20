@@ -62,13 +62,21 @@ public sealed class ShipmentsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateStatus(Guid id, ShipmentStatus status, CancellationToken cancellationToken)
     {
-        await shippingAppService.UpdateStatusAsync(id, status, cancellationToken);
-        await auditService.RecordAsync(
-            AuditAction.ShipmentStatusUpdated,
-            "Shipment",
-            id.ToString(),
-            after: new { Status = status.ToString() },
-            cancellationToken: cancellationToken);
+        try
+        {
+            await shippingAppService.UpdateStatusAsync(id, status, cancellationToken);
+            await auditService.RecordAsync(
+                AuditAction.ShipmentStatusUpdated,
+                "Shipment",
+                id.ToString(),
+                after: new { Status = status.ToString() },
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
+        }
+
         return RedirectToAction(nameof(Index));
     }
 }

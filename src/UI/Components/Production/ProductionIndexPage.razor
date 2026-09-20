@@ -8,6 +8,11 @@
     </div>
 </section>
 
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+}
+
 <form method="get" class="filter-panel">
     <div class="form-group">
         <label for="status" class="form-label">Status</label>
@@ -117,6 +122,7 @@
     [Parameter] public bool HasTasks { get; set; }
     [Parameter] public int LeadingBlankDays { get; set; }
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public IReadOnlyCollection<CalendarDay> Days { get; set; } = [];
 
     public sealed record CalendarDay(int DayNumber, string CssClass, IReadOnlyCollection<ProductionTaskRow> Tasks);

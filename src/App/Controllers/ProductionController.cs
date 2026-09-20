@@ -32,13 +32,21 @@ public sealed class ProductionController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Advance(Guid id, string action, CancellationToken cancellationToken)
     {
-        await productionScheduleService.AdvanceAsync(id, action, cancellationToken);
-        await auditService.RecordAsync(
-            AuditAction.ProductionAdvanced,
-            "ProductionTask",
-            id.ToString(),
-            after: new { Action = action },
-            cancellationToken: cancellationToken);
+        try
+        {
+            await productionScheduleService.AdvanceAsync(id, action, cancellationToken);
+            await auditService.RecordAsync(
+                AuditAction.ProductionAdvanced,
+                "ProductionTask",
+                id.ToString(),
+                after: new { Action = action },
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
+        }
+
         return RedirectToAction(nameof(Index));
     }
 }

@@ -86,6 +86,7 @@
         .ToArray();
     var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
     var plannedDate = selectedDate?.ToString("yyyy-MM-dd");
+    var errorMessage = TempData["Error"] as string;
 }
 
 <component type="typeof(ProductionIndexPage)" render-mode="Static"
@@ -96,4 +97,5 @@
            param-HasTasks="@tasks.Any()"
            param-LeadingBlankDays="@leadingBlankDays"
            param-RequestVerificationToken="@requestVerificationToken"
+           param-ErrorMessage="@errorMessage"
            param-Days="@days" />

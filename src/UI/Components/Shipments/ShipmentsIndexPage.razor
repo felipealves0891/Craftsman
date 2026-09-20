@@ -9,6 +9,11 @@
     <a href="/Shipments/Create" class="btn btn-primary"><i class="fas fa-plus fa-sm mr-1"></i>Criar envio</a>
 </section>
 
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">@ErrorMessage</div>
+}
+
 <form method="get" class="filter-panel">
     <div class="form-group">
         <label for="status" class="form-label">Status</label>
@@ -80,6 +85,7 @@
     [Parameter] public IReadOnlyCollection<SelectOption> StatusOptions { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
+    [Parameter] public string? ErrorMessage { get; set; }
 
     public sealed record ShipmentRow(Guid Id, Guid OrderId, string? TrackingCode, string StatusLabel, string StatusCss, string CreatedAt);
 }

@@ -21,9 +21,11 @@
             shipment.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();
     var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var errorMessage = TempData["Error"] as string;
 }
 
 <component type="typeof(ShipmentsIndexPage)" render-mode="Static"
            param-StatusOptions="@statusOptions"
            param-Shipments="@shipments"
-           param-RequestVerificationToken="@requestVerificationToken" />
+           param-RequestVerificationToken="@requestVerificationToken"
+           param-ErrorMessage="@errorMessage" />
