@@ -87,6 +87,12 @@ public sealed class OrderImportPipelineTests
         {
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            Orders.RemoveAll(order => order.Id == id);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeProductMappingRepository : IProductMappingRepository

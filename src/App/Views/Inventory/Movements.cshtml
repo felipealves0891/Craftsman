@@ -110,31 +110,3 @@
         </table>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        (() => {
-            const typeField = document.querySelector("[data-stock-movement-type]");
-            const reasonGroup = document.querySelector("[data-stock-movement-reason-group]");
-            const reasonField = document.querySelector("[data-stock-movement-reason]");
-
-            if (!typeField || !reasonGroup || !reasonField) {
-                return;
-            }
-
-            const outboundValue = "2";
-            const updateReasonVisibility = () => {
-                const isOutbound = typeField.value === outboundValue;
-                reasonGroup.hidden = !isOutbound;
-                reasonField.required = isOutbound;
-                reasonField.disabled = !isOutbound;
-                if (!isOutbound) {
-                    reasonField.value = "";
-                }
-            };
-
-            typeField.addEventListener("change", updateReasonVisibility);
-            updateReasonVisibility();
-        })();
-    </script>
-}

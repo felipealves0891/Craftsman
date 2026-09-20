@@ -4,6 +4,8 @@ namespace Craftsman.App.Models;
 
 public sealed class ManualOrderInputModel
 {
+    public Guid? Id { get; set; }
+
     [Required]
     [Display(Name = "Origem")]
     public string Source { get; set; } = string.Empty;

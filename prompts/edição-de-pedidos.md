@@ -1,0 +1,1 @@
+Precisamos adicionar funcionalidades de edição e exclusão de pedidos, nos dois cenarios, devemos alterar todos os pontos que foram feitos na criação, como estoque, deve ser recalculado.

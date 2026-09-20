@@ -4,7 +4,8 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 
 @{
-    ViewData["Title"] = "Novo pedido";
+    var isEdit = Model.Id.HasValue;
+    ViewData["Title"] = isEdit ? "Editar pedido" : "Novo pedido";
     var products = (ViewBag.Products as List<SelectListItem> ?? [])
         .Select(product => new SelectOption(product.Value, product.Text, product.Selected))
         .ToArray();
@@ -25,10 +26,22 @@
     var minimumShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd");
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
+    var formAction = isEdit ? $"/ManualOrders/Edit/{Model.Id}" : "/ManualOrders/Create";
+    var pageEyebrow = isEdit ? "Editar Pedido" : "Novo Pedido";
+    var pageTitle = isEdit ? "Editar pedido" : "Novo pedido";
+    var pageDescription = isEdit
+        ? "Atualize os dados do pedido e seus itens. Estoque e producao serao recalculados ao salvar."
+        : "Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.";
+    var submitLabel = isEdit ? "Salvar alteracoes" : "Salvar pedido";
 }
 
 @* Static component contract: asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" data-currency-input *@
 <component type="typeof(ManualOrderCreatePage)" render-mode="Static"
+           param-FormAction="@formAction"
+           param-PageEyebrow="@pageEyebrow"
+           param-PageTitle="@pageTitle"
+           param-PageDescription="@pageDescription"
+           param-SubmitLabel="@submitLabel"
            param-Products="@products"
            param-OrderSources="@orderSources"
            param-Items="@items"

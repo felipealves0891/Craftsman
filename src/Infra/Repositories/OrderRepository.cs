@@ -21,13 +21,16 @@ public sealed class OrderRepository : IOrderRepository
 
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await QueryOrders().FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
+        var entity = await QueryOrders()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(order => order.Id == id, cancellationToken);
         return entity is null ? null : ToModel(entity);
     }
 
     public async Task<Order?> GetByOriginAsync(OrderOrigin origin, CancellationToken cancellationToken = default)
     {
         var entity = await QueryOrders()
+            .AsNoTracking()
             .FirstOrDefaultAsync(
                 order => order.Source == origin.Source && order.ExternalOrderId == origin.ExternalOrderId,
                 cancellationToken);
@@ -71,6 +74,8 @@ public sealed class OrderRepository : IOrderRepository
                 .Where(item => !orderItemsById.ContainsKey(item.Id))
                 .ToList();
 
+            dbContext.OrderItems.RemoveRange(removedItems);
+
             foreach (var removedItem in removedItems)
             {
                 entity.Items.Remove(removedItem);
@@ -107,9 +112,22 @@ public sealed class OrderRepository : IOrderRepository
         cache?.RemoveByPrefix("sales:orders:");
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await QueryOrders().FirstOrDefaultAsync(existing => existing.Id == id, cancellationToken);
+        if (entity is null)
+        {
+            throw new InvalidOperationException($"Order '{id}' was not found.");
+        }
+
+        dbContext.Orders.Remove(entity);
+        cache?.RemoveByPrefix("sales:orders:");
+    }
+
     private async Task<IReadOnlyCollection<Order>> ListCoreAsync(CancellationToken cancellationToken)
     {
         var entities = await QueryOrders()
+            .AsNoTracking()
             .OrderByDescending(order => order.CreatedAt)
             .ToListAsync(cancellationToken);
 

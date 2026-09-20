@@ -28,6 +28,8 @@
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
     var stockAlertsMessage = TempData["StockAlerts"] as string;
+    var canChangeOrder = !Model.Shipments.Any()
+        && !Model.ProductionTasks.Any(task => task.Status is nameof(Craftsman.Domain.Production.Entities.ProductionTaskStatus.InProduction) or nameof(Craftsman.Domain.Production.Entities.ProductionTaskStatus.Completed));
 }
 
 <component type="typeof(OrderDetailsPage)" render-mode="Static"
@@ -39,6 +41,7 @@
            param-SuccessMessage="@successMessage"
            param-ErrorMessage="@errorMessage"
            param-StockAlertsMessage="@stockAlertsMessage"
+           param-CanChangeOrder="@canChangeOrder"
            param-RequestVerificationToken="@requestVerificationToken"
            param-Items="@items"
            param-ProductionTasks="@productionTasks"

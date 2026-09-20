@@ -13,18 +13,21 @@ public sealed class OrdersController : Controller
 {
     private readonly IOrderImportPipeline orderImportPipeline;
     private readonly OrderQueryService orderQueryService;
+    private readonly ManualOrderService manualOrderService;
     private readonly OrderProductionPlanningService productionPlanningService;
     private readonly StockAlertAppService stockAlertAppService;
     private readonly IAuditService auditService;
 
     public OrdersController(
         OrderQueryService orderQueryService,
+        ManualOrderService manualOrderService,
         IOrderImportPipeline orderImportPipeline,
         OrderProductionPlanningService productionPlanningService,
         StockAlertAppService stockAlertAppService,
         IAuditService auditService)
     {
         this.orderQueryService = orderQueryService;
+        this.manualOrderService = manualOrderService;
         this.orderImportPipeline = orderImportPipeline;
         this.productionPlanningService = productionPlanningService;
         this.stockAlertAppService = stockAlertAppService;
@@ -91,5 +94,23 @@ public sealed class OrdersController : Controller
         }
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await manualOrderService.DeleteAsync(id, cancellationToken);
+            TempData["Success"] = "Pedido excluido.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
+            return RedirectToAction(nameof(Details), new { id });
+        }
     }
 }

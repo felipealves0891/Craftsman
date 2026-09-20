@@ -6,6 +6,14 @@
     </div>
     <div class="page-actions">
         <a href="/Orders" class="btn btn-outline-secondary">Voltar para pedidos</a>
+        @if (CanChangeOrder)
+        {
+            <a href="/ManualOrders/Edit/@OrderId" class="btn btn-outline-primary">Editar</a>
+            <form action="/Orders/Delete/@OrderId" method="post">
+                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                <button type="submit" class="btn btn-outline-danger">Excluir</button>
+            </form>
+        }
         @if (!ProductionTasks.Any())
         {
             <form action="/Orders/SendToProduction/@OrderId" method="post">
@@ -169,6 +177,7 @@
     [Parameter] public string? SuccessMessage { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public string? StockAlertsMessage { get; set; }
+    [Parameter] public bool CanChangeOrder { get; set; }
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];

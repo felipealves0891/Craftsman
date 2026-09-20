@@ -29,6 +29,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
     public async Task<IReadOnlyCollection<StockMovement>> GetByRawMaterialAsync(Guid rawMaterialId, CancellationToken cancellationToken = default)
     {
         var movements = await dbContext.StockMovements
+            .AsNoTracking()
             .Where(movement => movement.RawMaterialId == rawMaterialId)
             .Where(movement => movement.Quantity != 0)
             .OrderBy(movement => movement.OccurredAt)
@@ -47,6 +48,21 @@ public sealed class StockMovementRepository : IStockMovementRepository
     public async Task<IReadOnlyCollection<StockMovement>> ListAsync(CancellationToken cancellationToken = default)
     {
         var movements = await dbContext.StockMovements
+            .AsNoTracking()
+            .Where(movement => movement.Quantity != 0)
+            .OrderBy(movement => movement.OccurredAt)
+            .ToListAsync(cancellationToken);
+
+        return movements.Select(ToModel).ToList().AsReadOnly();
+    }
+
+    public async Task<IReadOnlyCollection<StockMovement>> ListByBusinessReferenceAsync(
+        string businessReference,
+        CancellationToken cancellationToken = default)
+    {
+        var movements = await dbContext.StockMovements
+            .AsNoTracking()
+            .Where(movement => movement.BusinessReference == businessReference)
             .Where(movement => movement.Quantity != 0)
             .OrderBy(movement => movement.OccurredAt)
             .ToListAsync(cancellationToken);
@@ -57,6 +73,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
     public async Task<decimal> GetAverageUnitCostAsync(Guid rawMaterialId, CancellationToken cancellationToken = default)
     {
         var inboundMovements = await dbContext.StockMovements
+            .AsNoTracking()
             .Where(movement => movement.RawMaterialId == rawMaterialId && movement.Type == StockMovementType.Inbound.ToString())
             .Where(movement => movement.Quantity != 0)
             .ToListAsync(cancellationToken);

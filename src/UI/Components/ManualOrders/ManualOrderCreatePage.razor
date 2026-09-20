@@ -2,9 +2,9 @@
 
 <section class="page-heading">
     <div>
-        <span class="eyebrow">Novo Pedido</span>
-        <h1>Novo pedido</h1>
-        <p>Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.</p>
+        <span class="eyebrow">@PageEyebrow</span>
+        <h1>@PageTitle</h1>
+        <p>@PageDescription</p>
     </div>
     <a href="/Orders" class="btn btn-outline-secondary">Voltar para pedidos</a>
 </section>
@@ -30,7 +30,7 @@
     </div>
 </form>
 
-<form action="/ManualOrders/Create" method="post" id="manual-order-form">
+<form action="@FormAction" method="post" id="manual-order-form">
     <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
 
     <div class="manual-order-layout">
@@ -47,7 +47,7 @@
                 <div class="row">
                     <div class="col-md-4 form-group">
                         <label for="Source" class="form-label">Origem</label>
-                        <select id="Source" name="Source" class="form-select">
+                        <select id="Source" required name="Source" class="form-select">
                             <option value="">Selecione</option>
                             @foreach (var source in OrderSources)
                             {
@@ -57,11 +57,11 @@
                     </div>
                     <div class="col-md-4 form-group">
                         <label for="Reference" class="form-label">Referencia manual</label>
-                        <input id="Reference" name="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Reference" />
+                        <input id="Reference" required name="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Reference" />
                     </div>
                     <div class="col-md-4 form-group">
                         <label for="ShippingDate" class="form-label">Data de envio</label>
-                        <input id="ShippingDate" name="ShippingDate" type="date" min="@MinimumShippingDate" value="@ShippingDate" class="form-control" />
+                        <input id="ShippingDate" required name="ShippingDate" type="date" min="@MinimumShippingDate" value="@ShippingDate" class="form-control" />
                     </div>
                 </div>
             </section>
@@ -98,7 +98,7 @@
                             <div class="manual-item-grid">
                                 <div class="form-group manual-item-product">
                                     <label class="form-label" for="Items_@(i)__ProductId">Produto interno</label>
-                                    <select id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
+                                    <select required id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
                                         <option value="">Sem vinculo</option>
                                         @foreach (var product in Products)
                                         {
@@ -112,11 +112,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__Quantity">Quantidade</label>
-                                    <input id="Items_@(i)__Quantity" name="Items[@i].Quantity" value="@item.Quantity" class="form-control" data-item-field data-quantity-field />
+                                    <input required min="1" id="Items_@(i)__Quantity" name="Items[@i].Quantity" value="@item.Quantity" class="form-control" data-item-field data-quantity-field />
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__UnitPriceAmount">Valor unitario</label>
-                                    <input id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
+                                    <input required min="1" id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
                                 </div>                                
                                 <div class="manual-item-total">
                                     <span>Total do item</span>
@@ -143,7 +143,7 @@
                     </div>
                 </dl>
                 <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fas fa-save fa-sm mr-1"></i>Salvar pedido
+                    <i class="fas fa-save fa-sm mr-1"></i>@SubmitLabel
                 </button>
                 <a href="/Orders" class="btn btn-outline-secondary btn-block">Cancelar</a>
             </div>
@@ -189,7 +189,6 @@
                 const price = parseNumber(row.querySelector('[data-price-field]').value);
                 const rowTotal = quantity * price;
                 row.querySelector('[data-item-total]').textContent = currency.format(rowTotal);
-                row.querySelector('[data-item-title]').textContent = description || 'Novo item';
                 if (rowHasValue(row)) {
                     filledItems += 1;
                     total += rowTotal;
@@ -244,6 +243,11 @@
     [Parameter] public IReadOnlyCollection<SelectOption> Products { get; set; } = [];
     [Parameter] public IReadOnlyCollection<SelectOption> OrderSources { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ManualOrderItemRow> Items { get; set; } = [];
+    [Parameter] public string FormAction { get; set; } = "/ManualOrders/Create";
+    [Parameter] public string PageEyebrow { get; set; } = "Novo Pedido";
+    [Parameter] public string PageTitle { get; set; } = "Novo pedido";
+    [Parameter] public string PageDescription { get; set; } = "Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.";
+    [Parameter] public string SubmitLabel { get; set; } = "Salvar pedido";
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public string Reference { get; set; } = string.Empty;
     [Parameter] public string? ShippingDate { get; set; }

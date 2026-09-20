@@ -20,7 +20,9 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
 
     public async Task<ProductionTask?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.ProductionTasks.FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+        var entity = await dbContext.ProductionTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
         return entity is null ? null : ToModel(entity);
     }
 
@@ -37,6 +39,17 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         }
 
         return await ListCoreAsync(status, plannedDate, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<ProductionTask>> ListByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.ProductionTasks
+            .AsNoTracking()
+            .Where(task => task.OrderId == orderId)
+            .OrderBy(task => task.PlannedStartAt)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToModel).ToList().AsReadOnly();
     }
 
     public async Task AddAsync(ProductionTask productionTask, CancellationToken cancellationToken = default)
@@ -63,12 +76,24 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         cache?.RemoveByPrefix("production:");
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.ProductionTasks.FirstOrDefaultAsync(task => task.Id == id, cancellationToken);
+        if (entity is null)
+        {
+            throw new InvalidOperationException($"Production task '{id}' was not found.");
+        }
+
+        dbContext.ProductionTasks.Remove(entity);
+        cache?.RemoveByPrefix("production:");
+    }
+
     private async Task<IReadOnlyCollection<ProductionTask>> ListCoreAsync(
         ProductionTaskStatus? status,
         DateOnly? plannedDate,
         CancellationToken cancellationToken)
     {
-        var query = dbContext.ProductionTasks.AsQueryable();
+        var query = dbContext.ProductionTasks.AsNoTracking();
 
         if (status is not null)
         {

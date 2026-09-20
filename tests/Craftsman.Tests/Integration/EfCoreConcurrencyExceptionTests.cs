@@ -207,5 +207,8 @@ public sealed class EfCoreConcurrencyExceptionTests
 
         public Task UpdateAsync(Craftsman.Domain.Sales.Entities.Order order, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+
+        public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

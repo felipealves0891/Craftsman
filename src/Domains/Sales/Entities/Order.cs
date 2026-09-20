@@ -10,13 +10,13 @@ public sealed class Order
 
     public Guid Id { get; }
 
-    public OrderOrigin Origin { get; }
+    public OrderOrigin Origin { get; private set; }
 
     public OrderStatus Status { get; private set; }
 
     public DateTimeOffset CreatedAt { get; }
 
-    public DateOnly? ShippingDate { get; }
+    public DateOnly? ShippingDate { get; private set; }
 
     public IReadOnlyCollection<OrderItem> Items => items.AsReadOnly();
 
@@ -92,6 +92,36 @@ public sealed class Order
         }
 
         Status = OrderStatus.Cancelled;
+    }
+
+    public void Replace(OrderOrigin origin, IEnumerable<OrderItem> replacementItems, DateOnly? shippingDate)
+    {
+        var newItems = replacementItems?.ToList() ?? throw new ArgumentNullException(nameof(replacementItems));
+
+        if (newItems.Count == 0)
+        {
+            throw new ArgumentException("Order must contain at least one item.", nameof(replacementItems));
+        }
+
+        if (shippingDate is not null && shippingDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
+        {
+            throw new ArgumentException("Shipping date must be in the future.", nameof(shippingDate));
+        }
+
+        Origin = origin;
+        ShippingDate = shippingDate;
+        items.Clear();
+        items.AddRange(newItems);
+    }
+
+    public void MarkNormalized()
+    {
+        if (Status is OrderStatus.InProduction or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Cancelled)
+        {
+            throw new InvalidOperationException($"Order cannot be normalized from status {Status}.");
+        }
+
+        Status = OrderStatus.Normalized;
     }
 
     public void ClearDomainEvents()

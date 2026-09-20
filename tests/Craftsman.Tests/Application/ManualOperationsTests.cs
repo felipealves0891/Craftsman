@@ -40,6 +40,9 @@ public sealed class ManualOperationsTests
             orderRepository,
             orderSourceRepository,
             productRepository,
+            productionTaskRepository,
+            stockMovementRepository,
+            new ShipmentRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
@@ -167,6 +170,9 @@ public sealed class ManualOperationsTests
             orderRepository,
             orderSourceRepository,
             productRepository,
+            productionTaskRepository,
+            stockMovementRepository,
+            new ShipmentRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
@@ -202,6 +208,230 @@ public sealed class ManualOperationsTests
         Assert.Equal(orderId, productionTask.OrderId);
         Assert.Equal(OrderStatus.ReadyForProduction, loaded?.Status);
         Assert.Equal(6, await stockMovementRepository.GetBalanceAsync(material.Id));
+    }
+
+    [Fact]
+    public async Task Manual_order_service_update_recalculates_planned_stock_for_changed_quantity()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 20, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
+        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-EDIT-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        await service.UpdateAsync(orderId, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-EDIT-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa atualizada",
+                    Quantity = 3,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        var loaded = await new OrderRepository(dbContext).GetByIdAsync(orderId);
+        var productionTask = Assert.Single(await productionTaskRepository.ListByOrderAsync(orderId));
+
+        Assert.Equal(3, loaded?.Items.Single().Quantity);
+        Assert.Equal(3, productionTask.Quantity);
+        Assert.Equal(14, await stockMovementRepository.GetBalanceAsync(material.Id));
+    }
+
+    [Fact]
+    public async Task Manual_order_service_update_to_unlinked_item_reverses_old_planning()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var orderRepository = new OrderRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 20, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
+        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-UNLINK-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        await service.UpdateAsync(orderId, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-UNLINK-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa sem vinculo",
+                    Quantity = 2,
+                    UnitPriceAmount = 10
+                }
+            ]
+        });
+
+        var loaded = await orderRepository.GetByIdAsync(orderId);
+
+        Assert.Equal(20, await stockMovementRepository.GetBalanceAsync(material.Id));
+        Assert.Empty(await productionTaskRepository.ListByOrderAsync(orderId));
+        Assert.Equal(OrderStatus.Normalized, loaded?.Status);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_delete_reverses_planned_stock_and_removes_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var orderRepository = new OrderRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 20, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-DELETE-001",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        await service.DeleteAsync(orderId);
+
+        Assert.Null(await orderRepository.GetByIdAsync(orderId));
+        Assert.Empty(await productionTaskRepository.ListByOrderAsync(orderId));
+        Assert.Equal(20, await stockMovementRepository.GetBalanceAsync(material.Id));
+    }
+
+    [Fact]
+    public async Task Manual_order_service_blocks_update_when_production_started()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 20, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
+        var orderId = await service.CreateAsync(new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-STARTED-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+        var task = Assert.Single(await productionTaskRepository.ListByOrderAsync(orderId));
+        task.Start();
+        await productionTaskRepository.UpdateAsync(task);
+        await dbContext.SaveChangesAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateAsync(orderId, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-STARTED-001",
+            ShippingDate = shippingDate,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 1,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        }));
+
+        Assert.Contains("producao ja foi iniciada", exception.Message);
     }
 
     [Fact]
@@ -246,6 +476,7 @@ public sealed class ManualOperationsTests
             NullLogger<OrderProductionPlanningService>.Instance);
         var controller = new OrdersController(
             new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
+            CreateManualOrderService(dbContext),
             new EmptyOrderImportPipeline(),
             planningService,
             new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
@@ -533,6 +764,7 @@ public sealed class ManualOperationsTests
             NullLogger<OrderProductionPlanningService>.Instance);
         var controller = new OrdersController(
             new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
+            CreateManualOrderService(dbContext),
             new EmptyOrderImportPipeline(),
             planningService,
             new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
@@ -572,6 +804,9 @@ public sealed class ManualOperationsTests
             orderRepository,
             orderSourceRepository,
             productRepository,
+            productionTaskRepository,
+            stockMovementRepository,
+            new ShipmentRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
