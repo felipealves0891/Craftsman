@@ -62,6 +62,7 @@ builder.Services.AddScoped<E2EDatabaseResetter>();
 builder.Services.AddScoped<E2EIdentitySeeder>();
 builder.Services.AddScoped<E2EOrderScenarioSeeder>();
 builder.Services.AddScoped<E2EManualOrderScenarioSeeder>();
+builder.Services.AddScoped<E2EProductCatalogScenarioSeeder>();
 
 var app = builder.Build();
 

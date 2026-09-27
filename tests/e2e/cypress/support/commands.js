@@ -31,3 +31,7 @@ Cypress.Commands.add('seedOrdersScenario', scenario => {
 Cypress.Commands.add('seedManualOrdersScenario', scenario => {
   return cy.request('POST', '/__e2e/manual-orders/scenario', { scenario }).then(response => response.body)
 })
+
+Cypress.Commands.add('seedProductsScenario', scenario => {
+  return cy.request('POST', '/__e2e/products/scenario', { scenario }).then(response => response.body)
+})

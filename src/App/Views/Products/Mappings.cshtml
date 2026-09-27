@@ -13,21 +13,21 @@
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <div class="col-md-3">
         <label asp-for="Source" class="form-label"></label>
-        <input asp-for="Source" class="form-control" />
+        <input asp-for="Source" class="form-control" data-cy="mapping-source" />
         <span asp-validation-for="Source" class="text-danger"></span>
     </div>
     <div class="col-md-4">
         <label asp-for="ExternalItemId" class="form-label"></label>
-        <input asp-for="ExternalItemId" class="form-control" />
+        <input asp-for="ExternalItemId" class="form-control" data-cy="mapping-external-item" />
         <span asp-validation-for="ExternalItemId" class="text-danger"></span>
     </div>
     <div class="col-md-3">
         <label asp-for="ProductId" class="form-label"></label>
-        <select asp-for="ProductId" asp-items="products" class="form-select"></select>
+        <select asp-for="ProductId" asp-items="products" class="form-select" data-cy="mapping-product"></select>
         <span asp-validation-for="ProductId" class="text-danger"></span>
     </div>
     <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Adicionar</button>
+        <button type="submit" class="btn btn-primary w-100" data-cy="mapping-save">Adicionar</button>
     </div>
 </form>
 

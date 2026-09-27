@@ -48,6 +48,15 @@ public static class E2EEndpoints
             return Results.Ok(scenario);
         });
 
+        group.MapPost("/products/scenario", async (
+            E2EProductCatalogScenarioRequest request,
+            E2EProductCatalogScenarioSeeder seeder,
+            CancellationToken cancellationToken) =>
+        {
+            var scenario = await seeder.SeedAsync(request.Scenario, cancellationToken);
+            return Results.Ok(scenario);
+        });
+
         group.MapPost("/login", async (
             E2ELoginRequest request,
             E2EIdentitySeeder identitySeeder,

@@ -6,13 +6,13 @@
     </div>
     <div class="page-actions">
         <a href="/Products/Mappings" class="btn btn-outline-secondary">Mapeamentos</a>
-        <a href="/Products/Create" class="btn btn-primary">Novo produto</a>
+        <a href="/Products/Create" class="btn btn-primary" data-cy="product-create">Novo produto</a>
     </div>
 </section>
 
 <div class="table-panel">
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" data-cy="products-list">
             <thead>
                 <tr>
                     <th>Nome</th>
@@ -39,7 +39,7 @@
                 {
                     @foreach (var product in Products)
                     {
-                        <tr>
+                        <tr data-cy="product-row">
                             <td><strong>@product.Name</strong></td>
                             <td><span class="status-badge status-@product.StatusCss">@product.Status</span></td>
                             <td>@product.ProductionDurationHours hora(s)</td>
@@ -47,8 +47,8 @@
                             <td>@product.BillOfMaterialsItems item(ns)</td>
                             <td class="text-right">
                                 <div class="table-actions">
-                                    <a href="/Products/BillOfMaterials/@product.Id" class="btn btn-sm btn-outline-secondary">Ficha tecnica</a>
-                                    <a href="/Products/Edit/@product.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="/Products/BillOfMaterials/@product.Id" class="btn btn-sm btn-outline-secondary" data-cy="product-bom">Ficha tecnica</a>
+                                    <a href="/Products/Edit/@product.Id" class="btn btn-sm btn-outline-primary" data-cy="product-edit">Editar</a>
                                 </div>
                             </td>
                         </tr>
