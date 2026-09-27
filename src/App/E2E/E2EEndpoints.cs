@@ -30,6 +30,15 @@ public static class E2EEndpoints
         group.MapGet("/credentials", (E2EIdentitySeeder identitySeeder)
             => Results.Ok(new { users = identitySeeder.GetConfiguredUsers() }));
 
+        group.MapPost("/orders/scenario", async (
+            E2EOrderScenarioRequest request,
+            E2EOrderScenarioSeeder seeder,
+            CancellationToken cancellationToken) =>
+        {
+            var scenario = await seeder.SeedAsync(request.Scenario, cancellationToken);
+            return Results.Ok(scenario);
+        });
+
         group.MapPost("/login", async (
             E2ELoginRequest request,
             E2EIdentitySeeder identitySeeder,

@@ -60,6 +60,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<IdentitySeeder>();
 builder.Services.AddScoped<E2EDatabaseResetter>();
 builder.Services.AddScoped<E2EIdentitySeeder>();
+builder.Services.AddScoped<E2EOrderScenarioSeeder>();
 
 var app = builder.Build();
 

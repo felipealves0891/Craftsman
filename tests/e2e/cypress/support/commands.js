@@ -23,3 +23,7 @@ Cypress.Commands.add('loginThroughUi', (email, password, rememberMe = false) => 
 
   cy.getByCy('login-submit').click()
 })
+
+Cypress.Commands.add('seedOrdersScenario', scenario => {
+  return cy.request('POST', '/__e2e/orders/scenario', { scenario }).then(response => response.body)
+})
