@@ -1,4 +1,5 @@
 using Craftsman.App.Services;
+using Craftsman.App.E2E;
 using Craftsman.App.Security;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Security;
@@ -25,6 +26,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, HttpCurrentUserContext>();
 
 builder.Services.Configure<IdentitySeedOptions>(builder.Configuration.GetSection(IdentitySeedOptions.SectionName));
+builder.Services.Configure<E2EUserOptions>(builder.Configuration.GetSection(E2EUserOptions.SectionName));
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
     {
         options.User.RequireUniqueEmail = true;
@@ -56,6 +58,8 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddScoped<IdentitySeeder>();
+builder.Services.AddScoped<E2EDatabaseResetter>();
+builder.Services.AddScoped<E2EIdentitySeeder>();
 
 var app = builder.Build();
 
@@ -68,9 +72,9 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 });
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("E2E"))
 {
-    Console.WriteLine("Running in Development environment. Applying migrations and seeding data...");
+    Console.WriteLine($"Running in {app.Environment.EnvironmentName} environment. Applying migrations and seeding data...");
 
     app.UseDeveloperExceptionPage();
     using var scope = app.Services.CreateScope();
@@ -78,8 +82,16 @@ if (app.Environment.IsDevelopment())
     await using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
 
-    var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
-    await identitySeeder.SeedAsync();
+    if (app.Environment.IsDevelopment())
+    {
+        var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+        await identitySeeder.SeedAsync();
+    }
+    else
+    {
+        var e2eIdentitySeeder = scope.ServiceProvider.GetRequiredService<E2EIdentitySeeder>();
+        await e2eIdentitySeeder.SeedAsync();
+    }
 }
 else
 {
@@ -94,6 +106,15 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellationToken) =>
+    await dbContext.Database.CanConnectAsync(cancellationToken) ? Results.Ok() : Results.StatusCode(StatusCodes.Status503ServiceUnavailable))
+    .AllowAnonymous();
+
+if (app.Environment.IsEnvironment("E2E"))
+{
+    app.MapE2EEndpoints();
+}
 
 app.MapControllerRoute(
     name: "default",

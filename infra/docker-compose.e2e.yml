@@ -1,0 +1,16 @@
+name: craftsman-e2e
+services:
+  postgres_e2e:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: craftsman_e2e
+      POSTGRES_USER: craftsman
+      POSTGRES_PASSWORD: craftsman_dev_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U craftsman -d craftsman_e2e"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

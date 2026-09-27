@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "test:e2e": "node scripts/run-e2e.js",
+    "e2e": "cypress run",
+    "e2e:open": "cypress open"
+  },
+  "devDependencies": {
+    "cypress": "^13.17.0"
+  }
+}
