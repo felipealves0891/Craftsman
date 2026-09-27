@@ -27,3 +27,7 @@ Cypress.Commands.add('loginThroughUi', (email, password, rememberMe = false) => 
 Cypress.Commands.add('seedOrdersScenario', scenario => {
   return cy.request('POST', '/__e2e/orders/scenario', { scenario }).then(response => response.body)
 })
+
+Cypress.Commands.add('seedManualOrdersScenario', scenario => {
+  return cy.request('POST', '/__e2e/manual-orders/scenario', { scenario }).then(response => response.body)
+})

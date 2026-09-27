@@ -35,10 +35,10 @@
     <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
     <div class="col-md-9">
         <label for="Name" class="form-label">Nova origem</label>
-        <input id="Name" name="Name" class="form-control" placeholder="Ex.: WhatsApp" />
+        <input id="Name" name="Name" class="form-control" placeholder="Ex.: WhatsApp" data-cy="order-source-create-name" />
     </div>
     <div class="col-md-3 d-flex align-items-end">
-        <button type="submit" class="btn btn-outline-primary w-100">Adicionar origem</button>
+        <button type="submit" class="btn btn-outline-primary w-100" data-cy="order-source-create-submit">Adicionar origem</button>
     </div>
 </form>
 
@@ -59,7 +59,7 @@
                 <div class="row">
                     <div class="col-md-4 form-group">
                         <label for="Source" class="form-label">Origem</label>
-                        <select id="Source" required name="Source" class="form-select">
+                        <select id="Source" required name="Source" class="form-select" data-cy="manual-order-source">
                             <option value="">Selecione</option>
                             @foreach (var source in OrderSources)
                             {
@@ -69,11 +69,11 @@
                     </div>
                     <div class="col-md-4 form-group">
                         <label for="Reference" class="form-label">Referencia manual</label>
-                        <input id="Reference" required name="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Reference" />
+                        <input id="Reference" required name="Reference" class="form-control" placeholder="Ex.: WhatsApp 1024" value="@Reference" data-cy="manual-order-reference" />
                     </div>
                     <div class="col-md-4 form-group">
                         <label for="ShippingDate" class="form-label">Data de envio</label>
-                        <input id="ShippingDate" required name="ShippingDate" type="date" min="@MinimumShippingDate" value="@ShippingDate" class="form-control" />
+                        <input id="ShippingDate" required name="ShippingDate" type="date" min="@MinimumShippingDate" value="@ShippingDate" class="form-control" data-cy="manual-order-shipping-date" />
                     </div>
                 </div>
             </section>
@@ -87,7 +87,7 @@
                             <p>Adicione os produtos vendidos e vincule ao catalogo interno quando possivel.</p>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-outline-primary" id="add-order-item">
+                    <button type="button" class="btn btn-outline-primary" id="add-order-item" data-cy="manual-order-add-item">
                         <i class="fas fa-plus fa-sm mr-1"></i>Adicionar item
                     </button>
                 </div>
@@ -102,7 +102,7 @@
                                     <span class="manual-item-kicker">Item <span data-item-number>@(i + 1)</span></span>
                                     <strong data-item-title>Novo item</strong>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-item data-cy="manual-order-remove-item">
                                     <i class="fas fa-trash-alt fa-sm mr-1"></i>Remover
                                 </button>
                             </div>
@@ -110,7 +110,7 @@
                             <div class="manual-item-grid">
                                 <div class="form-group manual-item-product">
                                     <label class="form-label" for="Items_@(i)__ProductId">Produto interno</label>
-                                    <select required id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field>
+                                    <select required id="Items_@(i)__ProductId" name="Items[@i].ProductId" class="form-select" data-item-field data-cy="manual-order-item-product">
                                         <option value="">Sem vinculo</option>
                                         @foreach (var product in Products)
                                         {
@@ -120,19 +120,19 @@
                                 </div>
                                 <div class="form-group manual-item-description">
                                     <label class="form-label" for="Items_@(i)__Description">Observacao</label>
-                                    <textarea id="Items_@(i)__Description" name="Items[@i].Description" class="form-control" rows="3" placeholder="Observacoes do item vendido" data-item-field data-description-field>@item.Description</textarea>
+                                    <textarea id="Items_@(i)__Description" name="Items[@i].Description" class="form-control" rows="3" placeholder="Observacoes do item vendido" data-item-field data-description-field data-cy="manual-order-item-description">@item.Description</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__Quantity">Quantidade</label>
-                                    <input required min="1" id="Items_@(i)__Quantity" name="Items[@i].Quantity" value="@item.Quantity" class="form-control" data-item-field data-quantity-field />
+                                    <input required min="1" id="Items_@(i)__Quantity" name="Items[@i].Quantity" value="@item.Quantity" class="form-control" data-item-field data-quantity-field data-cy="manual-order-item-quantity" />
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="Items_@(i)__UnitPriceAmount">Valor unitario</label>
-                                    <input required min="1" id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input />
+                                    <input required min="1" id="Items_@(i)__UnitPriceAmount" name="Items[@i].UnitPriceAmount" value="@item.UnitPriceAmount" type="text" inputmode="decimal" class="form-control" data-item-field data-price-field data-currency-input data-cy="manual-order-item-unit-price" />
                                 </div>                                
                                 <div class="manual-item-total">
                                     <span>Total do item</span>
-                                    <strong data-item-total>R$ 0,00</strong>
+                                    <strong data-item-total data-cy="manual-order-item-total">R$ 0,00</strong>
                                 </div>
                             </div>
                         </div>
@@ -151,10 +151,10 @@
                     </div>
                     <div>
                         <dt>Total estimado</dt>
-                        <dd id="manual-order-total">R$ 0,00</dd>
+                        <dd id="manual-order-total" data-cy="manual-order-total">R$ 0,00</dd>
                     </div>
                 </dl>
-                <button type="submit" class="btn btn-primary btn-block">
+                <button type="submit" class="btn btn-primary btn-block" data-cy="manual-order-save">
                     <i class="fas fa-save fa-sm mr-1"></i>@SubmitLabel
                 </button>
                 <a href="/Orders" class="btn btn-outline-secondary btn-block">Cancelar</a>

@@ -29,7 +29,7 @@
             <tbody>
                 @foreach (var item in Items)
                 {
-                    <tr>
+                    <tr data-cy="manual-order-link-row">
                         <td>@item.ExternalItemId</td>
                         <td>@item.Description</td>
                         <td>@item.Quantity</td>
@@ -40,13 +40,13 @@
                                 <input type="hidden" name="orderId" value="@OrderId" />
                                 <input type="hidden" name="itemId" value="@item.Id" />
                                 <input type="search" class="form-control product-link-filter" placeholder="Filtrar" aria-label="Filtrar produtos internos" />
-                                <select name="productId" class="form-select">
+                                <select name="productId" class="form-select" data-cy="manual-order-link-product">
                                     @foreach (var product in Products)
                                     {
                                         <option value="@product.Value" selected="@product.Selected">@product.Text</option>
                                     }
                                 </select>
-                                <button type="submit" class="btn btn-primary">Vincular</button>
+                                <button type="submit" class="btn btn-primary" data-cy="manual-order-link-submit">Vincular</button>
                             </form>
                         </td>
                     </tr>
