@@ -57,6 +57,16 @@ public sealed class ShipmentRepository : IShipmentRepository
         cache?.RemoveByPrefix("shipping:");
     }
 
+    public async Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.Shipments
+            .Where(shipment => shipment.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.Shipments.RemoveRange(entities);
+        cache?.RemoveByPrefix("shipping:");
+    }
+
     private async Task<IReadOnlyCollection<Shipment>> ListCoreAsync(ShipmentStatus? status, CancellationToken cancellationToken)
     {
         var query = dbContext.Shipments.AsQueryable();

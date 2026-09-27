@@ -99,11 +99,11 @@ public sealed class OrdersController : Controller
     [HttpPost]
     [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, Guid? processId, CancellationToken cancellationToken)
     {
         try
         {
-            await manualOrderService.DeleteAsync(id, cancellationToken);
+            await manualOrderService.DeleteAsync(id, processId, cancellationToken);
             TempData["Success"] = "Pedido excluido.";
             return RedirectToAction(nameof(Index));
         }

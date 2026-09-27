@@ -50,6 +50,12 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
         {
             return Task.FromResult<IReadOnlyCollection<FinancialSettlement>>(Settlements.AsReadOnly());
         }
+
+        public Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+        {
+            Settlements.RemoveAll(settlement => settlement.OrderId == orderId);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeSettlementCalculator : ISettlementCalculator

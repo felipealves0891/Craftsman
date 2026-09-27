@@ -88,6 +88,16 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         cache?.RemoveByPrefix("production:");
     }
 
+    public async Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.ProductionTasks
+            .Where(task => task.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.ProductionTasks.RemoveRange(entities);
+        cache?.RemoveByPrefix("production:");
+    }
+
     private async Task<IReadOnlyCollection<ProductionTask>> ListCoreAsync(
         ProductionTaskStatus? status,
         DateOnly? plannedDate,

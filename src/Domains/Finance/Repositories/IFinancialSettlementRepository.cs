@@ -9,4 +9,6 @@ public interface IFinancialSettlementRepository
     Task<IReadOnlyCollection<FinancialSettlement>> ListAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken cancellationToken = default);
 
     Task AddAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default);
+
+    Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

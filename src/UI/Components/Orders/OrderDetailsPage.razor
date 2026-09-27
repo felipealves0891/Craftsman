@@ -9,11 +9,12 @@
         @if (CanChangeOrder)
         {
             <a href="/ManualOrders/Edit/@OrderId" class="btn btn-outline-primary">Editar</a>
-            <form action="/Orders/Delete/@OrderId" method="post">
-                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
-                <button type="submit" class="btn btn-outline-danger">Excluir</button>
-            </form>
         }
+        <form action="/Orders/Delete/@OrderId" method="post">
+            <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+            <input name="processId" type="hidden" value="@DeleteProcessId" />
+            <button type="submit" class="btn btn-outline-danger">Excluir</button>
+        </form>
         @if (!ProductionTasks.Any())
         {
             <form action="/Orders/SendToProduction/@OrderId" method="post">
@@ -178,6 +179,7 @@
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public string? StockAlertsMessage { get; set; }
     [Parameter] public bool CanChangeOrder { get; set; }
+    [Parameter] public Guid DeleteProcessId { get; set; }
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];
