@@ -11,4 +11,6 @@ public interface IShipmentRepository
     Task AddAsync(Shipment shipment, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default);
+
+    Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

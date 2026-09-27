@@ -1,4 +1,10 @@
 @{
+    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    string titleSufix = "Craftsman";
+
+    if(!string.IsNullOrEmpty(env) && env != "Production")
+        titleSufix = $"{env}";    
+
     var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
 
@@ -20,7 +26,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>@ViewData["Title"] - Craftsman</title>
+    <title>@ViewData["Title"] - @titleSufix</title>
 
     <link href="~/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css" />
     <link href="~/css/sb-admin-2/sb-admin-2.min.css" rel="stylesheet" />

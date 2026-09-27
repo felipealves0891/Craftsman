@@ -70,6 +70,15 @@ public sealed class StockMovementRepository : IStockMovementRepository
         return movements.Select(ToModel).ToList().AsReadOnly();
     }
 
+    public async Task<bool> ExistsByBusinessReferenceAsync(
+        string businessReference,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.StockMovements
+            .AsNoTracking()
+            .AnyAsync(movement => movement.BusinessReference == businessReference, cancellationToken);
+    }
+
     public async Task<decimal> GetAverageUnitCostAsync(Guid rawMaterialId, CancellationToken cancellationToken = default)
     {
         var inboundMovements = await dbContext.StockMovements

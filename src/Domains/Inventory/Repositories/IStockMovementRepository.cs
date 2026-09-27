@@ -14,5 +14,7 @@ public interface IStockMovementRepository
 
     Task<IReadOnlyCollection<StockMovement>> ListByBusinessReferenceAsync(string businessReference, CancellationToken cancellationToken = default);
 
+    Task<bool> ExistsByBusinessReferenceAsync(string businessReference, CancellationToken cancellationToken = default);
+
     Task<decimal> GetAverageUnitCostAsync(Guid rawMaterialId, CancellationToken cancellationToken = default);
 }

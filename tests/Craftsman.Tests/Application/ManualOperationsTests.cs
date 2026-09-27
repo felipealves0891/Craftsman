@@ -3,6 +3,7 @@ using Craftsman.App.Controllers;
 using Craftsman.App.Services;
 using Craftsman.Domain;
 using Craftsman.Domain.Events;
+using Craftsman.Domain.Finance.Entities;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Services;
 using Craftsman.Domain.Integration.Services;
@@ -11,6 +12,7 @@ using Craftsman.Domain.ProductCatalog.Services;
 using Craftsman.Domain.Production.Services;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
+using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Persistence.Entities;
 using Craftsman.Infra.Repositories;
@@ -44,6 +46,8 @@ public sealed class ManualOperationsTests
             productionTaskRepository,
             stockMovementRepository,
             new ShipmentRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
+            new OrderDeletionProcessRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
@@ -52,7 +56,8 @@ public sealed class ManualOperationsTests
                 new RecordingDomainEventPublisher(),
                 NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
-            new RecordingDomainEventPublisher());
+            new RecordingDomainEventPublisher(),
+            AnonymousUserContext());
 
         var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
         var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
@@ -174,6 +179,8 @@ public sealed class ManualOperationsTests
             productionTaskRepository,
             stockMovementRepository,
             new ShipmentRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
+            new OrderDeletionProcessRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
@@ -182,7 +189,8 @@ public sealed class ManualOperationsTests
                 publisher,
                 NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
-            publisher);
+            publisher,
+            AnonymousUserContext());
 
         var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
         {
@@ -373,6 +381,127 @@ public sealed class ManualOperationsTests
         Assert.Null(await orderRepository.GetByIdAsync(orderId));
         Assert.Empty(await productionTaskRepository.ListByOrderAsync(orderId));
         Assert.Equal(20, await stockMovementRepository.GetBalanceAsync(material.Id));
+    }
+
+    [Fact]
+    public async Task Manual_order_service_delete_removes_operational_references_and_records_process_audit()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var settlementRepository = new FinancialSettlementRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 20, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-DELETE-FULL-001",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Bolsa",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        var task = Assert.Single(await productionTaskRepository.ListByOrderAsync(orderId));
+        task.Start();
+        task.Complete();
+        await productionTaskRepository.UpdateAsync(task);
+        await shipmentRepository.AddAsync(new Shipment(Guid.NewGuid(), orderId, "TRACK-1", ShipmentStatus.Delivered));
+        await settlementRepository.AddAsync(new FinancialSettlement(Guid.NewGuid(), orderId, 20, 4, 0));
+        await dbContext.SaveChangesAsync();
+
+        var processId = Guid.NewGuid();
+        await service.DeleteAsync(orderId, processId);
+
+        Assert.Null(await new OrderRepository(dbContext).GetByIdAsync(orderId));
+        Assert.Empty(await productionTaskRepository.ListByOrderAsync(orderId));
+        Assert.DoesNotContain((await shipmentRepository.ListAsync()).ToList(), shipment => shipment.OrderId == orderId);
+        Assert.Null(await settlementRepository.GetByOrderIdAsync(orderId));
+        Assert.Equal(20, await stockMovementRepository.GetBalanceAsync(material.Id));
+
+        var deletionProcess = Assert.Single(await dbContext.OrderDeletionProcesses.ToListAsync());
+        Assert.Equal(processId, deletionProcess.Id);
+        Assert.Equal(orderId, deletionProcess.OrderId);
+        Assert.Equal("tester@example.com", deletionProcess.RequestedByUserName);
+        Assert.Equal("Manual", deletionProcess.Source);
+        Assert.Equal("MAN-DELETE-FULL-001", deletionProcess.ExternalOrderId);
+        Assert.Equal(1, deletionProcess.ItemCount);
+        Assert.Equal(1, deletionProcess.ProductionTaskCount);
+        Assert.Equal(1, deletionProcess.ShipmentCount);
+        Assert.True(deletionProcess.HadFinancialSettlement);
+        Assert.NotNull(deletionProcess.CompletedAt);
+        Assert.Contains("Bolsa", deletionProcess.ItemSummaryJson);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_delete_retry_with_same_process_does_not_duplicate_compensation()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = CreateManualOrderService(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var material = new RawMaterial(Guid.NewGuid(), "Linha", "m");
+        var product = new Product(Guid.NewGuid(), "Carteira", billOfMaterials: [new BillOfMaterialsItem(material.Id, 3)]);
+
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        await rawMaterialRepository.AddAsync(material);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), material.Id, StockMovementType.Inbound, 30, "Compra", null));
+        await productRepository.AddAsync(product);
+        await dbContext.SaveChangesAsync();
+
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-DELETE-RETRY-001",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Carteira",
+                    Quantity = 2,
+                    UnitPriceAmount = 10,
+                    ProductId = product.Id
+                }
+            ]
+        });
+
+        var outboundMovement = Assert.Single(
+            await stockMovementRepository.ListAsync(),
+            movement => movement.Type == StockMovementType.Outbound);
+        var processId = Guid.NewGuid();
+
+        await service.DeleteAsync(orderId, processId);
+        await service.DeleteAsync(orderId, processId);
+
+        var compensationReference = $"order-delete:{processId}:{outboundMovement.Id}";
+        var compensations = (await stockMovementRepository.ListAsync())
+            .Where(movement => movement.BusinessReference == compensationReference)
+            .ToList();
+
+        Assert.Single(compensations);
+        Assert.Single(await dbContext.OrderDeletionProcesses.ToListAsync());
+        Assert.Equal(30, await stockMovementRepository.GetBalanceAsync(material.Id));
     }
 
     [Fact]
@@ -808,6 +937,8 @@ public sealed class ManualOperationsTests
             productionTaskRepository,
             stockMovementRepository,
             new ShipmentRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
+            new OrderDeletionProcessRepository(dbContext),
             new OrderProductionPlanningService(
                 orderRepository,
                 new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
@@ -816,7 +947,23 @@ public sealed class ManualOperationsTests
                 publisher,
                 NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
-            publisher);
+            publisher,
+            UserContext());
+    }
+
+    private static ICurrentUserContext AnonymousUserContext()
+    {
+        return new StaticCurrentUserContext(CurrentUserInfo.Anonymous());
+    }
+
+    private static ICurrentUserContext UserContext()
+    {
+        return new StaticCurrentUserContext(new CurrentUserInfo(
+            42,
+            "tester@example.com",
+            ["Operador"],
+            "test-correlation",
+            "/Orders/Delete"));
     }
 
     private static Task<Guid> CreateManualOrderAsync(ManualOrderService service, ManualOrderInputModel input)

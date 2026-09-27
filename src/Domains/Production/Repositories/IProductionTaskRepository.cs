@@ -15,4 +15,6 @@ public interface IProductionTaskRepository
     Task UpdateAsync(ProductionTask productionTask, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

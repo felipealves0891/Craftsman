@@ -1,6 +1,7 @@
 using Craftsman.App.Models;
 using Craftsman.Domain;
 using Craftsman.Domain.Events;
+using Craftsman.Domain.Finance.Repositories;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.ProductCatalog.Repositories;
@@ -12,12 +13,16 @@ using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Shipping.Repositories;
+using Craftsman.Infra.Security;
 
 namespace Craftsman.App.Services;
 
 public sealed class ManualOrderService
 {
     private readonly IDomainEventPublisher domainEventPublisher;
+    private readonly ICurrentUserContext currentUserContext;
+    private readonly IFinancialSettlementRepository financialSettlementRepository;
+    private readonly IOrderDeletionProcessRepository orderDeletionProcessRepository;
     private readonly IOrderRepository orderRepository;
     private readonly IOrderSourceCatalogRepository orderSourceCatalogRepository;
     private readonly OrderProductionPlanningService productionPlanningService;
@@ -34,9 +39,12 @@ public sealed class ManualOrderService
         IProductionTaskRepository productionTaskRepository,
         IStockMovementRepository stockMovementRepository,
         IShipmentRepository shipmentRepository,
+        IFinancialSettlementRepository financialSettlementRepository,
+        IOrderDeletionProcessRepository orderDeletionProcessRepository,
         OrderProductionPlanningService productionPlanningService,
         IUnitOfWork unitOfWork,
-        IDomainEventPublisher domainEventPublisher)
+        IDomainEventPublisher domainEventPublisher,
+        ICurrentUserContext currentUserContext)
     {
         this.orderRepository = orderRepository;
         this.orderSourceCatalogRepository = orderSourceCatalogRepository;
@@ -44,9 +52,12 @@ public sealed class ManualOrderService
         this.productionTaskRepository = productionTaskRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.shipmentRepository = shipmentRepository;
+        this.financialSettlementRepository = financialSettlementRepository;
+        this.orderDeletionProcessRepository = orderDeletionProcessRepository;
         this.productionPlanningService = productionPlanningService;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
+        this.currentUserContext = currentUserContext;
     }
 
     public async Task<ManualOrderInputModel?> GetInputAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -183,14 +194,53 @@ public sealed class ManualOrderService
         await productionPlanningService.TryPlanAsync(order.Id, cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid orderId, Guid? processId = null, CancellationToken cancellationToken = default)
     {
-        _ = await orderRepository.GetByIdAsync(orderId, cancellationToken)
-            ?? throw new InvalidOperationException("Pedido nao encontrado.");
+        var deletionProcessId = processId.GetValueOrDefault(Guid.NewGuid());
+        var existingProcess = await orderDeletionProcessRepository.GetByIdAsync(deletionProcessId, cancellationToken);
+        var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
 
-        await EnsureOrderCanChangeAsync(orderId, cancellationToken);
-        await ReversePlannedProductionAsync(orderId, cancellationToken);
+        if (existingProcess is not null && existingProcess.OrderId != orderId)
+        {
+            throw new InvalidOperationException("Processo de exclusao nao pertence ao pedido informado.");
+        }
+
+        if (order is null)
+        {
+            if (existingProcess is not null && existingProcess.OrderId == orderId)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException("Pedido nao encontrado.");
+        }
+
+        var productionTasks = await productionTaskRepository.ListByOrderAsync(orderId, cancellationToken);
+        var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
+        var orderShipments = shipments.Where(shipment => shipment.OrderId == orderId).ToList();
+        var financialSettlement = await financialSettlementRepository.GetByOrderIdAsync(orderId, cancellationToken);
+
+        var deletionProcess = existingProcess ?? CreateDeletionProcess(
+            deletionProcessId,
+            order,
+            productionTasks.Count,
+            orderShipments.Count,
+            financialSettlement is not null);
+
+        if (existingProcess is null)
+        {
+            await orderDeletionProcessRepository.AddAsync(deletionProcess, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        await CompensateProductionStockAsync(deletionProcess.Id, productionTasks, cancellationToken);
+        await financialSettlementRepository.DeleteByOrderAsync(orderId, cancellationToken);
+        await shipmentRepository.DeleteByOrderAsync(orderId, cancellationToken);
+        await productionTaskRepository.DeleteByOrderAsync(orderId, cancellationToken);
         await orderRepository.DeleteAsync(orderId, cancellationToken);
+
+        deletionProcess.MarkCompleted(DateTimeOffset.UtcNow);
+        await orderDeletionProcessRepository.UpdateAsync(deletionProcess, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
@@ -347,6 +397,71 @@ public sealed class ManualOrderService
             }
 
             await productionTaskRepository.DeleteAsync(productionTask.Id, cancellationToken);
+        }
+    }
+
+    private OrderDeletionProcess CreateDeletionProcess(
+        Guid processId,
+        Order order,
+        int productionTaskCount,
+        int shipmentCount,
+        bool hadFinancialSettlement)
+    {
+        var currentUser = currentUserContext.Current;
+        var itemSummary = order.Items.Select(item => new OrderDeletionProcessItemSummary(
+            item.Id,
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.ProductId));
+
+        return new OrderDeletionProcess(
+            processId,
+            order.Id,
+            currentUser.UserId,
+            currentUser.UserName,
+            DateTimeOffset.UtcNow,
+            order.Origin.Source,
+            order.Origin.ExternalOrderId,
+            order.Status.ToString(),
+            order.ShippingDate,
+            order.Items.Count,
+            OrderDeletionProcess.SerializeItemSummary(itemSummary),
+            productionTaskCount,
+            shipmentCount,
+            hadFinancialSettlement);
+    }
+
+    private async Task CompensateProductionStockAsync(
+        Guid processId,
+        IReadOnlyCollection<ProductionTask> productionTasks,
+        CancellationToken cancellationToken)
+    {
+        foreach (var productionTask in productionTasks)
+        {
+            var movements = await stockMovementRepository.ListByBusinessReferenceAsync(
+                productionTask.Id.ToString(),
+                cancellationToken);
+
+            foreach (var movement in movements.Where(movement => movement.Type == StockMovementType.Outbound))
+            {
+                var businessReference = $"order-delete:{processId}:{movement.Id}";
+                if (await stockMovementRepository.ExistsByBusinessReferenceAsync(businessReference, cancellationToken))
+                {
+                    continue;
+                }
+
+                await stockMovementRepository.AddAsync(
+                    new StockMovement(
+                        Guid.NewGuid(),
+                        movement.RawMaterialId,
+                        StockMovementType.Inbound,
+                        movement.Quantity,
+                        "Order deletion stock compensation",
+                        businessReference,
+                        unitCostAmount: movement.UnitCostAmount),
+                    cancellationToken);
+            }
         }
     }
 }

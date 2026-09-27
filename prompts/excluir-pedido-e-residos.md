@@ -1,0 +1,1 @@
+Faça uma analise do que é necessario e quais os riscos de adicionar a opção de excluir um pedido e referencias a ele, sem deixar o sistema inconsistente, recalculando o que for preciso.

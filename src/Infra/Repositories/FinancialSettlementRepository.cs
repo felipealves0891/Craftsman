@@ -42,6 +42,16 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
         cache?.RemoveByPrefix("finance:");
     }
 
+    public async Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.FinancialSettlements
+            .Where(settlement => settlement.OrderId == orderId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.FinancialSettlements.RemoveRange(entities);
+        cache?.RemoveByPrefix("finance:");
+    }
+
     private async Task<IReadOnlyCollection<FinancialSettlement>> ListCoreAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken)
     {
         var query = dbContext.FinancialSettlements.AsQueryable();
