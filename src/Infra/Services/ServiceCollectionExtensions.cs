@@ -37,8 +37,6 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("CraftsmanDb")
             ?? throw new InvalidOperationException("Connection string 'CraftsmanDb' was not configured.");
 
-        Console.WriteLine($"Using connection string: {connectionString}");
-
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddDataProtection();
         services.AddMemoryCache();
