@@ -37,6 +37,8 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("CraftsmanDb")
             ?? throw new InvalidOperationException("Connection string 'CraftsmanDb' was not configured.");
 
+        Console.WriteLine($"Using connection string: {connectionString}");
+
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddDataProtection();
         services.AddMemoryCache();
@@ -78,6 +80,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IShopeeSigner, ShopeeSigner>();
         services.AddScoped<IShopeeShopTokenRepository, ShopeeShopTokenRepository>();
         services.AddScoped<IShopeeTokenService, ShopeeTokenService>();
+
         services.AddHttpClient<IShopeeClient, ShopeeClient>((serviceProvider, client) =>
         {
             var shopeeOptions = serviceProvider.GetRequiredService<IOptions<ShopeeOptions>>().Value;

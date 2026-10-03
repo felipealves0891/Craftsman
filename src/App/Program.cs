@@ -3,7 +3,6 @@ using Craftsman.App.Security;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Security;
 using Craftsman.Infra.Services;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +10,6 @@ using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
