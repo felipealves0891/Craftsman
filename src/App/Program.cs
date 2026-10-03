@@ -12,15 +12,6 @@ using System.Globalization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsoleFormatter<
-    Microsoft.Extensions.Logging.Console.ConsoleFormatter,
-    Microsoft.Extensions.Logging.Console.ConsoleFormatterOptions>(x =>
-{
-    x.IncludeScopes = true;
-    x.TimestampFormat = "[yyyy-MM-dd HH:mm:ss] ";
-    x.UseUtcTimestamp = true;
-
-});
 builder.Logging.AddConsole(x =>
 {
     x.FormatterName = "json";
