@@ -37,23 +37,22 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("CraftsmanDb")
             ?? throw new InvalidOperationException("Connection string 'CraftsmanDb' was not configured.");
 
+        Console.WriteLine(connectionString);
+
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddDataProtection();
         services.AddMemoryCache();
+        
         services.TryAddScoped<ICurrentUserContext>(_ => new StaticCurrentUserContext(CurrentUserInfo.Anonymous()));
-        services.AddScoped<IAuditService, AuditService>();
-        services.AddOptions<ShopeeOptions>()
-            .Bind(configuration.GetSection(ShopeeOptions.SectionName))
-            .ValidateOnStart();
+        
         services.AddSingleton<IValidateOptions<ShopeeOptions>, ShopeeOptionsValidator>();
-        services.AddOptions<CorreiosOptions>()
-            .Bind(configuration.GetSection(CorreiosOptions.SectionName))
-            .ValidateOnStart();
         services.AddSingleton<IValidateOptions<CorreiosOptions>, CorreiosOptionsValidator>();
-        services.AddOptions<LoggiOptions>()
-            .Bind(configuration.GetSection(LoggiOptions.SectionName))
-            .ValidateOnStart();
         services.AddSingleton<IValidateOptions<LoggiOptions>, LoggiOptionsValidator>();
+        services.AddSingleton(configuration
+            .GetSection(ProductionScheduleOptions.SectionName)
+            .Get<ProductionScheduleOptions>() ?? new ProductionScheduleOptions());
+
+        services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderDeletionProcessRepository, OrderDeletionProcessRepository>();
@@ -63,9 +62,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRawMaterialRepository, RawMaterialRepository>();
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
         services.AddScoped<IProductionTaskRepository, ProductionTaskRepository>();
-        services.AddSingleton(configuration
-            .GetSection(ProductionScheduleOptions.SectionName)
-            .Get<ProductionScheduleOptions>() ?? new ProductionScheduleOptions());
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<IFinancialSettlementRepository, FinancialSettlementRepository>();
         services.AddScoped<InventoryService>();
@@ -79,6 +75,53 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IShopeeShopTokenRepository, ShopeeShopTokenRepository>();
         services.AddScoped<IShopeeTokenService, ShopeeTokenService>();
 
+        ConfigureOptions(services, configuration);
+        ConfigureHttpClient(services, configuration);
+
+        services.AddScoped<ShippingService>();
+        services.AddScoped<ProductMappingService>();
+        services.AddScoped<IDomainEventPublisher, PersistentDomainEventPublisher>();
+        services.AddScoped<DomainEventRetryService>();
+        services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, OrderNormalizedProductionPlannerHandler>();
+        services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DeliveryConfirmedSettlementHandler>();
+        services.AddSingleton<IApplicationCache, MemoryApplicationCache>();
+
+        return services;
+    }
+
+    private static void ConfigureOptions(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<ShopeeOptions>()
+            .Bind(configuration.GetSection(ShopeeOptions.SectionName))
+            .ValidateOnStart();
+
+        services.AddOptions<CorreiosOptions>()
+            .Bind(configuration.GetSection(CorreiosOptions.SectionName))
+            .ValidateOnStart();
+
+        services.AddOptions<LoggiOptions>()
+            .Bind(configuration.GetSection(LoggiOptions.SectionName))
+            .ValidateOnStart();
+
+        var correiosOptions = configuration.GetSection(CorreiosOptions.SectionName).Get<CorreiosOptions>() ?? new CorreiosOptions();
+        var loggiOptions = configuration.GetSection(LoggiOptions.SectionName).Get<LoggiOptions>() ?? new LoggiOptions();
+        if (loggiOptions.Enabled)
+        {
+            services.AddScoped<IShippingTracker, LoggiShippingTracker>();
+        }
+        else if (correiosOptions.Enabled)
+        {
+            services.AddScoped<IShippingTracker, CorreiosShippingTracker>();
+        }
+        else
+        {
+            services.AddScoped<IShippingTracker, StaticShippingTracker>();
+        }
+    }
+
+    private static void ConfigureHttpClient(IServiceCollection services, IConfiguration configuration)
+    {
+        
         services.AddHttpClient<IShopeeClient, ShopeeClient>((serviceProvider, client) =>
         {
             var shopeeOptions = serviceProvider.GetRequiredService<IOptions<ShopeeOptions>>().Value;
@@ -116,30 +159,5 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = new Uri(loggiOptions.BaseUrl);
             client.Timeout = TimeSpan.FromSeconds(loggiOptions.RequestTimeoutSeconds);
         });
-
-        var correiosOptions = configuration.GetSection(CorreiosOptions.SectionName).Get<CorreiosOptions>() ?? new CorreiosOptions();
-        var loggiOptions = configuration.GetSection(LoggiOptions.SectionName).Get<LoggiOptions>() ?? new LoggiOptions();
-        if (loggiOptions.Enabled)
-        {
-            services.AddScoped<IShippingTracker, LoggiShippingTracker>();
-        }
-        else if (correiosOptions.Enabled)
-        {
-            services.AddScoped<IShippingTracker, CorreiosShippingTracker>();
-        }
-        else
-        {
-            services.AddScoped<IShippingTracker, StaticShippingTracker>();
-        }
-
-        services.AddScoped<ShippingService>();
-        services.AddScoped<ProductMappingService>();
-        services.AddScoped<IDomainEventPublisher, PersistentDomainEventPublisher>();
-        services.AddScoped<DomainEventRetryService>();
-        services.AddScoped<IDomainEventHandler<OrderNormalizedEvent>, OrderNormalizedProductionPlannerHandler>();
-        services.AddScoped<IDomainEventHandler<DeliveryConfirmedEvent>, DeliveryConfirmedSettlementHandler>();
-        services.AddSingleton<IApplicationCache, MemoryApplicationCache>();
-
-        return services;
     }
 }
