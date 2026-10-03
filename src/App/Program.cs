@@ -71,22 +71,21 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 if (app.Environment.IsDevelopment())
 {
     Console.WriteLine("Running in Development environment. Applying migrations and seeding data...");
-
     app.UseDeveloperExceptionPage();
-    using var scope = app.Services.CreateScope();
-
-    await using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-
-    var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
-    await identitySeeder.SeedAsync();
 }
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+using var scope = app.Services.CreateScope();
+
+await using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+await dbContext.Database.MigrateAsync();
+
+var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+await identitySeeder.SeedAsync();
 
 app.UseStaticFiles();
 
