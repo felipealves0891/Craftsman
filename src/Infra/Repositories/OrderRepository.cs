@@ -68,6 +68,9 @@ public sealed class OrderRepository : IOrderRepository
             entity.Status = order.Status.ToString();
             entity.CreatedAt = order.CreatedAt;
             entity.ShippingDate = order.ShippingDate;
+            entity.CustomerId = order.CustomerId;
+            entity.DiscountDescription = order.Discount?.Description;
+            entity.DiscountAmount = order.Discount?.Amount.Amount ?? 0;
 
             var orderItemsById = order.Items.ToDictionary(item => item.Id);
             var removedItems = entity.Items
@@ -136,7 +139,9 @@ public sealed class OrderRepository : IOrderRepository
 
     private IQueryable<OrderEntity> QueryOrders()
     {
-        return dbContext.Orders.Include(order => order.Items);
+        return dbContext.Orders
+            .Include(order => order.Customer)
+            .Include(order => order.Items);
     }
 
     private static Order ToModel(OrderEntity entity)
@@ -149,6 +154,13 @@ public sealed class OrderRepository : IOrderRepository
             new Money(item.UnitPriceAmount, item.UnitPriceCurrency),
             item.ProductId));
 
+        var customer = entity.Customer is null
+            ? null
+            : new Customer(entity.Customer.Id, entity.Customer.Name, entity.Customer.Phone, entity.Customer.Email, entity.Customer.CreatedAt);
+        var discount = entity.DiscountAmount > 0
+            ? new OrderDiscount(entity.DiscountDescription ?? string.Empty, new Money(entity.DiscountAmount, "BRL"))
+            : null;
+
         return new Order(
             entity.Id,
             new OrderOrigin(entity.Source, entity.ExternalOrderId),
@@ -156,6 +168,9 @@ public sealed class OrderRepository : IOrderRepository
             Enum.Parse<OrderStatus>(entity.Status),
             entity.CreatedAt,
             entity.ShippingDate,
+            customer,
+            entity.CustomerId,
+            discount,
             raiseNormalizedEvent: false);
     }
 
@@ -169,6 +184,9 @@ public sealed class OrderRepository : IOrderRepository
             Status = order.Status.ToString(),
             CreatedAt = order.CreatedAt,
             ShippingDate = order.ShippingDate,
+            CustomerId = order.CustomerId,
+            DiscountDescription = order.Discount?.Description,
+            DiscountAmount = order.Discount?.Amount.Amount ?? 0,
             Items = order.Items.Select(item => new OrderItemEntity
             {
                 Id = item.Id,

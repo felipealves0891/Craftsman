@@ -45,6 +45,10 @@
                 <dt>Custo de envio</dt>
                 <dd>@ShippingCostAmount.ToString("C")</dd>
             </div>
+            <div>
+                <dt>Desconto</dt>
+                <dd>@DiscountAmount.ToString("C")</dd>
+            </div>
         </dl>
     </section>
 
@@ -97,6 +101,9 @@
 
     [Parameter]
     public decimal ShippingCostAmount { get; set; }
+
+    [Parameter]
+    public decimal DiscountAmount { get; set; }
 
     [Parameter]
     public decimal TotalCostAmount { get; set; }

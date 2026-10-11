@@ -12,6 +12,7 @@
                 settlement.OrderId,
                 orderId[..8],
                 settlement.RevenueAmount.ToString("C"),
+                settlement.DiscountAmount.ToString("C"),
                 settlement.TotalCostAmount.ToString("C"),
                 settlement.MarginAmount.ToString("C"),
                 Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),

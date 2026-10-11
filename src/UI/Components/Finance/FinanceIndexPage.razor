@@ -51,6 +51,7 @@
                 <tr>
                     <th>Pedido</th>
                     <th>Receita</th>
+                    <th>Desconto</th>
                     <th>Custos</th>
                     <th>Margem</th>
                     <th>Status</th>
@@ -62,7 +63,7 @@
                 @if (!Settlements.Any())
                 {
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <strong>Nenhuma apura&ccedil;&atilde;o encontrada</strong>
                                 <span>Ajuste o per&iacute;odo ou aguarde entregas confirmadas para calcular margem.</span>
@@ -77,6 +78,7 @@
                         <tr>
                             <td><strong>@settlement.OrderCode</strong></td>
                             <td>@settlement.RevenueAmount</td>
+                            <td>@settlement.DiscountAmount</td>
                             <td>@settlement.TotalCostAmount</td>
                             <td><strong>@settlement.MarginAmount</strong></td>
                             <td><span class="status-badge status-@settlement.StatusCss">@settlement.StatusLabel</span></td>
@@ -113,6 +115,7 @@
         Guid OrderId,
         string OrderCode,
         string RevenueAmount,
+        string DiscountAmount,
         string TotalCostAmount,
         string MarginAmount,
         string StatusLabel,

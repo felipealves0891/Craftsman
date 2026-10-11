@@ -56,6 +56,13 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
             Settlements.RemoveAll(settlement => settlement.OrderId == orderId);
             return Task.CompletedTask;
         }
+
+        public Task ReplaceForOrderAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
+        {
+            Settlements.RemoveAll(existing => existing.OrderId == settlement.OrderId);
+            Settlements.Add(settlement);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeSettlementCalculator : ISettlementCalculator

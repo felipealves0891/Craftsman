@@ -70,6 +70,25 @@
     </div>
 </div>
 
+<div class="metric-row mb-4">
+    <div class="metric-card">
+        <span>Cliente</span>
+        <strong>@(string.IsNullOrWhiteSpace(CustomerName) ? "Sem cliente" : CustomerName)</strong>
+        @if (!string.IsNullOrWhiteSpace(CustomerPhone) || !string.IsNullOrWhiteSpace(CustomerEmail))
+        {
+            <small>@CustomerPhone @CustomerEmail</small>
+        }
+    </div>
+    <div class="metric-card">
+        <span>Desconto</span>
+        <strong>@(DiscountAmount > 0 ? DiscountAmount.ToString("C") : "Sem desconto")</strong>
+        @if (DiscountAmount > 0 && !string.IsNullOrWhiteSpace(DiscountDescription))
+        {
+            <small>@DiscountDescription</small>
+        }
+    </div>
+</div>
+
 <ul class="nav nav-tabs order-tabs" id="order-detail-tabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="items-tab" data-toggle="tab" data-target="#items-panel" type="button" role="tab" aria-controls="items-panel" aria-selected="true">Itens</button>
@@ -173,6 +192,11 @@
     [Parameter] public Guid OrderId { get; set; }
     [Parameter] public string Source { get; set; } = string.Empty;
     [Parameter] public string ExternalOrderId { get; set; } = string.Empty;
+    [Parameter] public string? CustomerName { get; set; }
+    [Parameter] public string? CustomerPhone { get; set; }
+    [Parameter] public string? CustomerEmail { get; set; }
+    [Parameter] public string? DiscountDescription { get; set; }
+    [Parameter] public decimal DiscountAmount { get; set; }
     [Parameter] public string Status { get; set; } = string.Empty;
     [Parameter] public string ShippingDate { get; set; } = "-";
     [Parameter] public string? SuccessMessage { get; set; }

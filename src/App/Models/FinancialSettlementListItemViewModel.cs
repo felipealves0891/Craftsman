@@ -6,6 +6,7 @@ public sealed record FinancialSettlementListItemViewModel(
     decimal RevenueAmount,
     decimal ProductionCostAmount,
     decimal ShippingCostAmount,
+    decimal DiscountAmount,
     decimal TotalCostAmount,
     decimal MarginAmount,
     string Status,

@@ -124,6 +124,47 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.ToTable("bill_of_materials_items", (string)null);
                 });
 
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.CustomerEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("phone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("customers", (string)null);
+                });
+
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.DomainEventHandlerExecutionEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,6 +233,13 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.Property<DateTimeOffset>("CalculatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("calculated_at");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount_amount");
 
                     b.Property<decimal>("MarginAmount")
                         .HasPrecision(18, 2)
@@ -329,6 +377,22 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount_amount");
+
+                    b.Property<string>("DiscountDescription")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("discount_description");
+
                     b.Property<string>("ExternalOrderId")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -352,6 +416,8 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnName("status");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("Source", "ExternalOrderId")
                         .IsUnique();
@@ -1008,6 +1074,16 @@ namespace Craftsman.Infra.Persistence.Migrations
                     b.Navigation("DomainEvent");
                 });
 
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderEntity", b =>
+                {
+                    b.HasOne("Craftsman.Infra.Persistence.Entities.CustomerEntity", "Customer")
+                        .WithMany("Orders")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderItemEntity", b =>
                 {
                     b.HasOne("Craftsman.Infra.Persistence.Entities.OrderEntity", "Order")
@@ -1090,6 +1166,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.CustomerEntity", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.OrderEntity", b =>

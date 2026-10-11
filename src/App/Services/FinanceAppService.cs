@@ -17,6 +17,7 @@ public sealed class FinanceAppService
     private static readonly TimeSpan SummaryCacheExpiration = TimeSpan.FromHours(1);
 
     private readonly IApplicationCache? cache;
+    private readonly ILogger<FinanceAppService>? logger;
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly IOrderRepository orderRepository;
     private readonly ISettlementCalculator settlementCalculator;
@@ -31,7 +32,8 @@ public sealed class FinanceAppService
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher,
-        IApplicationCache? cache = null)
+        IApplicationCache? cache = null,
+        ILogger<FinanceAppService>? logger = null)
     {
         this.settlementRepository = settlementRepository;
         this.settlementCalculator = settlementCalculator;
@@ -40,6 +42,7 @@ public sealed class FinanceAppService
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
         this.cache = cache;
+        this.logger = logger;
     }
 
     public async Task<FinancialSettlementIndexViewModel> GetIndexAsync(
@@ -68,8 +71,10 @@ public sealed class FinanceAppService
         DateOnly? to = null,
         CancellationToken cancellationToken = default)
     {
+
         if (cache is not null)
         {
+            logger?.LogDebug("GetSummaryAsync by cached!");
             return await cache.GetOrCreateAsync(
                 BuildSummaryCacheKey(from, to),
                 token => CalculateSummaryAsync(from, to, token),
@@ -147,6 +152,7 @@ public sealed class FinanceAppService
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
             settlement.ShippingCostAmount,
+            settlement.DiscountAmount,
             settlement.TotalCostAmount,
             settlement.MarginAmount,
             settlement.Status.ToString(),
@@ -158,13 +164,28 @@ public sealed class FinanceAppService
         DateOnly? to,
         CancellationToken cancellationToken)
     {
+        logger?.LogDebug("Iniciando calculo do sumario de financiamento!");
         var settlements = await settlementRepository.ListAsync(from, to, cancellationToken);
-        var orderCount = settlements.Count;
-        var totalMargin = settlements.Sum(settlement => settlement.MarginAmount);
 
+        if (logger?.IsEnabled(LogLevel.Debug) ?? false)
+        {
+            foreach (var item in settlements)
+            {
+                logger?.LogDebug("Settlement: Id: {Id}, RevenueAmount: {RevenueAmount}, ProductionCostAmount: {ProductionCostAmount}, ShippingCostAmount: {ShippingCostAmount}, DiscountAmount: {DiscountAmount}, TotalCostAmount: {TotalCostAmount}, MarginAmount: {MarginAmount}", 
+                    item.Id, item.RevenueAmount, item.ProductionCostAmount, item.ShippingCostAmount, item.DiscountAmount, item.TotalCostAmount, item.MarginAmount);   
+            }
+        }
+
+        var orderCount = settlements.Count;
+        var totalRevenue = settlements.Sum(settlement => settlement.RevenueAmount);
+        var totalCost = settlements.Sum(settlement => settlement.TotalCostAmount);
+        var totalMargin = settlements.Sum(settlement => settlement.MarginAmount);
+        logger?.LogDebug("Calculando: OrderCount: {OrderCount}, TotalRevenue: {TotalRevenue}, TotalCost: {TotalCost}, TotalMargin: {TotalMargin}", 
+            orderCount, totalRevenue, totalCost, totalMargin);
+        
         return new FinancialSettlementSummaryViewModel(
-            settlements.Sum(settlement => settlement.RevenueAmount),
-            settlements.Sum(settlement => settlement.TotalCostAmount),
+            totalRevenue,
+            totalCost,
             totalMargin,
             orderCount == 0 ? 0 : totalMargin / orderCount,
             orderCount);
@@ -190,6 +211,7 @@ public sealed class FinanceAppService
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
             settlement.ShippingCostAmount,
+            settlement.DiscountAmount,
             settlement.TotalCostAmount,
             settlement.MarginAmount,
             settlement.Status.ToString(),

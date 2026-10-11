@@ -79,9 +79,41 @@
             </section>
 
             <section class="form-panel manual-order-section">
+                <div class="section-title">
+                    <span class="section-step">2</span>
+                    <div>
+                        <h2>Cliente</h2>
+                        <p>Informe os dados do cliente para identificar o pedido manual.</p>
+                    </div>
+                </div>
+
+                <datalist id="customer-options">
+                    @foreach (var customer in Customers)
+                    {
+                        <option value="@customer.Name"></option>
+                    }
+                </datalist>
+
+                <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label for="CustomerName" class="form-label">Nome</label>
+                        <input id="CustomerName" name="CustomerName" class="form-control" list="customer-options" value="@CustomerName" autocomplete="off" data-customer-name />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="CustomerPhone" class="form-label">Telefone</label>
+                        <input id="CustomerPhone" name="CustomerPhone" class="form-control" value="@CustomerPhone" data-customer-contact />
+                    </div>
+                    <div class="col-md-4 form-group">
+                        <label for="CustomerEmail" class="form-label">Email</label>
+                        <input id="CustomerEmail" name="CustomerEmail" type="email" class="form-control" value="@CustomerEmail" data-customer-contact />
+                    </div>
+                </div>
+            </section>
+
+            <section class="form-panel manual-order-section">
                 <div class="section-toolbar manual-items-toolbar">
                     <div class="section-title">
-                        <span class="section-step">2</span>
+                        <span class="section-step">3</span>
                         <div>
                             <h2>Itens do pedido</h2>
                             <p>Adicione os produtos vendidos e vincule ao catalogo interno quando possivel.</p>
@@ -139,6 +171,34 @@
                     }
                 </div>
             </section>
+
+            <section class="form-panel manual-order-section">
+                <div class="section-title">
+                    <span class="section-step">4</span>
+                    <div>
+                        <h2>Desconto</h2>
+                        <p>Registre desconto monetario ou percentual aplicado ao total bruto.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 form-group">
+                        <label for="DiscountDescription" class="form-label">Descricao</label>
+                        <input id="DiscountDescription" name="DiscountDescription" class="form-control" value="@DiscountDescription" placeholder="Ex.: Desconto comercial" data-discount-description />
+                    </div>
+                    <div class="col-md-3 form-group">
+                        <label for="DiscountValue" class="form-label">Valor</label>
+                        <input id="DiscountValue" name="DiscountValue" min="0" value="@DiscountValue" type="text" inputmode="decimal" class="form-control" data-currency-input data-discount-value />
+                    </div>
+                    <div class="col-md-3 form-group d-flex align-items-end">
+                        <div class="custom-control custom-switch mb-2">
+                            <input id="DiscountIsPercent" name="DiscountIsPercent" type="checkbox" value="true" class="custom-control-input" checked="@DiscountIsPercent" data-discount-percent />
+                            <label for="DiscountIsPercent" class="custom-control-label">Percentual</label>
+                        </div>
+                        <input name="DiscountIsPercent" type="hidden" value="false" />
+                    </div>
+                </div>
+            </section>
         </div>
 
         <aside class="manual-order-summary">
@@ -153,7 +213,24 @@
                         <dt>Total estimado</dt>
                         <dd id="manual-order-total">R$ 0,00</dd>
                     </div>
+                    <div>
+                        <dt>Desconto estimado</dt>
+                        <dd id="manual-order-discount">R$ 0,00</dd>
+                    </div>
+                    <div>
+                        <dt>Total apos desconto</dt>
+                        <dd id="manual-order-net-total">R$ 0,00</dd>
+                    </div>
                 </dl>
+                <div class="alert alert-warning d-none" id="manual-order-discount-warning">
+                    Desconto maior que a receita estimada. O pedido sera aceito, mas a margem podera ficar negativa.
+                </div>
+                @if (ShowSettlementRecalculationWarning)
+                {
+                    <div class="alert alert-info">
+                        O acerto financeiro deste pedido sera recalculado automaticamente ao salvar alteracoes comerciais.
+                    </div>
+                }
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-save fa-sm mr-1"></i>@SubmitLabel
                 </button>
@@ -169,7 +246,15 @@
         const addButton = document.getElementById('add-order-item');
         const itemCount = document.getElementById('manual-order-item-count');
         const orderTotal = document.getElementById('manual-order-total');
-        if (!body || !addButton || !itemCount || !orderTotal) {
+        const orderDiscount = document.getElementById('manual-order-discount');
+        const orderNetTotal = document.getElementById('manual-order-net-total');
+        const discountValue = document.querySelector('[data-discount-value]');
+        const discountPercent = document.querySelector('[data-discount-percent]');
+        const discountDescription = document.querySelector('[data-discount-description]');
+        const customerName = document.querySelector('[data-customer-name]');
+        const customerContactFields = [...document.querySelectorAll('[data-customer-contact]')];
+        const discountWarning = document.getElementById('manual-order-discount-warning');
+        if (!body || !addButton || !itemCount || !orderTotal || !orderDiscount || !orderNetTotal || !discountValue || !discountPercent || !discountDescription || !customerName || !discountWarning) {
             return;
         }
         const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -206,8 +291,15 @@
                     total += rowTotal;
                 }
             });
+            const rawDiscount = parseNumber(discountValue.value);
+            const discount = discountPercent.checked ? total * rawDiscount / 100 : rawDiscount;
+            discountDescription.required = discount > 0;
+            customerName.required = customerContactFields.some((field) => field.value.trim() !== '');
             itemCount.textContent = filledItems;
             orderTotal.textContent = currency.format(total);
+            orderDiscount.textContent = currency.format(discount);
+            orderNetTotal.textContent = currency.format(total - discount);
+            discountWarning.classList.toggle('d-none', discount <= total || discount <= 0);
         };
         const clearRow = (row) => {
             row.querySelectorAll('input').forEach((field) => field.value = '');
@@ -246,6 +338,9 @@
             updateSummary();
         });
         addButton.addEventListener('click', addRow);
+        discountValue.addEventListener('input', updateSummary);
+        discountPercent.addEventListener('change', updateSummary);
+        customerContactFields.forEach((field) => field.addEventListener('input', updateSummary));
         updateIndexes();
         updateSummary();
     })();
@@ -254,6 +349,7 @@
 @code {
     [Parameter] public IReadOnlyCollection<SelectOption> Products { get; set; } = [];
     [Parameter] public IReadOnlyCollection<SelectOption> OrderSources { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<CustomerOption> Customers { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ManualOrderItemRow> Items { get; set; } = [];
     [Parameter] public string FormAction { get; set; } = "/ManualOrders/Create";
     [Parameter] public string PageEyebrow { get; set; } = "Novo Pedido";
@@ -263,10 +359,18 @@
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public string Reference { get; set; } = string.Empty;
     [Parameter] public string? ShippingDate { get; set; }
+    [Parameter] public string? CustomerName { get; set; }
+    [Parameter] public string? CustomerPhone { get; set; }
+    [Parameter] public string? CustomerEmail { get; set; }
+    [Parameter] public string? DiscountDescription { get; set; }
+    [Parameter] public string DiscountValue { get; set; } = "0,00";
+    [Parameter] public bool DiscountIsPercent { get; set; }
+    [Parameter] public bool ShowSettlementRecalculationWarning { get; set; }
     [Parameter] public string MinimumShippingDate { get; set; } = string.Empty;
     [Parameter] public string? SuccessMessage { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public IReadOnlyCollection<string> ValidationSummaryErrors { get; set; } = [];
 
+    public sealed record CustomerOption(string Name, string? Phone, string? Email);
     public sealed record ManualOrderItemRow(string? ExternalItemId, string Description, int Quantity, string UnitPriceAmount, string? ProductId);
 }

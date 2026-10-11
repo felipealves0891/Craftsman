@@ -8,7 +8,7 @@ services:
     environment:     
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__CraftsmanDb: Host=postgres;Port=5432;Database=craftsman;Username=craftsman;Password=craftsman_dev_password
-      Cache__Enabled: "true"
+      Cache__Enabled: "false"
     ports:
       - "80:80"
       - "443:8443"

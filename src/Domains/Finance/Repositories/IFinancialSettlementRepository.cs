@@ -10,5 +10,7 @@ public interface IFinancialSettlementRepository
 
     Task AddAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default);
 
+    Task ReplaceForOrderAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default);
+
     Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 }

@@ -54,6 +54,17 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
         cache?.RemoveByPrefix("finance:");
     }
 
+    public async Task ReplaceForOrderAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.FinancialSettlements
+            .Where(existing => existing.OrderId == settlement.OrderId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.FinancialSettlements.RemoveRange(entities);
+        await dbContext.FinancialSettlements.AddAsync(ToEntity(settlement), cancellationToken);
+        cache?.RemoveByPrefix("finance:");
+    }
+
     private async Task<IReadOnlyCollection<FinancialSettlement>> ListCoreAsync(DateOnly? from, DateOnly? to, CancellationToken cancellationToken)
     {
         var query = dbContext.FinancialSettlements.AsQueryable();
@@ -83,6 +94,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             entity.RevenueAmount,
             entity.ProductionCostAmount,
             entity.ShippingCostAmount,
+            entity.DiscountAmount,
             Enum.Parse<FinancialSettlementStatus>(entity.Status),
             entity.CalculatedAt,
             raiseCalculatedEvent: false);
@@ -97,6 +109,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             RevenueAmount = settlement.RevenueAmount,
             ProductionCostAmount = settlement.ProductionCostAmount,
             ShippingCostAmount = settlement.ShippingCostAmount,
+            DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,
             MarginAmount = settlement.MarginAmount,
             Status = settlement.Status.ToString(),

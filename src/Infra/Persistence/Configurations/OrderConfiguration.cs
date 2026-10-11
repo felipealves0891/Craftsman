@@ -18,8 +18,17 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<OrderEntity>
         builder.Property(order => order.Status).HasColumnName("status").HasMaxLength(50).IsRequired();
         builder.Property(order => order.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(order => order.ShippingDate).HasColumnName("shipping_date");
+        builder.Property(order => order.CustomerId).HasColumnName("customer_id");
+        builder.Property(order => order.DiscountDescription).HasColumnName("discount_description").HasMaxLength(200);
+        builder.Property(order => order.DiscountAmount).HasColumnName("discount_amount").HasPrecision(18, 2).HasDefaultValue(0m).IsRequired();
 
         builder.HasIndex(order => new { order.Source, order.ExternalOrderId }).IsUnique();
+        builder.HasIndex(order => order.CustomerId);
+
+        builder.HasOne(order => order.Customer)
+            .WithMany(customer => customer.Orders)
+            .HasForeignKey(order => order.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(order => order.Items)
             .WithOne(item => item.Order)
