@@ -9,4 +9,5 @@ public sealed record FinancialSettlementDetailViewModel(
     decimal TotalCostAmount,
     decimal MarginAmount,
     string Status,
-    DateTimeOffset CalculatedAt);
+    DateTimeOffset CalculatedAt,
+    IReadOnlyCollection<OrderItemViewModel> Items);

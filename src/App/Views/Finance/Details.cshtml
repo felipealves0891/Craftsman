@@ -2,6 +2,14 @@
 
 @{
     ViewData["Title"] = "Acerto financeiro";
+
+    var items = Model.Items
+        .Select(item => new FinancialSettlementDetailsPage.OrderItemRow(
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.UnitPrice.ToString("C")))
+        .ToArray();
 }
 
 <component type="typeof(FinancialSettlementDetailsPage)" render-mode="Static"
@@ -12,4 +20,5 @@
            param-TotalCostAmount="@Model.TotalCostAmount"
            param-MarginAmount="@Model.MarginAmount"
            param-Status="@Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), Model.Status)"
-           param-CalculatedAt="@Model.CalculatedAt" />
+           param-CalculatedAt="@Model.CalculatedAt"
+           param-Items="@items" />

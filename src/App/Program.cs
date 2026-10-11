@@ -8,13 +8,19 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
+using Microsoft.Extensions.Logging.Console;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole(x =>
+builder.Logging.AddJsonConsole(x =>
 {
-    x.FormatterName = "json";
+    x.IncludeScopes = true;
+    x.UseUtcTimestamp = true;
+    x.JsonWriterOptions = new System.Text.Json.JsonWriterOptions
+    {
+        Indented = false
+    };
 });
 
 // Add services to the container.

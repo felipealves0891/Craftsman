@@ -57,6 +57,42 @@ public sealed class FinanceAppServiceTests
     }
 
     [Fact]
+    public async Task Detail_includes_items_from_settlement_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var productId = Guid.NewGuid();
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-FIN-DETAIL"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-FIN-1", "Carteira", 3, new Money(12.5m, "BRL"), productId)]);
+
+        await new OrderRepository(dbContext).AddAsync(order);
+        await new FinancialSettlementRepository(dbContext).AddAsync(new FinancialSettlement(
+            Guid.NewGuid(),
+            order.Id,
+            revenueAmount: 37.5m,
+            productionCostAmount: 10,
+            shippingCostAmount: 5,
+            raiseCalculatedEvent: false));
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var detail = await service.GetByOrderIdAsync(order.Id);
+
+        Assert.NotNull(detail);
+        Assert.Equal(order.Id, detail!.OrderId);
+        Assert.Equal(37.5m, detail.RevenueAmount);
+        Assert.Equal(15, detail.TotalCostAmount);
+        var item = Assert.Single(detail.Items);
+        Assert.Equal("ITEM-FIN-1", item.ExternalItemId);
+        Assert.Equal("Carteira", item.Description);
+        Assert.Equal(3, item.Quantity);
+        Assert.Equal(12.5m, item.UnitPrice);
+        Assert.Equal("BRL", item.Currency);
+        Assert.Equal(productId, item.ProductId);
+    }
+
+    [Fact]
     public async Task Index_summary_returns_totals_for_selected_period()
     {
         await using var dbContext = CreateDbContext();

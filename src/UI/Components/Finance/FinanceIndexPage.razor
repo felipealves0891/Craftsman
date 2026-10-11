@@ -75,7 +75,7 @@
                     @foreach (var settlement in Settlements)
                     {
                         <tr>
-                            <td><strong>@settlement.OrderId</strong></td>
+                            <td><strong>@settlement.OrderCode</strong></td>
                             <td>@settlement.RevenueAmount</td>
                             <td>@settlement.TotalCostAmount</td>
                             <td><strong>@settlement.MarginAmount</strong></td>
@@ -111,6 +111,7 @@
 
     public sealed record SettlementRow(
         Guid OrderId,
+        string OrderCode,
         string RevenueAmount,
         string TotalCostAmount,
         string MarginAmount,

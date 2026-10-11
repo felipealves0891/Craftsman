@@ -4,14 +4,20 @@
     ViewData["Title"] = "Financeiro";
 
     var settlements = Model.Settlements
-        .Select(settlement => new FinanceIndexPage.SettlementRow(
-            settlement.OrderId,
-            settlement.RevenueAmount.ToString("C"),
-            settlement.TotalCostAmount.ToString("C"),
-            settlement.MarginAmount.ToString("C"),
-            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
-            settlement.Status.ToLowerInvariant(),
-            settlement.CalculatedAt.ToLocalTime().ToString("g")))
+        .Select(settlement =>
+        {
+            var orderId = settlement.OrderId.ToString();
+
+            return new FinanceIndexPage.SettlementRow(
+                settlement.OrderId,
+                orderId[..8],
+                settlement.RevenueAmount.ToString("C"),
+                settlement.TotalCostAmount.ToString("C"),
+                settlement.MarginAmount.ToString("C"),
+                Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
+                settlement.Status.ToLowerInvariant(),
+                settlement.CalculatedAt.ToLocalTime().ToString("d"));
+        })
         .ToArray();
 
     var kpis = new[]
