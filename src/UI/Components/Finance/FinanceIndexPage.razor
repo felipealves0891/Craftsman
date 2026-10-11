@@ -31,6 +31,19 @@
     </div>
 </form>
 
+<section class="finance-kpi-grid" aria-label="Indicadores financeiros">
+    @foreach (var kpi in Kpis)
+    {
+        <button type="button" class="finance-kpi-card" title="@kpi.Title" aria-label="@kpi.Title" data-title="@kpi.Title">
+            <span class="finance-kpi-icon" aria-hidden="true"><i class="@kpi.IconCss"></i></span>
+            <span class="finance-kpi-content">
+                <span class="finance-kpi-title">@kpi.Title</span>
+                <strong>@kpi.Value</strong>
+            </span>
+        </button>
+    }
+</section>
+
 <div class="table-panel">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -82,6 +95,9 @@
     public IReadOnlyCollection<SettlementRow> Settlements { get; set; } = [];
 
     [Parameter]
+    public IReadOnlyCollection<KpiCard> Kpis { get; set; } = [];
+
+    [Parameter]
     public string? From { get; set; }
 
     [Parameter]
@@ -101,4 +117,9 @@
         string StatusLabel,
         string StatusCss,
         string CalculatedAt);
+
+    public sealed record KpiCard(
+        string Title,
+        string IconCss,
+        string Value);
 }

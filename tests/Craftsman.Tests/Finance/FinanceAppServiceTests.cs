@@ -1,8 +1,10 @@
 using Craftsman.App.Services;
 using Craftsman.Domain.Events;
+using Craftsman.Domain.Finance.Entities;
 using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
+using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
@@ -54,7 +56,59 @@ public sealed class FinanceAppServiceTests
         Assert.Single(await dbContext.FinancialSettlements.ToListAsync());
     }
 
-    private static FinanceAppService CreateService(AppDbContext dbContext)
+    [Fact]
+    public async Task Index_summary_returns_totals_for_selected_period()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedSettlementAsync(dbContext, revenue: 100, productionCost: 25, shippingCost: 5, calculatedAt: new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero));
+        await SeedSettlementAsync(dbContext, revenue: 80, productionCost: 30, shippingCost: 10, calculatedAt: new DateTimeOffset(2026, 10, 12, 12, 0, 0, TimeSpan.Zero));
+        await SeedSettlementAsync(dbContext, revenue: 200, productionCost: 70, shippingCost: 20, calculatedAt: new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
+        var service = CreateService(dbContext);
+
+        var index = await service.GetIndexAsync(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 31));
+
+        Assert.Equal(2, index.Summary.OrderCount);
+        Assert.Equal(180, index.Summary.TotalRevenueAmount);
+        Assert.Equal(70, index.Summary.TotalCostAmount);
+        Assert.Equal(110, index.Summary.TotalMarginAmount);
+        Assert.Equal(55, index.Summary.MarginPerOrderAmount);
+        Assert.Equal(2, index.Settlements.Count);
+    }
+
+    [Fact]
+    public async Task Index_summary_returns_zeroes_when_period_has_no_settlements()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedSettlementAsync(dbContext, revenue: 100, productionCost: 25, shippingCost: 5, calculatedAt: new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
+        var service = CreateService(dbContext);
+
+        var index = await service.GetIndexAsync(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 31));
+
+        Assert.Empty(index.Settlements);
+        Assert.Equal(0, index.Summary.OrderCount);
+        Assert.Equal(0, index.Summary.TotalRevenueAmount);
+        Assert.Equal(0, index.Summary.TotalCostAmount);
+        Assert.Equal(0, index.Summary.TotalMarginAmount);
+        Assert.Equal(0, index.Summary.MarginPerOrderAmount);
+    }
+
+    [Fact]
+    public async Task Summary_uses_cache_for_equivalent_period_for_one_hour()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedSettlementAsync(dbContext, revenue: 100, productionCost: 25, shippingCost: 5, calculatedAt: new DateTimeOffset(2026, 10, 5, 12, 0, 0, TimeSpan.Zero));
+        var cache = new RecordingApplicationCache();
+        var service = CreateService(dbContext, cache);
+
+        await service.GetSummaryAsync(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 31));
+        await service.GetSummaryAsync(new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 31));
+
+        Assert.Equal(1, cache.FactoryCalls);
+        Assert.Equal("finance:settlement-summary:20261001:20261031", cache.LastKey);
+        Assert.Equal(TimeSpan.FromHours(1), cache.LastExpiration);
+    }
+
+    private static FinanceAppService CreateService(AppDbContext dbContext, IApplicationCache? cache = null)
     {
         var settlementRepository = new FinancialSettlementRepository(dbContext);
         var shipmentRepository = new ShipmentRepository(dbContext);
@@ -68,7 +122,8 @@ public sealed class FinanceAppServiceTests
             shipmentRepository,
             orderRepository,
             new UnitOfWork(dbContext),
-            new NoOpDomainEventPublisher());
+            new NoOpDomainEventPublisher(),
+            cache);
     }
 
     private static async Task<Order> SeedDeliveredOrderAsync(AppDbContext dbContext)
@@ -89,6 +144,24 @@ public sealed class FinanceAppServiceTests
         return order;
     }
 
+    private static async Task SeedSettlementAsync(
+        AppDbContext dbContext,
+        decimal revenue,
+        decimal productionCost,
+        decimal shippingCost,
+        DateTimeOffset calculatedAt)
+    {
+        await new FinancialSettlementRepository(dbContext).AddAsync(new FinancialSettlement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            revenue,
+            productionCost,
+            shippingCost,
+            calculatedAt: calculatedAt,
+            raiseCalculatedEvent: false));
+        await dbContext.SaveChangesAsync();
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
@@ -104,6 +177,50 @@ public sealed class FinanceAppServiceTests
             where TEvent : IDomainEvent
         {
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingApplicationCache : IApplicationCache
+    {
+        private readonly Dictionary<string, object> values = [];
+
+        public int FactoryCalls { get; private set; }
+
+        public TimeSpan? LastExpiration { get; private set; }
+
+        public string? LastKey { get; private set; }
+
+        public async Task<T> GetOrCreateAsync<T>(
+            string key,
+            Func<CancellationToken, Task<T>> factory,
+            TimeSpan? absoluteExpirationRelativeToNow = null,
+            CancellationToken cancellationToken = default)
+        {
+            LastKey = key;
+            LastExpiration = absoluteExpirationRelativeToNow;
+
+            if (values.TryGetValue(key, out var value))
+            {
+                return (T)value;
+            }
+
+            FactoryCalls++;
+            var created = await factory(cancellationToken);
+            values[key] = created!;
+            return created;
+        }
+
+        public void Remove(string key)
+        {
+            values.Remove(key);
+        }
+
+        public void RemoveByPrefix(string prefix)
+        {
+            foreach (var key in values.Keys.Where(key => key.StartsWith(prefix, StringComparison.Ordinal)).ToArray())
+            {
+                values.Remove(key);
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
-@model IReadOnlyCollection<Craftsman.App.Models.FinancialSettlementListItemViewModel>
+@model Craftsman.App.Models.FinancialSettlementIndexViewModel
 
 @{
     ViewData["Title"] = "Financeiro";
 
-    var settlements = Model
+    var settlements = Model.Settlements
         .Select(settlement => new FinanceIndexPage.SettlementRow(
             settlement.OrderId,
             settlement.RevenueAmount.ToString("C"),
@@ -14,6 +14,14 @@
             settlement.CalculatedAt.ToLocalTime().ToString("g")))
         .ToArray();
 
+    var kpis = new[]
+    {
+        new FinanceIndexPage.KpiCard("Total de Receita", "fas fa-dollar-sign", Model.Summary.TotalRevenueAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Total de Custos", "fas fa-receipt", Model.Summary.TotalCostAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Total de Margem", "fas fa-chart-line", Model.Summary.TotalMarginAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Margem por Pedido", "fas fa-balance-scale", Model.Summary.MarginPerOrderAmount.ToString("C"))
+    };
+
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
     var from = ViewBag.From is DateOnly fromDate ? fromDate.ToString("yyyy-MM-dd") : null;
@@ -22,6 +30,7 @@
 
 <component type="typeof(FinanceIndexPage)" render-mode="Static"
            param-Settlements="@settlements"
+           param-Kpis="@kpis"
            param-From="@from"
            param-To="@to"
            param-SuccessMessage="@successMessage"

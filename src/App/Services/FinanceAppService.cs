@@ -5,6 +5,7 @@ using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Repositories;
+using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Domain.Shipping.Repositories;
 
@@ -12,6 +13,9 @@ namespace Craftsman.App.Services;
 
 public sealed class FinanceAppService
 {
+    private static readonly TimeSpan SummaryCacheExpiration = TimeSpan.FromHours(1);
+
+    private readonly IApplicationCache? cache;
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly IOrderRepository orderRepository;
     private readonly ISettlementCalculator settlementCalculator;
@@ -25,7 +29,8 @@ public sealed class FinanceAppService
         IShipmentRepository shipmentRepository,
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
-        IDomainEventPublisher domainEventPublisher)
+        IDomainEventPublisher domainEventPublisher,
+        IApplicationCache? cache = null)
     {
         this.settlementRepository = settlementRepository;
         this.settlementCalculator = settlementCalculator;
@@ -33,6 +38,18 @@ public sealed class FinanceAppService
         this.orderRepository = orderRepository;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
+        this.cache = cache;
+    }
+
+    public async Task<FinancialSettlementIndexViewModel> GetIndexAsync(
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var settlements = await ListAsync(from, to, cancellationToken);
+        var summary = await GetSummaryAsync(from, to, cancellationToken);
+
+        return new FinancialSettlementIndexViewModel(settlements, summary);
     }
 
     public async Task<IReadOnlyCollection<FinancialSettlementListItemViewModel>> ListAsync(
@@ -43,6 +60,23 @@ public sealed class FinanceAppService
         var settlements = await settlementRepository.ListAsync(from, to, cancellationToken);
 
         return settlements.Select(ToListItem).ToList().AsReadOnly();
+    }
+
+    public async Task<FinancialSettlementSummaryViewModel> GetSummaryAsync(
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (cache is not null)
+        {
+            return await cache.GetOrCreateAsync(
+                BuildSummaryCacheKey(from, to),
+                token => CalculateSummaryAsync(from, to, token),
+                SummaryCacheExpiration,
+                cancellationToken);
+        }
+
+        return await CalculateSummaryAsync(from, to, cancellationToken);
     }
 
     public async Task<FinancialSettlementDetailViewModel?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -116,6 +150,28 @@ public sealed class FinanceAppService
             settlement.MarginAmount,
             settlement.Status.ToString(),
             settlement.CalculatedAt);
+    }
+
+    private async Task<FinancialSettlementSummaryViewModel> CalculateSummaryAsync(
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken)
+    {
+        var settlements = await settlementRepository.ListAsync(from, to, cancellationToken);
+        var orderCount = settlements.Count;
+        var totalMargin = settlements.Sum(settlement => settlement.MarginAmount);
+
+        return new FinancialSettlementSummaryViewModel(
+            settlements.Sum(settlement => settlement.RevenueAmount),
+            settlements.Sum(settlement => settlement.TotalCostAmount),
+            totalMargin,
+            orderCount == 0 ? 0 : totalMargin / orderCount,
+            orderCount);
+    }
+
+    private static string BuildSummaryCacheKey(DateOnly? from, DateOnly? to)
+    {
+        return $"finance:settlement-summary:{from?.ToString("yyyyMMdd") ?? "all"}:{to?.ToString("yyyyMMdd") ?? "all"}";
     }
 
     private static FinancialSettlementDetailViewModel ToDetail(FinancialSettlement settlement)

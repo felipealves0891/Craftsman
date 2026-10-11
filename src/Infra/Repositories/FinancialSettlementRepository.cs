@@ -9,6 +9,8 @@ namespace Craftsman.Infra.Repositories;
 
 public sealed class FinancialSettlementRepository : IFinancialSettlementRepository
 {
+    private static readonly TimeSpan CacheExpiration = TimeSpan.FromHours(1);
+
     private readonly IApplicationCache? cache;
     private readonly AppDbContext dbContext;
 
@@ -30,7 +32,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
 
         if (cache is not null)
         {
-            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(from, to, token), cancellationToken: cancellationToken);
+            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(from, to, token), CacheExpiration, cancellationToken);
         }
 
         return await ListCoreAsync(from, to, cancellationToken);

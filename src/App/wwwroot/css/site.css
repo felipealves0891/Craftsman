@@ -1231,7 +1231,102 @@ h2,
   border-left-color: #8f3428;
 }
 
+.finance-kpi-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
+}
+
+.finance-kpi-card {
+  align-items: center;
+  background: var(--craftsman-surface);
+  border: 1px solid var(--craftsman-border);
+  border-left: .25rem solid var(--craftsman-primary);
+  border-radius: .35rem;
+  box-shadow: 0 .15rem 1.75rem 0 var(--craftsman-shadow);
+  color: inherit;
+  display: flex;
+  gap: .8rem;
+  min-height: 92px;
+  padding: 1rem;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.finance-kpi-card:focus {
+  outline: 3px solid rgba(192, 87, 70, .25);
+  outline-offset: 2px;
+}
+
+.finance-kpi-card::after {
+  background: var(--craftsman-secondary);
+  border-radius: .25rem;
+  bottom: calc(100% + .4rem);
+  color: #fff;
+  content: attr(data-title);
+  font-size: .75rem;
+  font-weight: 700;
+  left: 50%;
+  max-width: 190px;
+  opacity: 0;
+  padding: .35rem .5rem;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+  transition: opacity .15s ease;
+  visibility: hidden;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.finance-kpi-card:hover::after,
+.finance-kpi-card:focus::after,
+.finance-kpi-card:active::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.finance-kpi-icon {
+  align-items: center;
+  background: var(--craftsman-auxiliary);
+  border: 1px solid var(--craftsman-border);
+  border-radius: 999px;
+  color: var(--craftsman-primary);
+  display: inline-flex;
+  flex: 0 0 2.55rem;
+  font-size: 1rem;
+  height: 2.55rem;
+  justify-content: center;
+  width: 2.55rem;
+}
+
+.finance-kpi-content {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+
+.finance-kpi-title {
+  color: var(--craftsman-muted);
+  font-size: .72rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.finance-kpi-content strong {
+  color: var(--craftsman-secondary);
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 991.98px) {
+  .finance-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .calendar-weekdays {
     display: none;
   }
@@ -1251,6 +1346,40 @@ h2,
 }
 
 @media (max-width: 575.98px) {
+  .finance-kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .finance-kpi-card {
+    display: grid;
+    gap: .45rem;
+    justify-items: center;
+    min-height: 86px;
+    padding: .75rem .45rem;
+    text-align: center;
+  }
+
+  .finance-kpi-icon {
+    flex-basis: 2.2rem;
+    height: 2.2rem;
+    width: 2.2rem;
+  }
+
+  .finance-kpi-title {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .finance-kpi-content strong {
+    font-size: .82rem;
+    line-height: 1.15;
+  }
+
   .calendar-toolbar {
     display: block;
   }
