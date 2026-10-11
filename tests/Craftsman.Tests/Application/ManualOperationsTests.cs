@@ -4,6 +4,7 @@ using Craftsman.App.Services;
 using Craftsman.Domain;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Finance.Entities;
+using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Services;
 using Craftsman.Domain.Integration.Services;
@@ -84,6 +85,159 @@ public sealed class ManualOperationsTests
         Assert.Equal("MAN-001", loaded.Origin.ExternalOrderId);
         Assert.Equal(shippingDate, loaded.ShippingDate);
         Assert.Single(loaded.Items);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_creates_customer_and_monetary_discount()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "WhatsApp");
+        var service = CreateManualOrderService(dbContext);
+
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "WhatsApp",
+            Reference = "MAN-CUSTOMER-001",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            CustomerName = "Ana Maria",
+            CustomerPhone = "(11) 99999-0000",
+            CustomerEmail = "ana@example.com",
+            DiscountDescription = "Desconto comercial",
+            DiscountValue = 7.5m,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 2,
+                    UnitPriceAmount = 20
+                }
+            ]
+        });
+
+        var loaded = await new OrderRepository(dbContext).GetByIdAsync(orderId);
+        var customer = Assert.Single(await dbContext.Customers.ToListAsync());
+
+        Assert.Equal(customer.Id, loaded?.CustomerId);
+        Assert.Equal("Ana Maria", loaded?.Customer?.Name);
+        Assert.Equal(7.5m, loaded?.Discount?.Amount.Amount);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_reuses_customer_by_normalized_name()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        var customerRepository = new CustomerRepository(dbContext);
+        await customerRepository.AddAsync(new Customer(Guid.NewGuid(), "Ana Maria"));
+        await dbContext.SaveChangesAsync();
+        var service = CreateManualOrderService(dbContext);
+
+        await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-CUSTOMER-REUSE",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            CustomerName = " ana   maria ",
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 1,
+                    UnitPriceAmount = 10
+                }
+            ]
+        });
+
+        Assert.Single(await dbContext.Customers.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Manual_order_service_calculates_percentage_discount_from_gross_total()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        var service = CreateManualOrderService(dbContext);
+
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-DISCOUNT-PERCENT",
+            ShippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10),
+            DiscountDescription = "Cupom",
+            DiscountValue = 10,
+            DiscountIsPercent = true,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 3,
+                    UnitPriceAmount = 20
+                }
+            ]
+        });
+
+        var loaded = await new OrderRepository(dbContext).GetByIdAsync(orderId);
+
+        Assert.Equal(6, loaded?.Discount?.Amount.Amount);
+    }
+
+    [Fact]
+    public async Task Manual_order_service_recalculates_settlement_after_commercial_edit()
+    {
+        await using var dbContext = CreateDbContext();
+        await SeedOrderSourceAsync(dbContext, "Manual");
+        var service = CreateManualOrderService(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var settlementRepository = new FinancialSettlementRepository(dbContext);
+        var shippingDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(10);
+
+        var orderId = await CreateManualOrderAsync(service, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-SETTLED-DISCOUNT",
+            ShippingDate = shippingDate,
+            DiscountDescription = "Desconto inicial",
+            DiscountValue = 5,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 2,
+                    UnitPriceAmount = 30
+                }
+            ]
+        });
+
+        await shipmentRepository.AddAsync(new Shipment(Guid.NewGuid(), orderId, "TRACK-1", ShipmentStatus.Delivered, deliveredAt: DateTimeOffset.UtcNow));
+        await settlementRepository.AddAsync(new FinancialSettlement(Guid.NewGuid(), orderId, 60, 0, 0, discountAmount: 5));
+        await dbContext.SaveChangesAsync();
+
+        await service.UpdateAsync(orderId, new ManualOrderInputModel
+        {
+            Source = "Manual",
+            Reference = "MAN-SETTLED-DISCOUNT",
+            ShippingDate = shippingDate,
+            DiscountDescription = "Desconto atualizado",
+            DiscountValue = 12,
+            Items =
+            [
+                new ManualOrderItemInputModel
+                {
+                    Description = "Produto informado manualmente",
+                    Quantity = 2,
+                    UnitPriceAmount = 30
+                }
+            ]
+        });
+
+        var settlement = await settlementRepository.GetByOrderIdAsync(orderId);
+
+        Assert.Equal(12, settlement?.DiscountAmount);
+        Assert.Equal(48, settlement?.MarginAmount);
     }
 
     [Fact]
@@ -948,7 +1102,13 @@ public sealed class ManualOperationsTests
                 NullLogger<OrderProductionPlanningService>.Instance),
             unitOfWork,
             publisher,
-            UserContext());
+            UserContext(),
+            new CustomerRepository(dbContext),
+            new SettlementCalculator(
+                orderRepository,
+                productionTaskRepository,
+                stockMovementRepository,
+                new ShipmentRepository(dbContext)));
     }
 
     private static ICurrentUserContext AnonymousUserContext()

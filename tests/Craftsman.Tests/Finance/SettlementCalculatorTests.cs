@@ -50,6 +50,34 @@ public sealed class SettlementCalculatorTests
         Assert.Equal(88, settlement.MarginAmount);
     }
 
+    [Fact]
+    public async Task Calculator_includes_order_discount_in_total_cost_and_margin()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "MAN-DISC-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 2, new Money(50, "BRL"))],
+            OrderStatus.Delivered,
+            discount: new OrderDiscount("Desconto comercial", new Money(15, "BRL")));
+        var orderRepository = new OrderRepository(dbContext);
+        var calculator = new SettlementCalculator(
+            orderRepository,
+            new ProductionTaskRepository(dbContext),
+            new StockMovementRepository(dbContext),
+            new ShipmentRepository(dbContext));
+
+        await orderRepository.AddAsync(order);
+        await dbContext.SaveChangesAsync();
+
+        var settlement = await calculator.CalculateAsync(order.Id);
+
+        Assert.Equal(100, settlement.RevenueAmount);
+        Assert.Equal(15, settlement.DiscountAmount);
+        Assert.Equal(15, settlement.TotalCostAmount);
+        Assert.Equal(85, settlement.MarginAmount);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

@@ -4,7 +4,9 @@ using Craftsman.Domain.Finance.Repositories;
 using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Repositories;
+using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
+using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Domain.Shipping.Repositories;
 
@@ -12,6 +14,10 @@ namespace Craftsman.App.Services;
 
 public sealed class FinanceAppService
 {
+    private static readonly TimeSpan SummaryCacheExpiration = TimeSpan.FromHours(1);
+
+    private readonly IApplicationCache? cache;
+    private readonly ILogger<FinanceAppService>? logger;
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly IOrderRepository orderRepository;
     private readonly ISettlementCalculator settlementCalculator;
@@ -25,7 +31,9 @@ public sealed class FinanceAppService
         IShipmentRepository shipmentRepository,
         IOrderRepository orderRepository,
         IUnitOfWork unitOfWork,
-        IDomainEventPublisher domainEventPublisher)
+        IDomainEventPublisher domainEventPublisher,
+        IApplicationCache? cache = null,
+        ILogger<FinanceAppService>? logger = null)
     {
         this.settlementRepository = settlementRepository;
         this.settlementCalculator = settlementCalculator;
@@ -33,6 +41,19 @@ public sealed class FinanceAppService
         this.orderRepository = orderRepository;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
+        this.cache = cache;
+        this.logger = logger;
+    }
+
+    public async Task<FinancialSettlementIndexViewModel> GetIndexAsync(
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var settlements = await ListAsync(from, to, cancellationToken);
+        var summary = await GetSummaryAsync(from, to, cancellationToken);
+
+        return new FinancialSettlementIndexViewModel(settlements, summary);
     }
 
     public async Task<IReadOnlyCollection<FinancialSettlementListItemViewModel>> ListAsync(
@@ -45,11 +66,30 @@ public sealed class FinanceAppService
         return settlements.Select(ToListItem).ToList().AsReadOnly();
     }
 
+    public async Task<FinancialSettlementSummaryViewModel> GetSummaryAsync(
+        DateOnly? from = null,
+        DateOnly? to = null,
+        CancellationToken cancellationToken = default)
+    {
+
+        if (cache is not null)
+        {
+            logger?.LogDebug("GetSummaryAsync by cached!");
+            return await cache.GetOrCreateAsync(
+                BuildSummaryCacheKey(from, to),
+                token => CalculateSummaryAsync(from, to, token),
+                SummaryCacheExpiration,
+                cancellationToken);
+        }
+
+        return await CalculateSummaryAsync(from, to, cancellationToken);
+    }
+
     public async Task<FinancialSettlementDetailViewModel?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         var settlement = await settlementRepository.GetByOrderIdAsync(orderId, cancellationToken);
 
-        return settlement is null ? null : ToDetail(settlement);
+        return settlement is null ? null : await ToDetailAsync(settlement, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<FinancialSettlementPendingViewModel>> ListPendingAsync(CancellationToken cancellationToken = default)
@@ -88,7 +128,7 @@ public sealed class FinanceAppService
         var existingSettlement = await settlementRepository.GetByOrderIdAsync(orderId, cancellationToken);
         if (existingSettlement is not null)
         {
-            return ToDetail(existingSettlement);
+            return await ToDetailAsync(existingSettlement, cancellationToken);
         }
 
         var settlement = await settlementCalculator.CalculateAsync(orderId, cancellationToken);
@@ -101,7 +141,7 @@ public sealed class FinanceAppService
 
         settlement.ClearDomainEvents();
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return ToDetail(settlement);
+        return await ToDetailAsync(settlement, cancellationToken);
     }
 
     private static FinancialSettlementListItemViewModel ToListItem(FinancialSettlement settlement)
@@ -112,23 +152,82 @@ public sealed class FinanceAppService
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
             settlement.ShippingCostAmount,
+            settlement.DiscountAmount,
             settlement.TotalCostAmount,
             settlement.MarginAmount,
             settlement.Status.ToString(),
             settlement.CalculatedAt);
     }
 
-    private static FinancialSettlementDetailViewModel ToDetail(FinancialSettlement settlement)
+    private async Task<FinancialSettlementSummaryViewModel> CalculateSummaryAsync(
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken)
     {
+        logger?.LogDebug("Iniciando calculo do sumario de financiamento!");
+        var settlements = await settlementRepository.ListAsync(from, to, cancellationToken);
+
+        if (logger?.IsEnabled(LogLevel.Debug) ?? false)
+        {
+            foreach (var item in settlements)
+            {
+                logger?.LogDebug("Settlement: Id: {Id}, RevenueAmount: {RevenueAmount}, ProductionCostAmount: {ProductionCostAmount}, ShippingCostAmount: {ShippingCostAmount}, DiscountAmount: {DiscountAmount}, TotalCostAmount: {TotalCostAmount}, MarginAmount: {MarginAmount}", 
+                    item.Id, item.RevenueAmount, item.ProductionCostAmount, item.ShippingCostAmount, item.DiscountAmount, item.TotalCostAmount, item.MarginAmount);   
+            }
+        }
+
+        var orderCount = settlements.Count;
+        var totalRevenue = settlements.Sum(settlement => settlement.RevenueAmount);
+        var totalCost = settlements.Sum(settlement => settlement.TotalCostAmount);
+        var totalMargin = settlements.Sum(settlement => settlement.MarginAmount);
+        logger?.LogDebug("Calculando: OrderCount: {OrderCount}, TotalRevenue: {TotalRevenue}, TotalCost: {TotalCost}, TotalMargin: {TotalMargin}", 
+            orderCount, totalRevenue, totalCost, totalMargin);
+        
+        return new FinancialSettlementSummaryViewModel(
+            totalRevenue,
+            totalCost,
+            totalMargin,
+            orderCount == 0 ? 0 : totalMargin / orderCount,
+            orderCount);
+    }
+
+    private static string BuildSummaryCacheKey(DateOnly? from, DateOnly? to)
+    {
+        return $"finance:settlement-summary:{from?.ToString("yyyyMMdd") ?? "all"}:{to?.ToString("yyyyMMdd") ?? "all"}";
+    }
+
+    private async Task<FinancialSettlementDetailViewModel> ToDetailAsync(
+        FinancialSettlement settlement,
+        CancellationToken cancellationToken)
+    {
+        var order = await orderRepository.GetByIdAsync(settlement.OrderId, cancellationToken);
+        IReadOnlyCollection<OrderItemViewModel> items = order is null
+            ? Array.Empty<OrderItemViewModel>()
+            : order.Items.Select(ToOrderItemViewModel).ToList().AsReadOnly();
+
         return new FinancialSettlementDetailViewModel(
             settlement.Id,
             settlement.OrderId,
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
             settlement.ShippingCostAmount,
+            settlement.DiscountAmount,
             settlement.TotalCostAmount,
             settlement.MarginAmount,
             settlement.Status.ToString(),
-            settlement.CalculatedAt);
+            settlement.CalculatedAt,
+            items);
+    }
+
+    private static OrderItemViewModel ToOrderItemViewModel(OrderItem item)
+    {
+        return new OrderItemViewModel(
+            item.Id,
+            item.ExternalItemId,
+            item.Description,
+            item.Quantity,
+            item.UnitPrice.Amount,
+            item.UnitPrice.Currency,
+            item.ProductId);
     }
 }

@@ -16,7 +16,9 @@ public sealed class FinancialSettlement
 
     public decimal ShippingCostAmount { get; }
 
-    public decimal TotalCostAmount => ProductionCostAmount + ShippingCostAmount;
+    public decimal DiscountAmount { get; }
+
+    public decimal TotalCostAmount => ProductionCostAmount + ShippingCostAmount + DiscountAmount;
 
     public decimal MarginAmount => RevenueAmount - TotalCostAmount;
 
@@ -32,6 +34,7 @@ public sealed class FinancialSettlement
         decimal revenueAmount,
         decimal productionCostAmount,
         decimal shippingCostAmount,
+        decimal discountAmount = 0,
         FinancialSettlementStatus status = FinancialSettlementStatus.Calculated,
         DateTimeOffset? calculatedAt = null,
         bool raiseCalculatedEvent = true)
@@ -61,11 +64,17 @@ public sealed class FinancialSettlement
             throw new ArgumentOutOfRangeException(nameof(shippingCostAmount), "Shipping cost cannot be negative.");
         }
 
+        if (discountAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount cannot be negative.");
+        }
+
         Id = id;
         OrderId = orderId;
         RevenueAmount = revenueAmount;
         ProductionCostAmount = productionCostAmount;
         ShippingCostAmount = shippingCostAmount;
+        DiscountAmount = discountAmount;
         Status = status;
         CalculatedAt = calculatedAt ?? DateTimeOffset.UtcNow;
 

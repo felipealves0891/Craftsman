@@ -29,6 +29,7 @@ public sealed class ManualOrdersController : Controller
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         await PopulateFormOptionsAsync(cancellationToken);
+        ViewBag.ShowSettlementRecalculationWarning = false;
         return View(new ManualOrderInputModel());
     }
 
@@ -88,6 +89,7 @@ public sealed class ManualOrdersController : Controller
         }
 
         await PopulateFormOptionsAsync(cancellationToken);
+        ViewBag.ShowSettlementRecalculationWarning = await manualOrderService.HasFinancialSettlementAsync(id, cancellationToken);
         return View("Create", input);
     }
 
@@ -177,5 +179,7 @@ public sealed class ManualOrdersController : Controller
 
         var sources = await manualOrderService.ListOrderSourcesAsync(cancellationToken);
         ViewBag.OrderSources = sources.Select(source => new SelectListItem(source, source)).ToList();
+
+        ViewBag.Customers = await manualOrderService.ListCustomerOptionsAsync(cancellationToken);
     }
 }

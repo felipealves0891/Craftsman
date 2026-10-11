@@ -14,5 +14,13 @@ public sealed class OrderEntity : IPersistenceEntity<Guid>
 
     public DateOnly? ShippingDate { get; set; }
 
+    public Guid? CustomerId { get; set; }
+
+    public CustomerEntity? Customer { get; set; }
+
+    public string? DiscountDescription { get; set; }
+
+    public decimal DiscountAmount { get; set; }
+
     public List<OrderItemEntity> Items { get; set; } = [];
 }

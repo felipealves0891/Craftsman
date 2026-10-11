@@ -20,8 +20,8 @@ public sealed class FinanceController : Controller
         ViewBag.From = from;
         ViewBag.To = to;
 
-        var settlements = await financeAppService.ListAsync(from, to, cancellationToken);
-        return View(settlements);
+        var model = await financeAppService.GetIndexAsync(from, to, cancellationToken);
+        return View(model);
     }
 
     public async Task<IActionResult> Details(Guid orderId, CancellationToken cancellationToken)

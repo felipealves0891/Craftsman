@@ -9,6 +9,8 @@ namespace Craftsman.Infra.Repositories;
 
 public sealed class FinancialSettlementRepository : IFinancialSettlementRepository
 {
+    private static readonly TimeSpan CacheExpiration = TimeSpan.FromHours(1);
+
     private readonly IApplicationCache? cache;
     private readonly AppDbContext dbContext;
 
@@ -30,7 +32,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
 
         if (cache is not null)
         {
-            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(from, to, token), cancellationToken: cancellationToken);
+            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(from, to, token), CacheExpiration, cancellationToken);
         }
 
         return await ListCoreAsync(from, to, cancellationToken);
@@ -49,6 +51,17 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             .ToListAsync(cancellationToken);
 
         dbContext.FinancialSettlements.RemoveRange(entities);
+        cache?.RemoveByPrefix("finance:");
+    }
+
+    public async Task ReplaceForOrderAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.FinancialSettlements
+            .Where(existing => existing.OrderId == settlement.OrderId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.FinancialSettlements.RemoveRange(entities);
+        await dbContext.FinancialSettlements.AddAsync(ToEntity(settlement), cancellationToken);
         cache?.RemoveByPrefix("finance:");
     }
 
@@ -81,6 +94,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             entity.RevenueAmount,
             entity.ProductionCostAmount,
             entity.ShippingCostAmount,
+            entity.DiscountAmount,
             Enum.Parse<FinancialSettlementStatus>(entity.Status),
             entity.CalculatedAt,
             raiseCalculatedEvent: false);
@@ -95,6 +109,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             RevenueAmount = settlement.RevenueAmount,
             ProductionCostAmount = settlement.ProductionCostAmount,
             ShippingCostAmount = settlement.ShippingCostAmount,
+            DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,
             MarginAmount = settlement.MarginAmount,
             Status = settlement.Status.ToString(),

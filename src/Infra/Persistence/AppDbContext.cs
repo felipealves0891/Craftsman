@@ -36,6 +36,8 @@ public sealed class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRo
 
     public DbSet<OrderDeletionProcessEntity> OrderDeletionProcesses => Set<OrderDeletionProcessEntity>();
 
+    public DbSet<CustomerEntity> Customers => Set<CustomerEntity>();
+
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
 
     public DbSet<BillOfMaterialsItemEntity> BillOfMaterialsItems => Set<BillOfMaterialsItemEntity>();

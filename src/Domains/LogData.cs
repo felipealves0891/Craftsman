@@ -48,7 +48,7 @@ public class LogData : IDisposable
         ResponseBody = response;
         var log = JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = false
         });
 
         Console.WriteLine(log);

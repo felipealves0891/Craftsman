@@ -2,6 +2,7 @@ using Craftsman.App.Models;
 using Craftsman.Domain;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Finance.Repositories;
+using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.ProductCatalog.Repositories;
@@ -12,6 +13,7 @@ using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Sales.Repositories;
+using Craftsman.Domain.Sales.Services;
 using Craftsman.Domain.Shipping.Repositories;
 using Craftsman.Infra.Security;
 
@@ -22,6 +24,8 @@ public sealed class ManualOrderService
     private readonly IDomainEventPublisher domainEventPublisher;
     private readonly ICurrentUserContext currentUserContext;
     private readonly IFinancialSettlementRepository financialSettlementRepository;
+    private readonly ISettlementCalculator? settlementCalculator;
+    private readonly ICustomerRepository? customerRepository;
     private readonly IOrderDeletionProcessRepository orderDeletionProcessRepository;
     private readonly IOrderRepository orderRepository;
     private readonly IOrderSourceCatalogRepository orderSourceCatalogRepository;
@@ -44,7 +48,9 @@ public sealed class ManualOrderService
         OrderProductionPlanningService productionPlanningService,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher,
-        ICurrentUserContext currentUserContext)
+        ICurrentUserContext currentUserContext,
+        ICustomerRepository? customerRepository = null,
+        ISettlementCalculator? settlementCalculator = null)
     {
         this.orderRepository = orderRepository;
         this.orderSourceCatalogRepository = orderSourceCatalogRepository;
@@ -58,6 +64,8 @@ public sealed class ManualOrderService
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
         this.currentUserContext = currentUserContext;
+        this.customerRepository = customerRepository;
+        this.settlementCalculator = settlementCalculator;
     }
 
     public async Task<ManualOrderInputModel?> GetInputAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -74,6 +82,11 @@ public sealed class ManualOrderService
             Source = order.Origin.Source,
             Reference = order.Origin.ExternalOrderId,
             ShippingDate = order.ShippingDate,
+            CustomerName = order.Customer?.Name,
+            CustomerPhone = order.Customer?.Phone,
+            CustomerEmail = order.Customer?.Email,
+            DiscountDescription = order.Discount?.Description,
+            DiscountValue = order.Discount?.Amount.Amount ?? 0,
             Items = order.Items.Select(item => new ManualOrderItemInputModel
             {
                 ExternalItemId = item.ExternalItemId,
@@ -124,27 +137,17 @@ public sealed class ManualOrderService
             throw new InvalidOperationException("Referencia manual ja existe.");
         }
 
-        var line = 0;
-        var items = new List<OrderItem>();
-        foreach (var inputItem in populatedItems)
-        {
-            line++;
-            var item = new OrderItem(
-                Guid.NewGuid(),
-                string.IsNullOrWhiteSpace(inputItem.ExternalItemId) ? $"{externalOrderId}-{line}" : inputItem.ExternalItemId,
-                inputItem.Description,
-                inputItem.Quantity,
-                new Money(inputItem.UnitPriceAmount, "BRL"),
-                inputItem.ProductId);
-
-            items.Add(item);
-        }
+        var items = await BuildOrderItemsAsync(input, externalOrderId, cancellationToken);
+        var customer = await ResolveCustomerAsync(input, cancellationToken);
+        var discount = ResolveDiscount(input, items);
 
         var order = new Order(
             Guid.NewGuid(),
             new OrderOrigin(source.Name, externalOrderId),
             items,
-            shippingDate: input.ShippingDate);
+            shippingDate: input.ShippingDate,
+            customer: customer,
+            discount: discount);
 
         await orderRepository.AddAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -166,8 +169,6 @@ public sealed class ManualOrderService
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
             ?? throw new InvalidOperationException("Pedido nao encontrado.");
 
-        await EnsureOrderCanChangeAsync(orderId, cancellationToken);
-
         var source = await ResolveSourceAsync(input.Source, cancellationToken);
         var externalOrderId = ResolveExternalOrderId(input.Reference);
 
@@ -179,19 +180,32 @@ public sealed class ManualOrderService
 
         var items = await BuildOrderItemsAsync(input, externalOrderId, cancellationToken, order.Items);
         var shippingDate = ResolveShippingDate(input.ShippingDate);
+        var customer = await ResolveCustomerAsync(input, cancellationToken);
+        var discount = ResolveDiscount(input, items);
+        var operationalDataChanged = HasOperationalChanges(order, source.Name, externalOrderId, shippingDate, items);
 
-        await ReversePlannedProductionAsync(orderId, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await EnsureOrderCanChangeAsync(orderId, operationalDataChanged, cancellationToken);
 
-        order.Replace(new OrderOrigin(source.Name, externalOrderId), items, shippingDate);
-        if (order.Status == OrderStatus.ReadyForProduction)
+        if (operationalDataChanged)
+        {
+            await ReversePlannedProductionAsync(orderId, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        order.Replace(new OrderOrigin(source.Name, externalOrderId), items, shippingDate, customer, customer?.Id, discount);
+        if (operationalDataChanged && order.Status == OrderStatus.ReadyForProduction)
         {
             order.MarkNormalized();
         }
 
         await orderRepository.UpdateAsync(order, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        await productionPlanningService.TryPlanAsync(order.Id, cancellationToken);
+        await RecalculateSettlementIfNeededAsync(orderId, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        if (operationalDataChanged)
+        {
+            await productionPlanningService.TryPlanAsync(order.Id, cancellationToken);
+        }
     }
 
     public async Task DeleteAsync(Guid orderId, Guid? processId = null, CancellationToken cancellationToken = default)
@@ -258,6 +272,25 @@ public sealed class ManualOrderService
     {
         var sources = await orderSourceCatalogRepository.ListAsync(cancellationToken);
         return sources.Select(source => source.Name).ToList().AsReadOnly();
+    }
+
+    public async Task<IReadOnlyCollection<CustomerOptionViewModel>> ListCustomerOptionsAsync(CancellationToken cancellationToken = default)
+    {
+        if (customerRepository is null)
+        {
+            return Array.Empty<CustomerOptionViewModel>();
+        }
+
+        var customers = await customerRepository.ListAsync(cancellationToken);
+        return customers
+            .Select(customer => new CustomerOptionViewModel(customer.Id, customer.Name, customer.Phone, customer.Email))
+            .ToList()
+            .AsReadOnly();
+    }
+
+    public async Task<bool> HasFinancialSettlementAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        return await financialSettlementRepository.GetByOrderIdAsync(orderId, cancellationToken) is not null;
     }
 
     public async Task CreateOrderSourceAsync(OrderSourceInputModel input, CancellationToken cancellationToken = default)
@@ -356,7 +389,7 @@ public sealed class ManualOrderService
         return items;
     }
 
-    private async Task EnsureOrderCanChangeAsync(Guid orderId, CancellationToken cancellationToken)
+    private async Task EnsureOrderCanChangeAsync(Guid orderId, bool operationalDataChanged, CancellationToken cancellationToken)
     {
         var productionTasks = await productionTaskRepository.ListByOrderAsync(orderId, cancellationToken);
         if (productionTasks.Any(task => task.Status is ProductionTaskStatus.InProduction or ProductionTaskStatus.Completed))
@@ -365,10 +398,111 @@ public sealed class ManualOrderService
         }
 
         var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
-        if (shipments.Any(shipment => shipment.OrderId == orderId))
+        if (operationalDataChanged && shipments.Any(shipment => shipment.OrderId == orderId))
         {
             throw new InvalidOperationException("Pedido nao pode ser alterado pois possui envio vinculado.");
         }
+    }
+
+    private async Task<Customer?> ResolveCustomerAsync(ManualOrderInputModel input, CancellationToken cancellationToken)
+    {
+        var hasCustomerData = !string.IsNullOrWhiteSpace(input.CustomerName)
+            || !string.IsNullOrWhiteSpace(input.CustomerPhone)
+            || !string.IsNullOrWhiteSpace(input.CustomerEmail);
+
+        if (!hasCustomerData)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(input.CustomerName))
+        {
+            throw new InvalidOperationException("Nome do cliente e obrigatorio quando telefone ou email forem informados.");
+        }
+
+        if (customerRepository is null)
+        {
+            throw new InvalidOperationException("Repositorio de clientes nao configurado.");
+        }
+
+        var normalizedName = CustomerNormalizer.NormalizeName(input.CustomerName);
+        var existing = await customerRepository.GetByNormalizedNameAsync(normalizedName, cancellationToken);
+        if (existing is not null)
+        {
+            existing.UpdateContact(input.CustomerName, input.CustomerPhone, input.CustomerEmail);
+            await customerRepository.UpdateAsync(existing, cancellationToken);
+            return existing;
+        }
+
+        var customer = new Customer(Guid.NewGuid(), input.CustomerName, input.CustomerPhone, input.CustomerEmail);
+        await customerRepository.AddAsync(customer, cancellationToken);
+        return customer;
+    }
+
+    private static OrderDiscount? ResolveDiscount(ManualOrderInputModel input, IReadOnlyCollection<OrderItem> items)
+    {
+        if (input.DiscountValue <= 0)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(input.DiscountDescription))
+        {
+            throw new InvalidOperationException("Descricao do desconto e obrigatoria quando houver desconto.");
+        }
+
+        var grossTotal = items.Sum(item => item.Quantity * item.UnitPrice.Amount);
+        var discountAmount = input.DiscountIsPercent
+            ? grossTotal * input.DiscountValue / 100
+            : input.DiscountValue;
+
+        return new OrderDiscount(input.DiscountDescription, new Money(decimal.Round(discountAmount, 2), "BRL"));
+    }
+
+    private static bool HasOperationalChanges(
+        Order order,
+        string source,
+        string externalOrderId,
+        DateOnly shippingDate,
+        IReadOnlyCollection<OrderItem> items)
+    {
+        return order.Origin.Source != source
+            || order.Origin.ExternalOrderId != externalOrderId
+            || order.ShippingDate != shippingDate
+            || !ItemsMatch(order.Items, items);
+    }
+
+    private static bool ItemsMatch(IReadOnlyCollection<OrderItem> current, IReadOnlyCollection<OrderItem> replacement)
+    {
+        var currentItems = current.OrderBy(item => item.Id).ToList();
+        var replacementItems = replacement.OrderBy(item => item.Id).ToList();
+        if (currentItems.Count != replacementItems.Count)
+        {
+            return false;
+        }
+
+        return currentItems.Zip(replacementItems).All(pair =>
+            pair.First.ExternalItemId == pair.Second.ExternalItemId
+            && pair.First.Description == pair.Second.Description
+            && pair.First.Quantity == pair.Second.Quantity
+            && pair.First.UnitPrice == pair.Second.UnitPrice
+            && pair.First.ProductId == pair.Second.ProductId);
+    }
+
+    private async Task RecalculateSettlementIfNeededAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        if (settlementCalculator is null)
+        {
+            return;
+        }
+
+        if (await financialSettlementRepository.GetByOrderIdAsync(orderId, cancellationToken) is null)
+        {
+            return;
+        }
+
+        var settlement = await settlementCalculator.CalculateAsync(orderId, cancellationToken);
+        await financialSettlementRepository.ReplaceForOrderAsync(settlement, cancellationToken);
     }
 
     private async Task ReversePlannedProductionAsync(Guid orderId, CancellationToken cancellationToken)

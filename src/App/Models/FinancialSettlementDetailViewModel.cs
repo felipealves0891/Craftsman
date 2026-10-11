@@ -6,7 +6,9 @@ public sealed record FinancialSettlementDetailViewModel(
     decimal RevenueAmount,
     decimal ProductionCostAmount,
     decimal ShippingCostAmount,
+    decimal DiscountAmount,
     decimal TotalCostAmount,
     decimal MarginAmount,
     string Status,
-    DateTimeOffset CalculatedAt);
+    DateTimeOffset CalculatedAt,
+    IReadOnlyCollection<OrderItemViewModel> Items);

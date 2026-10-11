@@ -1,18 +1,33 @@
-@model IReadOnlyCollection<Craftsman.App.Models.FinancialSettlementListItemViewModel>
+@model Craftsman.App.Models.FinancialSettlementIndexViewModel
 
 @{
     ViewData["Title"] = "Financeiro";
 
-    var settlements = Model
-        .Select(settlement => new FinanceIndexPage.SettlementRow(
-            settlement.OrderId,
-            settlement.RevenueAmount.ToString("C"),
-            settlement.TotalCostAmount.ToString("C"),
-            settlement.MarginAmount.ToString("C"),
-            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
-            settlement.Status.ToLowerInvariant(),
-            settlement.CalculatedAt.ToLocalTime().ToString("g")))
+    var settlements = Model.Settlements
+        .Select(settlement =>
+        {
+            var orderId = settlement.OrderId.ToString();
+
+            return new FinanceIndexPage.SettlementRow(
+                settlement.OrderId,
+                orderId[..8],
+                settlement.RevenueAmount.ToString("C"),
+                settlement.DiscountAmount.ToString("C"),
+                settlement.TotalCostAmount.ToString("C"),
+                settlement.MarginAmount.ToString("C"),
+                Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
+                settlement.Status.ToLowerInvariant(),
+                settlement.CalculatedAt.ToLocalTime().ToString("d"));
+        })
         .ToArray();
+
+    var kpis = new[]
+    {
+        new FinanceIndexPage.KpiCard("Total de Receita", "fas fa-dollar-sign", Model.Summary.TotalRevenueAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Total de Custos", "fas fa-receipt", Model.Summary.TotalCostAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Total de Margem", "fas fa-chart-line", Model.Summary.TotalMarginAmount.ToString("C")),
+        new FinanceIndexPage.KpiCard("Margem por Pedido", "fas fa-balance-scale", Model.Summary.MarginPerOrderAmount.ToString("C"))
+    };
 
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
@@ -22,6 +37,7 @@
 
 <component type="typeof(FinanceIndexPage)" render-mode="Static"
            param-Settlements="@settlements"
+           param-Kpis="@kpis"
            param-From="@from"
            param-To="@to"
            param-SuccessMessage="@successMessage"

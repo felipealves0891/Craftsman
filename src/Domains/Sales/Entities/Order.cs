@@ -18,6 +18,12 @@ public sealed class Order
 
     public DateOnly? ShippingDate { get; private set; }
 
+    public Guid? CustomerId { get; private set; }
+
+    public Customer? Customer { get; private set; }
+
+    public OrderDiscount? Discount { get; private set; }
+
     public IReadOnlyCollection<OrderItem> Items => items.AsReadOnly();
 
     public IReadOnlyCollection<IDomainEvent> DomainEvents => domainEvents.AsReadOnly();
@@ -29,6 +35,9 @@ public sealed class Order
         OrderStatus status = OrderStatus.Normalized,
         DateTimeOffset? createdAt = null,
         DateOnly? shippingDate = null,
+        Customer? customer = null,
+        Guid? customerId = null,
+        OrderDiscount? discount = null,
         bool raiseNormalizedEvent = true)
     {
         if (id == Guid.Empty)
@@ -53,6 +62,9 @@ public sealed class Order
         }
 
         ShippingDate = shippingDate;
+        Customer = customer;
+        CustomerId = customer?.Id ?? customerId;
+        Discount = discount;
 
         if (raiseNormalizedEvent)
         {
@@ -94,7 +106,13 @@ public sealed class Order
         Status = OrderStatus.Cancelled;
     }
 
-    public void Replace(OrderOrigin origin, IEnumerable<OrderItem> replacementItems, DateOnly? shippingDate)
+    public void Replace(
+        OrderOrigin origin,
+        IEnumerable<OrderItem> replacementItems,
+        DateOnly? shippingDate,
+        Customer? customer = null,
+        Guid? customerId = null,
+        OrderDiscount? discount = null)
     {
         var newItems = replacementItems?.ToList() ?? throw new ArgumentNullException(nameof(replacementItems));
 
@@ -110,8 +128,18 @@ public sealed class Order
 
         Origin = origin;
         ShippingDate = shippingDate;
+        Customer = customer;
+        CustomerId = customer?.Id ?? customerId;
+        Discount = discount;
         items.Clear();
         items.AddRange(newItems);
+    }
+
+    public void UpdateCommercialData(Customer? customer, Guid? customerId, OrderDiscount? discount)
+    {
+        Customer = customer;
+        CustomerId = customer?.Id ?? customerId;
+        Discount = discount;
     }
 
     public void MarkNormalized()

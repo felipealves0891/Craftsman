@@ -37,8 +37,6 @@ public static class ServiceCollectionExtensions
         var connectionString = configuration.GetConnectionString("CraftsmanDb")
             ?? throw new InvalidOperationException("Connection string 'CraftsmanDb' was not configured.");
 
-        Console.WriteLine(connectionString);
-
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
         services.AddDataProtection();
         services.AddMemoryCache();
@@ -55,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOrderDeletionProcessRepository, OrderDeletionProcessRepository>();
         services.AddScoped<IOrderSourceCatalogRepository, OrderSourceCatalogRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();

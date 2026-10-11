@@ -9,7 +9,8 @@
         .Select(order => new OrdersIndexPage.OrderRow(
             order.Id,
             order.Source,
-            order.ExternalOrderId,
+            order.CustomerName ?? "-",
+            order.DiscountAmount > 0 ? order.DiscountAmount.ToString("C") : "Nao",
             order.ShippingDate?.ToString("dd/MM/yyyy") ?? "-",
             Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Sales.Entities.OrderStatus), order.Status),
             order.Status.ToLowerInvariant(),

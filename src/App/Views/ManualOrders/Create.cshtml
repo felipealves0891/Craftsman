@@ -12,6 +12,9 @@
     var orderSources = (ViewBag.OrderSources as List<SelectListItem> ?? [])
         .Select(source => new SelectOption(source.Value, source.Text, source.Selected || source.Value == Model.Source))
         .ToArray();
+    var customers = (ViewBag.Customers as IReadOnlyCollection<Craftsman.App.Models.CustomerOptionViewModel> ?? [])
+        .Select(customer => new ManualOrderCreatePage.CustomerOption(customer.Name, customer.Phone, customer.Email))
+        .ToArray();
     var items = Model.Items
         .Select(item => new ManualOrderCreatePage.ManualOrderItemRow(
             item.ExternalItemId,
@@ -37,6 +40,7 @@
         ? "Atualize os dados do pedido e seus itens. Estoque e producao serao recalculados ao salvar."
         : "Selecione a origem, informe a data de envio e adicione quantos itens forem necessarios.";
     var submitLabel = isEdit ? "Salvar alteracoes" : "Salvar pedido";
+    var showSettlementRecalculationWarning = ViewBag.ShowSettlementRecalculationWarning is true;
 }
 
 @* Static component contract: asp-for="Items[i].UnitPriceAmount" type="text" inputmode="decimal" data-currency-input *@
@@ -48,10 +52,18 @@
            param-SubmitLabel="@submitLabel"
            param-Products="@products"
            param-OrderSources="@orderSources"
+           param-Customers="@customers"
            param-Items="@items"
            param-RequestVerificationToken="@requestVerificationToken"
            param-Reference="@reference"
            param-ShippingDate="@shippingDate"
+           param-CustomerName="@Model.CustomerName"
+           param-CustomerPhone="@Model.CustomerPhone"
+           param-CustomerEmail="@Model.CustomerEmail"
+           param-DiscountDescription="@Model.DiscountDescription"
+           param-DiscountValue="@Model.DiscountValue.ToString("N2")"
+           param-DiscountIsPercent="@Model.DiscountIsPercent"
+           param-ShowSettlementRecalculationWarning="@showSettlementRecalculationWarning"
            param-MinimumShippingDate="@minimumShippingDate"
            param-SuccessMessage="@successMessage"
            param-ErrorMessage="@errorMessage"

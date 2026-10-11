@@ -47,12 +47,14 @@ public sealed class SettlementCalculator : ISettlementCalculator
                 .Where(movement => movement.BusinessReference == task.Id.ToString())
                 .Sum(movement => movement.TotalCostAmount));
         var revenue = order.Items.Sum(item => item.Quantity * item.UnitPrice.Amount);
+        var discount = order.Discount?.Amount.Amount ?? 0;
 
         return new FinancialSettlement(
             Guid.NewGuid(),
             order.Id,
             revenue,
             productionCost,
-            shippingCostAmount: 0);
+            shippingCostAmount: 0,
+            discountAmount: discount);
     }
 }

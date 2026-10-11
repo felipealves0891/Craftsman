@@ -53,6 +53,8 @@ public sealed class SharedInterfaceViewTests
         Assert.Contains("param-OrderId=\"@Model.OrderId\"", view);
         Assert.Contains("param-RevenueAmount=\"@Model.RevenueAmount\"", view);
         Assert.Contains("param-CalculatedAt=\"@Model.CalculatedAt\"", view);
+        Assert.Contains("new FinancialSettlementDetailsPage.OrderItemRow", view);
+        Assert.Contains("param-Items=\"@items\"", view);
     }
 
     [Fact]
@@ -68,6 +70,8 @@ public sealed class SharedInterfaceViewTests
         Assert.Contains("new ProductsIndexPage.ProductRow", productsView);
         Assert.Contains("new InventoryIndexPage.MaterialRow", inventoryView);
         Assert.Contains("new FinanceIndexPage.SettlementRow", financeView);
+        Assert.Contains("new FinanceIndexPage.KpiCard", financeView);
+        Assert.Contains("param-Kpis", financeView);
         Assert.Contains("new OrdersIndexPage.OrderRow", ordersView);
         Assert.Contains("new ProductionIndexPage.CalendarDay", productionView);
         Assert.Contains("new ShipmentsIndexPage.ShipmentRow", shipmentsView);
@@ -158,6 +162,49 @@ public sealed class SharedInterfaceViewTests
         Assert.Contains("<textarea id=\"Items_@(i)__Description\" name=\"Items[@i].Description\"", component);
         Assert.Contains(".manual-item-product", styles);
         Assert.Contains("grid-column: span 3;", styles);
+    }
+
+    [Fact]
+    public void Finance_index_component_renders_kpi_cards_with_accessible_tooltips()
+    {
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "Finance", "FinanceIndexPage.razor"));
+        var styles = File.ReadAllText(ProjectPath("src", "App", "wwwroot", "css", "site.css"));
+
+        Assert.Contains("finance-kpi-grid", component);
+        Assert.Contains("finance-kpi-card", component);
+        Assert.Contains("aria-label=\"@kpi.Title\"", component);
+        Assert.Contains("data-title=\"@kpi.Title\"", component);
+        Assert.Contains("public sealed record KpiCard", component);
+        Assert.Contains(".finance-kpi-card::after", styles);
+        Assert.Contains(".finance-kpi-title", styles);
+    }
+
+    [Fact]
+    public void Finance_index_view_uses_abbreviated_order_code_and_date_only_calculation()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Finance", "Index.cshtml"));
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "Finance", "FinanceIndexPage.razor"));
+
+        Assert.Contains("orderId[..8]", view);
+        Assert.Contains("ToString(\"d\")", view);
+        Assert.Contains("string OrderCode", component);
+        Assert.Contains("@settlement.OrderCode", component);
+        Assert.Contains("href=\"/Finance/Details?orderId=@settlement.OrderId\"", component);
+    }
+
+    [Fact]
+    public void Financial_details_component_renders_order_items_and_empty_state()
+    {
+        var component = File.ReadAllText(ProjectPath("src", "UI", "Components", "Finance", "FinancialSettlementDetailsPage.razor"));
+        var styles = File.ReadAllText(ProjectPath("src", "App", "wwwroot", "css", "site.css"));
+
+        Assert.Contains("public sealed record OrderItemRow", component);
+        Assert.Contains("Nenhum item encontrado", component);
+        Assert.Contains("@item.ExternalItemId", component);
+        Assert.Contains("@item.Description", component);
+        Assert.Contains("@item.Quantity", component);
+        Assert.Contains("@item.UnitPrice", component);
+        Assert.Contains(".finance-detail-grid", styles);
     }
 
     private static string ProjectPath(params string[] paths)

@@ -31,6 +31,19 @@
     </div>
 </form>
 
+<section class="finance-kpi-grid" aria-label="Indicadores financeiros">
+    @foreach (var kpi in Kpis)
+    {
+        <button type="button" class="finance-kpi-card" title="@kpi.Title" aria-label="@kpi.Title" data-title="@kpi.Title">
+            <span class="finance-kpi-icon" aria-hidden="true"><i class="@kpi.IconCss"></i></span>
+            <span class="finance-kpi-content">
+                <span class="finance-kpi-title">@kpi.Title</span>
+                <strong>@kpi.Value</strong>
+            </span>
+        </button>
+    }
+</section>
+
 <div class="table-panel">
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -38,6 +51,7 @@
                 <tr>
                     <th>Pedido</th>
                     <th>Receita</th>
+                    <th>Desconto</th>
                     <th>Custos</th>
                     <th>Margem</th>
                     <th>Status</th>
@@ -49,7 +63,7 @@
                 @if (!Settlements.Any())
                 {
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <strong>Nenhuma apura&ccedil;&atilde;o encontrada</strong>
                                 <span>Ajuste o per&iacute;odo ou aguarde entregas confirmadas para calcular margem.</span>
@@ -62,8 +76,9 @@
                     @foreach (var settlement in Settlements)
                     {
                         <tr>
-                            <td><strong>@settlement.OrderId</strong></td>
+                            <td><strong>@settlement.OrderCode</strong></td>
                             <td>@settlement.RevenueAmount</td>
+                            <td>@settlement.DiscountAmount</td>
                             <td>@settlement.TotalCostAmount</td>
                             <td><strong>@settlement.MarginAmount</strong></td>
                             <td><span class="status-badge status-@settlement.StatusCss">@settlement.StatusLabel</span></td>
@@ -82,6 +97,9 @@
     public IReadOnlyCollection<SettlementRow> Settlements { get; set; } = [];
 
     [Parameter]
+    public IReadOnlyCollection<KpiCard> Kpis { get; set; } = [];
+
+    [Parameter]
     public string? From { get; set; }
 
     [Parameter]
@@ -95,10 +113,17 @@
 
     public sealed record SettlementRow(
         Guid OrderId,
+        string OrderCode,
         string RevenueAmount,
+        string DiscountAmount,
         string TotalCostAmount,
         string MarginAmount,
         string StatusLabel,
         string StatusCss,
         string CalculatedAt);
+
+    public sealed record KpiCard(
+        string Title,
+        string IconCss,
+        string Value);
 }

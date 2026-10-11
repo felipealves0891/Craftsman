@@ -50,7 +50,8 @@
             <thead>
                 <tr>
                     <th>Origem</th>
-                    <th>Pedido externo</th>
+                    <th>Cliente</th>
+                    <th>Desconto</th>
                     <th>Data de envio</th>
                     <th>Status</th>
                     <th>Itens</th>
@@ -62,7 +63,7 @@
                 @if (!Orders.Any())
                 {
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <strong>Nenhum pedido na carteira</strong>
                                 <span>Importe pedidos ou crie um pedido manual para comecar.</span>
@@ -76,7 +77,8 @@
                     {
                         <tr>
                             <td>@order.Source</td>
-                            <td><strong>@order.ExternalOrderId</strong></td>
+                            <td><strong>@order.CustomerName</strong></td>
+                            <td>@order.DiscountLabel</td>
                             <td>@order.ShippingDate</td>
                             <td><span class="status-badge status-@order.StatusCss">@order.StatusLabel</span></td>
                             <td>@order.ItemCount</td>
@@ -103,7 +105,8 @@
     public sealed record OrderRow(
         Guid Id,
         string Source,
-        string ExternalOrderId,
+        string CustomerName,
+        string DiscountLabel,
         string ShippingDate,
         string StatusLabel,
         string StatusCss,
