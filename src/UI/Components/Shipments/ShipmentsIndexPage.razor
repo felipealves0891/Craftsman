@@ -60,7 +60,9 @@
                     {
                         <tr>
                             <td><strong>@shipment.OrderId</strong></td>
-                            <td>@shipment.TrackingCode</td>
+                            <td>
+                                @shipment.TrackingCode
+                            </td>
                             <td><span class="status-badge status-@shipment.StatusCss">@shipment.StatusLabel</span></td>
                             <td>@shipment.CreatedAt</td>
                             <td class="text-right">
@@ -87,5 +89,5 @@
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public string? ErrorMessage { get; set; }
 
-    public sealed record ShipmentRow(Guid Id, Guid OrderId, string? TrackingCode, string StatusLabel, string StatusCss, string CreatedAt);
+    public sealed record ShipmentRow(Guid Id, Guid OrderId, string? TrackingCode, bool isLink, string StatusLabel, string StatusCss, string CreatedAt);
 }

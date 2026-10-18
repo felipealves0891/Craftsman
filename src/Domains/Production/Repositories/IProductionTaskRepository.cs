@@ -8,6 +8,8 @@ public interface IProductionTaskRepository
 
     Task<IReadOnlyCollection<ProductionTask>> ListAsync(ProductionTaskStatus? status = null, DateOnly? plannedDate = null, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<ProductionTask>> ListRangeAsync(DateOnly plannedStartDate, DateOnly plannedEndDate, ProductionTaskStatus? status = null, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyCollection<ProductionTask>> ListByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
 
     Task AddAsync(ProductionTask productionTask, CancellationToken cancellationToken = default);

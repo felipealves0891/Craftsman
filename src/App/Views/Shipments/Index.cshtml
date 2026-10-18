@@ -16,6 +16,7 @@
             shipment.Id,
             shipment.OrderId,
             shipment.TrackingCode,
+            shipment.TrackingCode?.StartsWith("http") ?? false,
             Craftsman.App.Presentation.EnumPresentation.Label(typeof(ShipmentStatus), shipment.Status),
             shipment.Status.ToLowerInvariant(),
             shipment.CreatedAt.ToLocalTime().ToString("g")))

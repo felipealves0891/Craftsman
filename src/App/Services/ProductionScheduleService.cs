@@ -32,7 +32,12 @@ public sealed class ProductionScheduleService
         DateOnly? plannedDate = null,
         CancellationToken cancellationToken = default)
     {
-        var tasks = await productionTaskRepository.ListAsync(status, plannedDate: null, cancellationToken);
+        
+        var referenceDate = plannedDate ?? DateOnly.FromDateTime(DateTime.Now);
+        var start = new DateOnly(referenceDate.Year, referenceDate.Month, 1);
+        var end = start.AddMonths(1).AddDays(-1);
+
+        var tasks = await productionTaskRepository.ListRangeAsync(start, end, status, cancellationToken);
         var orders = await orderRepository.ListAsync(cancellationToken);
         var ordersById = orders.ToDictionary(order => order.Id);
 
@@ -49,19 +54,6 @@ public sealed class ProductionScheduleService
                     order?.Origin.ExternalOrderId ?? task.OrderId.ToString()[..8]);
             })
             .ToList();
-
-        if (plannedDate is not null)
-        {
-            viewModels = viewModels
-                .Where(task =>
-                {
-                    var startDate = DateOnly.FromDateTime(task.PlannedStartAt.ToLocalTime().Date);
-                    var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
-
-                    return plannedDate.Value >= startDate && plannedDate.Value <= endDate;
-                })
-                .ToList();
-        }
 
         return viewModels.AsReadOnly();
     }

@@ -26,6 +26,22 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
         return entity is null ? null : ToModel(entity);
     }
 
+    public async Task<IReadOnlyCollection<ProductionTask>> ListRangeAsync(
+        DateOnly plannedStartDate, 
+        DateOnly plannedEndDate, 
+        ProductionTaskStatus? status = null, 
+        CancellationToken cancellationToken = default)
+    {
+        var key = $"production:list:{status?.ToString() ?? "all"}:{plannedStartDate.ToString("yyyyMMdd")}:{plannedEndDate.ToString("yyyyMMdd")}";
+
+        if (cache is not null)
+        {
+            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(status, plannedStartDate, plannedEndDate, token), cancellationToken: cancellationToken);
+        }
+
+        return await ListCoreAsync(status, plannedStartDate, plannedEndDate, cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<ProductionTask>> ListAsync(
         ProductionTaskStatus? status = null,
         DateOnly? plannedDate = null,
@@ -35,10 +51,10 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
 
         if (cache is not null)
         {
-            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(status, plannedDate, token), cancellationToken: cancellationToken);
+            return await cache.GetOrCreateAsync(key, token => ListCoreAsync(status, plannedDate, null, token), cancellationToken: cancellationToken);
         }
 
-        return await ListCoreAsync(status, plannedDate, cancellationToken);
+        return await ListCoreAsync(status, plannedDate, null, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<ProductionTask>> ListByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -100,7 +116,8 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
 
     private async Task<IReadOnlyCollection<ProductionTask>> ListCoreAsync(
         ProductionTaskStatus? status,
-        DateOnly? plannedDate,
+        DateOnly? plannedStartDate,
+        DateOnly? plannedEndDate,
         CancellationToken cancellationToken)
     {
         var query = dbContext.ProductionTasks.AsNoTracking();
@@ -110,10 +127,17 @@ public sealed class ProductionTaskRepository : IProductionTaskRepository
             query = query.Where(task => task.Status == status.ToString());
         }
 
-        if (plannedDate is not null)
+        if (plannedStartDate is not null && plannedEndDate is null)
         {
-            var start = plannedDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            var end = plannedDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var start = plannedStartDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var end = plannedStartDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            query = query.Where(task => task.PlannedStartAt < end && task.PlannedAt >= start);
+        }
+
+        if (plannedStartDate is not null && plannedEndDate is not null)
+        {
+            var start = plannedStartDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var end = plannedEndDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             query = query.Where(task => task.PlannedStartAt < end && task.PlannedAt >= start);
         }
 
