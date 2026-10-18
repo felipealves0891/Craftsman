@@ -61,7 +61,17 @@
                         <tr>
                             <td><strong>@shipment.OrderId</strong></td>
                             <td>
-                                @shipment.TrackingCode
+                                @if(shipment.isLink)
+                                {
+                                    <a href="@shipment.TrackingCode" target="_blank">
+                                        @shipment.TrackingCode?.Split("/").Reverse().FirstOrDefault()
+                                    </a>
+                                } 
+                                else
+                                {
+                                    @shipment.TrackingCode
+                                }
+
                             </td>
                             <td><span class="status-badge status-@shipment.StatusCss">@shipment.StatusLabel</span></td>
                             <td>@shipment.CreatedAt</td>

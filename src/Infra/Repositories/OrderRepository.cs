@@ -131,7 +131,7 @@ public sealed class OrderRepository : IOrderRepository
     {
         var entities = await QueryOrders()
             .AsNoTracking()
-            .OrderByDescending(order => order.CreatedAt)
+            .OrderByDescending(order => order.ShippingDate)
             .ToListAsync(cancellationToken);
 
         return entities.Select(ToModel).ToList().AsReadOnly();
