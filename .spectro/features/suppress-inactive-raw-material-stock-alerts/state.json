@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
   "feature_id": "suppress-inactive-raw-material-stock-alerts",
-  "current_phase": "waiting_input",
-  "status": "waiting_input",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "failed",
-      "execution_id": "gate-20261102T222259Z",
+      "status": "completed",
+      "execution_id": "gate-20261102T223956Z",
       "report": ".spectro/features/suppress-inactive-raw-material-stock-alerts/gates.json"
     }
   },
@@ -28,7 +28,6 @@
     ],
     "detected_at": "2026-11-02T22:24:21.621Z"
   },
-  "last_execution_id": "gate-20261102T222259Z",
-  "updated_at": "2026-11-02T22:24:21.622Z",
-  "invalidation_reason": "Recovery invalidated evidence for gate-20261102T222259Z."
+  "last_execution_id": "gate-20261102T223956Z",
+  "updated_at": "2026-11-02T22:41:06.448Z"
 }
