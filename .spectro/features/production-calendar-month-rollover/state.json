@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
   "feature_id": "production-calendar-month-rollover",
-  "current_phase": "implement",
-  "status": "running",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "invalidated",
-      "execution_id": "gate-20261102T195835Z",
+      "status": "completed",
+      "execution_id": "gate-20261102T201710Z",
       "report": ".spectro/features/production-calendar-month-rollover/gates.json"
     }
   },
@@ -31,6 +31,6 @@
     ],
     "detected_at": "2026-11-02T19:58:33.171Z"
   },
-  "last_execution_id": "gate-20261102T195835Z",
-  "updated_at": "2026-11-02T19:59:33.255Z"
+  "last_execution_id": "gate-20261102T201710Z",
+  "updated_at": "2026-11-02T20:18:51.568Z"
 }
