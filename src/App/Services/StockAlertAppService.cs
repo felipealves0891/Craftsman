@@ -110,7 +110,7 @@ public sealed class StockAlertAppService
     {
         var alerts = new List<StockAlertViewModel>();
 
-        foreach (var material in materials)
+        foreach (var material in materials.Where(material => material.Status == RawMaterialStatus.Active))
         {
             var balance = await stockMovementRepository.GetBalanceAsync(material.Id, cancellationToken);
             var level = material.GetStockAlertLevel(balance);
