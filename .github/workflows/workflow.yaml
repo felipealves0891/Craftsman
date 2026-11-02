@@ -193,8 +193,6 @@ jobs:
 
           # Até 20 tentativas para encontrar o registro
           for attempt in $(seq 1 20); do
-            sleep 3
-
             DEPLOYMENTS=$(get_deployments)
 
             DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | jq -r \
@@ -207,6 +205,8 @@ jobs:
             if [[ -n "$DEPLOYMENT_ID" ]]; then
               break
             fi
+            
+            sleep 60
           done
 
           if [[ -z "$DEPLOYMENT_ID" ]]; then
@@ -238,7 +238,7 @@ jobs:
                 ;;
             esac
 
-            sleep 5
+            sleep 60
           done
 
           echo "::error::Deployment timeout"
