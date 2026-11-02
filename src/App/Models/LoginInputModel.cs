@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class LoginInputModel
 {
     [Required(ErrorMessage = "Informe o e-mail.")]

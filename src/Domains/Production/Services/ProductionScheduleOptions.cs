@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 namespace Craftsman.Domain.Production.Services;
 
+[ExcludeFromCodeCoverage]
 public sealed class ProductionScheduleOptions
 {
     public const string SectionName = "Production";

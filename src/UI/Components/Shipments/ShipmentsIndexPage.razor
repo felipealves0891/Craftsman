@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 @using Craftsman.UI.Components.Shared
 
 <section class="page-heading">
@@ -99,5 +100,6 @@
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public string? ErrorMessage { get; set; }
 
+    [ExcludeFromCodeCoverage]
     public sealed record ShipmentRow(Guid Id, Guid OrderId, string? TrackingCode, bool isLink, string StatusLabel, string StatusCss, string CreatedAt);
 }

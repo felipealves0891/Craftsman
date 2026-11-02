@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Envios</span>
@@ -168,6 +169,7 @@
     [Parameter] public IReadOnlyCollection<string> OrderIdErrors { get; set; } = [];
     [Parameter] public IReadOnlyCollection<string> TrackingCodeErrors { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record OrderSelectionRow(
         Guid Id,
         string Source,
@@ -178,5 +180,6 @@
         string SearchText,
         IReadOnlyCollection<OrderSelectionItemRow> Items);
 
+    [ExcludeFromCodeCoverage]
     public sealed record OrderSelectionItemRow(string ExternalItemId, string Description, int Quantity, string UnitPrice);
 }

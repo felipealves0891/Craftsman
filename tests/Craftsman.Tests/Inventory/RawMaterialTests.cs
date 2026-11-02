@@ -40,6 +40,45 @@ public sealed class RawMaterialTests
             new RawMaterial(Guid.NewGuid(), "Tecido", "m", minimumStockLevel: 5, criticalStockLevel: 6));
     }
 
+    [Fact]
+    public void Raw_material_validates_identity_and_required_text()
+    {
+        Assert.Throws<ArgumentException>(() => new RawMaterial(Guid.Empty, "Tecido", "m"));
+        Assert.Throws<ArgumentException>(() => new RawMaterial(Guid.NewGuid(), " ", "m"));
+        Assert.Throws<ArgumentException>(() => new RawMaterial(Guid.NewGuid(), "Tecido", "\t"));
+    }
+
+    [Fact]
+    public void Raw_material_can_be_deactivated_and_activated_again()
+    {
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "  Tecido ", " m ");
+
+        Assert.Equal("Tecido", rawMaterial.Name);
+        Assert.Equal("m", rawMaterial.UnitOfMeasure);
+        Assert.True(rawMaterial.CanBeConsumed);
+
+        rawMaterial.Deactivate();
+        Assert.False(rawMaterial.CanBeConsumed);
+
+        rawMaterial.Activate();
+        Assert.True(rawMaterial.CanBeConsumed);
+    }
+
+    [Fact]
+    public void Raw_material_updates_low_stock_rules_and_classifies_warning_without_critical_level()
+    {
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+
+        rawMaterial.SetLowStockRule(8, null);
+
+        Assert.Equal(8, rawMaterial.MinimumStockLevel);
+        Assert.Null(rawMaterial.CriticalStockLevel);
+        Assert.Equal(StockAlertLevel.Warning, rawMaterial.GetStockAlertLevel(8));
+        Assert.Equal(StockAlertLevel.Normal, rawMaterial.GetStockAlertLevel(9));
+        Assert.Throws<ArgumentOutOfRangeException>(() => rawMaterial.SetLowStockRule(-1, null));
+        Assert.Throws<ArgumentOutOfRangeException>(() => rawMaterial.SetLowStockRule(null, -1));
+    }
+
     [Theory]
     [InlineData(11, StockAlertLevel.Normal)]
     [InlineData(10, StockAlertLevel.Warning)]

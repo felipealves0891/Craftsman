@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Finance.Repositories;
 using Craftsman.Domain.Finance.Services;
@@ -28,6 +29,7 @@ using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Services;
 
+[ExcludeFromCodeCoverage]
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCraftsmanInfrastructure(

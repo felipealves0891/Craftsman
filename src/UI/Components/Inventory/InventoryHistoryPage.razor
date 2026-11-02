@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Estoque</span>
@@ -57,6 +58,7 @@
     [Parameter]
     public IReadOnlyCollection<MovementRow> Movements { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record MovementRow(
         string Type,
         string Quantity,

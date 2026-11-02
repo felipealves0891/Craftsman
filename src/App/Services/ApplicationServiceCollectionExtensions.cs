@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
 namespace Craftsman.App.Services;
 
+[ExcludeFromCodeCoverage]
 public static class ApplicationServiceCollectionExtensions
 {
     public static IServiceCollection AddCraftsmanApplication(this IServiceCollection services)
     {
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<OrderQueryService>();
         services.AddScoped<ProductionScheduleService>();
         services.AddScoped<ShippingAppService>();

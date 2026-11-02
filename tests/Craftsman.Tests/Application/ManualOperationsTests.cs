@@ -782,6 +782,50 @@ public sealed class ManualOperationsTests
     }
 
     [Fact]
+    public async Task Orders_controller_reports_unplannable_order_without_stock_alerts()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var unitOfWork = new UnitOfWork(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "NO-PLAN-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Item sem vínculo", 1, new Money(10, "BRL"))]);
+
+        await orderRepository.AddAsync(order);
+        await dbContext.SaveChangesAsync();
+
+        var planningService = new OrderProductionPlanningService(
+            orderRepository,
+            new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository)),
+            productionTaskRepository,
+            unitOfWork,
+            new RecordingDomainEventPublisher(),
+            NullLogger<OrderProductionPlanningService>.Instance);
+        var controller = new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
+            CreateManualOrderService(dbContext),
+            new EmptyOrderImportPipeline(),
+            planningService,
+            new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
+            new NoOpAuditService())
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+
+        await controller.SendToProduction(order.Id, CancellationToken.None);
+
+        Assert.Equal("Pedido nao pode ser enviado para producao. Verifique vinculos, estoque e tarefas ja existentes.", controller.TempData["Error"]);
+        Assert.False(controller.TempData.ContainsKey("StockAlerts"));
+        Assert.Empty(await productionTaskRepository.ListAsync());
+    }
+
+    [Fact]
     public async Task Product_catalog_service_rejects_duplicate_bill_of_materials_items()
     {
         await using var dbContext = CreateDbContext();

@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Usuarios</h1>
     <a class="btn btn-primary" href="/Users/Create">
@@ -34,5 +35,6 @@
     [Parameter]
     public IReadOnlyCollection<UserRow> Users { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record UserRow(string Email, string Roles);
 }

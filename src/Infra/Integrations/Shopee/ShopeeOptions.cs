@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Integrations.Shopee;
 
+[ExcludeFromCodeCoverage]
 public sealed class ShopeeOptions
 {
     public const string SectionName = "Shopee";

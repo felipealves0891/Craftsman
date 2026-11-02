@@ -48,6 +48,52 @@ public sealed class DomainEventPublisherTests
     }
 
     [Fact]
+    public async Task Publisher_persists_duplicate_event_once_but_dispatches_each_publish()
+    {
+        var handler = new RecordingDeliveryHandler();
+        await using var provider = CreateServiceProvider(handler);
+        using var scope = provider.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IDomainEventPublisher>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var domainEvent = new DeliveryConfirmedEvent(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow);
+
+        await publisher.PublishAsync(domainEvent);
+        await publisher.PublishAsync(domainEvent);
+
+        Assert.Single(await dbContext.DomainEvents.ToListAsync());
+        Assert.Equal(2, await dbContext.DomainEventHandlerExecutions.CountAsync());
+        Assert.Equal(2, handler.HandledCount);
+    }
+
+    [Fact]
+    public async Task Publisher_persists_event_without_creating_handler_execution_when_no_handler_is_registered()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        services.AddScoped<IDomainEventPublisher, PersistentDomainEventPublisher>();
+        await using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IDomainEventPublisher>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        await publisher.PublishAsync(new DeliveryConfirmedEvent(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow));
+
+        Assert.Single(await dbContext.DomainEvents.ToListAsync());
+        Assert.Empty(await dbContext.DomainEventHandlerExecutions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Publisher_rejects_null_event()
+    {
+        await using var provider = CreateServiceProvider(new RecordingDeliveryHandler());
+        using var scope = provider.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IDomainEventPublisher>();
+
+        await Assert.ThrowsAsync<ArgumentNullException>(() => publisher.PublishAsync<DeliveryConfirmedEvent>(null!));
+    }
+
+    [Fact]
     public async Task Retry_service_reexecutes_failed_handler()
     {
         var handler = new RecordingDeliveryHandler { ShouldFail = true };

@@ -26,6 +26,32 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
         Assert.Single(repository.Settlements);
     }
 
+    [Fact]
+    public async Task Handler_calculates_publishes_and_saves_new_settlement()
+    {
+        var orderId = Guid.NewGuid();
+        var repository = new FakeFinancialSettlementRepository();
+        var calculator = new FakeSettlementCalculator();
+        var unitOfWork = new FakeUnitOfWork();
+        var publisher = new FakeDomainEventPublisher();
+        var handler = new DeliveryConfirmedSettlementHandler(
+            NullLogger<DeliveryConfirmedSettlementHandler>.Instance,
+            calculator,
+            repository,
+            unitOfWork,
+            publisher);
+
+        await handler.HandleAsync(new DeliveryConfirmedEvent(Guid.NewGuid(), orderId, DateTimeOffset.UtcNow));
+
+        var settlement = Assert.Single(repository.Settlements);
+        Assert.Equal(orderId, settlement.OrderId);
+        Assert.Equal(1, calculator.CallCount);
+        Assert.Single(publisher.PublishedEvents);
+        Assert.IsType<FinancialSettlementCalculatedEvent>(publisher.PublishedEvents[0]);
+        Assert.Empty(settlement.DomainEvents);
+        Assert.Equal(1, unitOfWork.SaveCount);
+    }
+
     private sealed class FakeFinancialSettlementRepository : IFinancialSettlementRepository
     {
         public List<FinancialSettlement> Settlements { get; }
@@ -67,25 +93,34 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
 
     private sealed class FakeSettlementCalculator : ISettlementCalculator
     {
+        public int CallCount { get; private set; }
+
         public Task<FinancialSettlement> CalculateAsync(Guid orderId, CancellationToken cancellationToken = default)
         {
+            CallCount++;
             return Task.FromResult(new FinancialSettlement(Guid.NewGuid(), orderId, 10, 3, 0));
         }
     }
 
     private sealed class FakeUnitOfWork : IUnitOfWork
     {
+        public int SaveCount { get; private set; }
+
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            SaveCount++;
             return Task.FromResult(1);
         }
     }
 
     private sealed class FakeDomainEventPublisher : IDomainEventPublisher
     {
+        public List<IDomainEvent> PublishedEvents { get; } = [];
+
         public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
             where TEvent : IDomainEvent
         {
+            PublishedEvents.Add(domainEvent);
             return Task.CompletedTask;
         }
     }

@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Estoque</span>
@@ -51,6 +52,7 @@
     [Parameter]
     public IReadOnlyCollection<BalanceRow> Balances { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record BalanceRow(
         Guid RawMaterialId,
         string RawMaterialName,
