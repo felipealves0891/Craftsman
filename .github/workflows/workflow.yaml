@@ -78,11 +78,10 @@ jobs:
             --min-branches 50
       
       - name: Create Pull Request
-        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
-        if: always() &&
+        if: success() &&
             github.event_name == 'push' &&
             github.ref != 'refs/heads/main'
         run: |
