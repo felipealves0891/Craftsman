@@ -62,6 +62,49 @@ public sealed class ProductionScheduleServiceTests
     }
 
     [Fact]
+    public async Task List_uses_fallback_references_when_task_order_is_missing()
+    {
+        await using var dbContext = CreateDbContext();
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        var task = CreateTask(
+            Guid.NewGuid(),
+            new DateTimeOffset(2031, 6, 12, 10, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2031, 6, 12, 11, 0, 0, TimeSpan.Zero));
+        await taskRepository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, new FixedTimeProvider(new DateTimeOffset(2031, 6, 15, 8, 0, 0, TimeSpan.Zero)));
+
+        var item = Assert.Single(await service.ListAsync());
+
+        Assert.Equal(task.OrderId.ToString()[..8], item.OrderReference);
+        Assert.Equal("Item sem descricao", item.ItemDescription);
+        Assert.Equal(task.OrderId.ToString()[..8], item.ExternalOrderId);
+    }
+
+    [Fact]
+    public async Task List_uses_item_fallback_when_order_does_not_contain_task_item()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        var order = CreateOrder(OrderStatus.ReadyForProduction, "PROD-NO-ITEM");
+        var task = CreateTask(
+            order.Id,
+            new DateTimeOffset(2031, 6, 12, 10, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2031, 6, 12, 11, 0, 0, TimeSpan.Zero));
+        await orderRepository.AddAsync(order);
+        await taskRepository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, new FixedTimeProvider(new DateTimeOffset(2031, 6, 15, 8, 0, 0, TimeSpan.Zero)));
+
+        var item = Assert.Single(await service.ListAsync());
+
+        Assert.Equal("Manual PROD-NO-ITEM", item.OrderReference);
+        Assert.Equal("Item sem descricao", item.ItemDescription);
+        Assert.Equal("PROD-NO-ITEM", item.ExternalOrderId);
+    }
+
+    [Fact]
     public async Task Completing_in_production_task_sets_completion_time()
     {
         await using var dbContext = CreateDbContext();

@@ -69,10 +69,44 @@ public sealed class ProductionCalendarPartialViewTests
         Assert.DoesNotContain("Nenhuma tarefa encontrada", rendered);
     }
 
+    [Fact]
+    public async Task Partial_uses_selected_date_when_reference_date_is_not_provided()
+    {
+        var rendered = await RenderPartialAsync([], new DateOnly(2032, 2, 9), new DateTime(2031, 6, 15),
+            includeReferenceDate: false, includeToday: false, status: null);
+
+        Assert.Contains("data-current-month=\"2032-02\"", rendered);
+        Assert.Contains("value=\"2032-02-09\"", rendered);
+        Assert.Contains("data-auto-update=\"false\"", rendered);
+    }
+
+    [Fact]
+    public async Task Partial_labels_start_middle_and_end_days_for_a_multiday_task()
+    {
+        var plannedStart = new DateTimeOffset(2031, 6, 1, 8, 0, 0, TimeSpan.Zero);
+        var plannedEnd = new DateTimeOffset(2031, 6, 3, 17, 0, 0, TimeSpan.Zero);
+        var task = new ProductionTaskListItemViewModel(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            1, 3, nameof(ProductionTaskStatus.Planned),
+            plannedStart,
+            plannedEnd,
+            null, null, "Manual PROD-13", "Bolsa", "PROD-13");
+
+        var rendered = await RenderPartialAsync([task], null, new DateTime(2031, 6, 15));
+
+        Assert.Contains($"Inicio {plannedStart.ToLocalTime():HH\\:mm}", rendered);
+        Assert.Contains("Em producao", rendered);
+        Assert.Contains($"Fim {plannedEnd.ToLocalTime():HH\\:mm}", rendered);
+        Assert.Contains("data-auto-update=\"true\"", rendered);
+    }
+
     private static async Task<string> RenderPartialAsync(
         IReadOnlyCollection<ProductionTaskListItemViewModel> tasks,
         DateOnly? selectedDate,
-        DateTime referenceDate)
+        DateTime referenceDate,
+        bool includeReferenceDate = true,
+        bool includeToday = true,
+        ProductionTaskStatus? status = ProductionTaskStatus.Planned)
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -107,10 +141,16 @@ public sealed class ProductionCalendarPartialViewTests
         {
             Model = tasks
         };
-        viewData["Status"] = ProductionTaskStatus.Planned;
+        viewData["Status"] = status;
         viewData["PlannedDate"] = selectedDate;
-        viewData["ReferenceDate"] = selectedDate?.ToDateTime(TimeOnly.MinValue) ?? referenceDate;
-        viewData["Today"] = DateOnly.FromDateTime(referenceDate);
+        if (includeReferenceDate)
+        {
+            viewData["ReferenceDate"] = selectedDate?.ToDateTime(TimeOnly.MinValue) ?? referenceDate;
+        }
+        if (includeToday)
+        {
+            viewData["Today"] = DateOnly.FromDateTime(referenceDate);
+        }
 
         var tempData = new TempDataDictionary(httpContext, new EmptyTempDataProvider());
         using var writer = new StringWriter(CultureInfo.InvariantCulture);

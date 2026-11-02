@@ -20,15 +20,16 @@
 
 - Concluídas: `TASK-001`, `TASK-002`
 - Em andamento: `TASK-003` (aguardando aceitação manual em navegador)
-- Bloqueadas: `TASK-004` (gate de cobertura abaixo dos limiares configurados)
+- Bloqueadas: `TASK-004` (aguardando aceitação manual pendente de `TASK-003`; gates técnicos aprovados)
 
 ## Evidências desta execução
 
-- Testes direcionados: 43 aprovados no conjunto inicial; 2 testes adicionais de renderização do componente e 2 testes do partial Razor também passaram.
-- Suíte completa: 237 aprovados, 0 falhas.
+- Cobertura adicional: 21 novos cenários para entidades de finanças, estoque, catálogo e pedidos; 2 cenários para fallback de data e tarefas de vários dias no partial; sucesso do handler de liquidação.
+- Testes direcionados: 11 testes de `ProductionScheduleService` aprovados, incluindo os fallbacks de pedido/item ausente.
+- Suíte completa: 305 aprovados, 0 falhas.
 - Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
 - Verificação de vulnerabilidades NuGet: aprovada; nenhum pacote vulnerável encontrado. Foi necessária execução fora do sandbox para acessar o feed NuGet.
 - Sintaxe do script: `node --check src/App/wwwroot/js/production-calendar.js` aprovado.
 - Snapshot e classes das migrations EF, DTOs, opções/configurações, registros de linha da UI, registros de composição de serviços e `Program` estão marcados com `[ExcludeFromCodeCoverage]`, conforme decisão humana.
-- Gate de cobertura, com os limiares atuais do `.spectro/config.yaml`: falhou com cobertura total de linhas 59,55% (mínimo 70%) e branches 39,34% (mínimo 50%). O script só compara linhas novas já commitadas; com a árvore suja mostrou 0 linhas C# novas e métricas de cobertura nova como N/A.
+- Gate de cobertura, com os limiares atuais do `.spectro/config.yaml`: aprovado com cobertura total de linhas 72,94% (mínimo 70%) e branches 50,00% (mínimo 50%). Para o código novo comparado a `main`, cobertura de linhas 99,14% (mínimo 90%) e branches 90,32% (mínimo 85%) também passaram.
 - Aceitação de virada ao vivo no navegador (`AC-001`, `AC-004`): pendente; a suíte não contém harness de navegador.
