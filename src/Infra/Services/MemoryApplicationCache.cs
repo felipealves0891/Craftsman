@@ -7,6 +7,7 @@ namespace Craftsman.Infra.Services;
 public sealed class MemoryApplicationCache : IApplicationCache
 {
     private readonly bool enabled;
+    private readonly Dictionary<string, long> generations = [];
     private readonly HashSet<string> keys = [];
     private readonly IMemoryCache memoryCache;
     private readonly object sync = new();
@@ -17,7 +18,7 @@ public sealed class MemoryApplicationCache : IApplicationCache
         enabled = configuration.GetValue("Cache:Enabled", true);
     }
 
-    public Task<T> GetOrCreateAsync<T>(
+    public async Task<T> GetOrCreateAsync<T>(
         string key,
         Func<CancellationToken, Task<T>> factory,
         TimeSpan? absoluteExpirationRelativeToNow = null,
@@ -25,29 +26,45 @@ public sealed class MemoryApplicationCache : IApplicationCache
     {
         if (!enabled)
         {
-            return factory(cancellationToken);
+            return await factory(cancellationToken);
         }
+
+        long generation;
 
         lock (sync)
         {
+            if (memoryCache.TryGetValue(key, out var cachedValue))
+            {
+                return (T)cachedValue!;
+            }
+
             keys.Add(key);
+            generation = generations.GetValueOrDefault(key);
         }
 
-        return memoryCache.GetOrCreateAsync(key, entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow ?? TimeSpan.FromMinutes(10);
+        var created = await factory(cancellationToken);
 
-            return factory(cancellationToken);
-        })!;
+        lock (sync)
+        {
+            if (generations.GetValueOrDefault(key) == generation)
+            {
+                memoryCache.Set(
+                    key,
+                    created,
+                    absoluteExpirationRelativeToNow ?? TimeSpan.FromMinutes(10));
+            }
+        }
+
+        return created;
     }
 
     public void Remove(string key)
     {
-        memoryCache.Remove(key);
-
         lock (sync)
         {
+            generations[key] = generations.GetValueOrDefault(key) + 1;
             keys.Remove(key);
+            memoryCache.Remove(key);
         }
     }
 
@@ -61,13 +78,10 @@ public sealed class MemoryApplicationCache : IApplicationCache
 
             foreach (var key in matchingKeys)
             {
+                generations[key] = generations.GetValueOrDefault(key) + 1;
                 keys.Remove(key);
+                memoryCache.Remove(key);
             }
-        }
-
-        foreach (var key in matchingKeys)
-        {
-            memoryCache.Remove(key);
         }
     }
 }

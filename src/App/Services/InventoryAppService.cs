@@ -2,6 +2,7 @@ using Craftsman.App.Models;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.Repositories;
+using Craftsman.Domain.Services;
 
 namespace Craftsman.App.Services;
 
@@ -10,15 +11,18 @@ public sealed class InventoryAppService
     private readonly IRawMaterialRepository rawMaterialRepository;
     private readonly IStockMovementRepository stockMovementRepository;
     private readonly IUnitOfWork unitOfWork;
+    private readonly IApplicationCache? cache;
 
     public InventoryAppService(
         IRawMaterialRepository rawMaterialRepository,
         IStockMovementRepository stockMovementRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IApplicationCache? cache = null)
     {
         this.rawMaterialRepository = rawMaterialRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.unitOfWork = unitOfWork;
+        this.cache = cache;
     }
 
     public async Task<IReadOnlyCollection<RawMaterialListItemViewModel>> ListRawMaterialsAsync(CancellationToken cancellationToken = default)
@@ -79,6 +83,7 @@ public sealed class InventoryAppService
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+        cache?.RemoveByPrefix("inventory:");
 
         return material.Id;
     }

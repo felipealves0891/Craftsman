@@ -1,4 +1,5 @@
 using Craftsman.App.Controllers;
+using Craftsman.App.Models;
 using System.Diagnostics;
 using Craftsman.App.Services;
 using Craftsman.Controllers;
@@ -8,8 +9,10 @@ using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Services;
 using Craftsman.Domain.Shipping.Entities;
+using Craftsman.Domain.Shipping.Services;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Craftsman.Infra.Security;
 using Craftsman.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -89,6 +92,53 @@ public sealed class MvcControllerCoverageTests
         Assert.Equal("Order was not found.", controller.TempData["Error"]);
     }
 
+    [Fact]
+    public async Task Shipments_controller_handles_empty_create_and_update_failures()
+    {
+        await using var dbContext = CreateDbContext();
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var orderRepository = new OrderRepository(dbContext);
+        var orderQueryService = new OrderQueryService(
+            orderRepository,
+            new ProductRepository(dbContext),
+            new ProductionTaskRepository(dbContext),
+            shipmentRepository);
+        var shippingService = new ShippingAppService(
+            shipmentRepository,
+            orderQueryService,
+            new ShippingService(
+                shipmentRepository,
+                orderRepository,
+                new UnitOfWork(dbContext),
+                new NoOpDomainEventPublisher()));
+        var controller = new ShipmentsController(shippingService, new NoOpAuditService())
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+
+        Assert.IsType<ViewResult>(await controller.Index(null, CancellationToken.None));
+        Assert.IsType<ViewResult>(await controller.Create(Guid.NewGuid(), CancellationToken.None));
+
+        controller.ModelState.AddModelError("OrderId", "required");
+        var invalidCreate = Assert.IsType<ViewResult>(await controller.Create(new CreateShipmentInputModel(), CancellationToken.None));
+        Assert.NotNull(invalidCreate.Model);
+
+        controller.ModelState.Clear();
+        var unavailableCreate = Assert.IsType<ViewResult>(await controller.Create(
+            new CreateShipmentInputModel { OrderId = Guid.NewGuid() },
+            CancellationToken.None));
+        Assert.Contains(controller.ModelState.Values.SelectMany(value => value.Errors), error => error.ErrorMessage.Contains("nao foi encontrado"));
+        Assert.NotNull(unavailableCreate.Model);
+
+        var update = Assert.IsType<RedirectToActionResult>(await controller.UpdateStatus(
+            Guid.NewGuid(),
+            ShipmentStatus.Delivered,
+            CancellationToken.None));
+        Assert.Equal(nameof(ShipmentsController.Index), update.ActionName);
+        Assert.NotNull(controller.TempData["Error"]);
+    }
+
     private static FinanceAppService CreateFinanceService(AppDbContext dbContext)
     {
         var settlementRepository = new FinancialSettlementRepository(dbContext);
@@ -141,5 +191,17 @@ public sealed class MvcControllerCoverageTests
         public void SaveTempData(HttpContext context, IDictionary<string, object> values)
         {
         }
+    }
+
+    private sealed class NoOpAuditService : IAuditService
+    {
+        public Task RecordAsync(
+            string action,
+            string entityName,
+            string? entityId = null,
+            object? before = null,
+            object? after = null,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

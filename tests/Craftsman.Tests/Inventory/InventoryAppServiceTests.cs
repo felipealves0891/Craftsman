@@ -98,6 +98,62 @@ public sealed class InventoryAppServiceTests
         Assert.Equal("Ajuste manual nao pode gerar saldo negativo.", exception.Message);
     }
 
+    [Fact]
+    public async Task Inactivating_material_preserves_limits_balance_and_movement_history()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterials = new RawMaterialRepository(dbContext);
+        var stockMovements = new StockMovementRepository(dbContext);
+        var material = new RawMaterial(
+            Guid.NewGuid(),
+            "Linha",
+            "un",
+            minimumStockLevel: 10,
+            criticalStockLevel: 2);
+        await rawMaterials.AddAsync(material);
+        await stockMovements.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            material.Id,
+            StockMovementType.Inbound,
+            4,
+            "Compra inicial",
+            null));
+        await dbContext.SaveChangesAsync();
+        var service = new InventoryAppService(rawMaterials, stockMovements, new UnitOfWork(dbContext));
+
+        await service.SaveRawMaterialAsync(new RawMaterialInputModel
+        {
+            Id = material.Id,
+            Name = material.Name,
+            UnitOfMeasure = material.UnitOfMeasure,
+            Status = RawMaterialStatus.Inactive,
+            MinimumStockLevel = material.MinimumStockLevel,
+            CriticalStockLevel = material.CriticalStockLevel
+        });
+
+        var input = await service.GetRawMaterialInputAsync(material.Id);
+        var listed = Assert.Single(await service.ListRawMaterialsAsync());
+        var balance = Assert.Single(await service.ListBalancesAsync());
+        var movement = Assert.Single(await service.ListMovementsAsync(material.Id));
+        var alerts = await new StockAlertAppService(
+            rawMaterials,
+            stockMovements,
+            new OrderRepository(dbContext),
+            new ProductRepository(dbContext)).ListAlertsAsync();
+
+        Assert.Equal(RawMaterialStatus.Inactive, input?.Status);
+        Assert.Equal(10, input?.MinimumStockLevel);
+        Assert.Equal(2, input?.CriticalStockLevel);
+        Assert.Equal(RawMaterialStatus.Inactive.ToString(), listed.Status);
+        Assert.Equal(10, listed.MinimumStockLevel);
+        Assert.Equal(2, listed.CriticalStockLevel);
+        Assert.Equal(4, balance.Balance);
+        Assert.Equal(StockAlertLevel.Warning, balance.AlertLevel);
+        Assert.Equal(4, movement.Quantity);
+        Assert.Equal("Compra inicial", movement.Reason);
+        Assert.DoesNotContain(alerts, alert => alert.RawMaterialId == material.Id);
+    }
+
     private static InventoryAppService CreateService(AppDbContext dbContext)
     {
         return new InventoryAppService(

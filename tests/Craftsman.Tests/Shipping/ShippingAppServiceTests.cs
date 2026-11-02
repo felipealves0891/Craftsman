@@ -156,6 +156,55 @@ public sealed class ShippingAppServiceTests
         Assert.Contains("Pedido selecionado", exception.Message);
     }
 
+    [Fact]
+    public async Task Order_query_lists_orders_and_returns_detail_or_null()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-DETAIL-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))]);
+        await orderRepository.AddAsync(order);
+        await dbContext.SaveChangesAsync();
+        var service = CreateOrderQueryService(dbContext);
+
+        var list = await service.ListAsync();
+        var detail = await service.GetDetailAsync(order.Id);
+
+        Assert.Equal(order.Id, Assert.Single(list).Id);
+        Assert.Equal(order.Id, detail?.Id);
+        Assert.Single(detail!.Items);
+        Assert.Null(await service.GetDetailAsync(Guid.NewGuid()));
+    }
+
+    [Fact]
+    public async Task Shipping_model_preserves_input_and_rejects_unavailable_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderRepository = new OrderRepository(dbContext);
+        var deliveredOrder = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-UNAVAILABLE-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(30, "BRL"))],
+            OrderStatus.Delivered);
+        await orderRepository.AddAsync(deliveredOrder);
+        await dbContext.SaveChangesAsync();
+        var service = CreateShippingAppService(dbContext);
+        var input = new CreateShipmentInputModel { TrackingCode = "TRACK-INPUT" };
+
+        var model = await service.BuildCreateModelAsync(deliveredOrder.Id, input);
+
+        Assert.Same(input, model);
+        Assert.Equal(deliveredOrder.Id, model.OrderId);
+        Assert.Empty(model.AvailableOrders);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateAsync(new CreateShipmentInputModel { OrderId = deliveredOrder.Id }));
+
+        Assert.Contains("nao foi encontrado", exception.Message);
+    }
+
     private static ShippingAppService CreateShippingAppService(AppDbContext dbContext)
     {
         var shipmentRepository = new ShipmentRepository(dbContext);
