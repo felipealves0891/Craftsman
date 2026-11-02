@@ -20,6 +20,8 @@
 ## Progresso
 
 - Concluídas: `TASK-001`, `TASK-002`, `TASK-003`.
+- Concluídas: `TASK-REV-001`.
+- Pendentes: `TASK-004` para renovar os gates depois da correção de revisão.
 - Bloqueadas: nenhuma.
 
 ## Evidências da implementação
@@ -27,6 +29,19 @@
 - `TASK-001`: os 2 novos testes de alertas globais/críticos e por pedido falharam antes do filtro por status e passaram depois da alteração em `StockAlertAppService`.
 - `TASK-002`: testes cobrem cache de alertas previamente aquecido, duas invalidações do prefixo `inventory:` no fluxo bem-sucedido (repositório e pós-commit) e ausência da invalidação pós-commit quando a unidade de trabalho falha.
 - `TASK-003`: teste confirma que status, limites, saldo e movimento permanecem consultáveis e inalterados depois da inativação, enquanto o material não aparece nos alertas.
+- `TASK-REV-001`: o cache usa uma geração por chave para impedir que uma factory iniciada antes de uma invalidação publique seu resultado depois dela. O teste concorrente bloqueia a leitura antiga, conclui a inativação e confirma que a consulta seguinte recompõe os alertas sem a matéria-prima inativa.
 - Regressão direcionada: 11 testes aprovados, incluindo os cenários antigos de ordenação dos alertas e aviso de estoque ao enviar pedido para produção.
+- Verificação da correção: 9 testes direcionados e a suíte completa com 311 testes aprovados; build com `--warnaserror` aprovado sem avisos.
 - `git diff --check`: aprovado sem erros de espaçamento.
 - `TASK-004`: pendente para execução formal pelo estágio `spectro-gates`.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** Impedir que uma criação de cache de alertas iniciada antes da inativação publique um resultado obsoleto depois da invalidação pós-commit; adicionar teste concorrente determinístico que bloqueie a factory, conclua a inativação e confirme que consultas subsequentes não recuperam o alerta antigo.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.

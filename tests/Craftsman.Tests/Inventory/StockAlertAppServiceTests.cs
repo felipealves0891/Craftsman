@@ -1,5 +1,6 @@
 using Craftsman.App.Services;
 using Craftsman.Domain.Inventory.Entities;
+using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.ProductCatalog.Entities;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
@@ -7,7 +8,10 @@ using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Services;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Craftsman.Infra.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace Craftsman.Tests.Inventory;
 
@@ -168,6 +172,55 @@ public sealed class StockAlertAppServiceTests
     }
 
     [Fact]
+    public async Task Inactivation_prevents_an_in_flight_alert_load_from_repopulating_the_cache()
+    {
+        await using var dbContext = CreateDbContext();
+        using var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cache = new MemoryApplicationCache(
+            memoryCache,
+            new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { ["Cache:Enabled"] = "true" })
+                .Build());
+        var material = new RawMaterial(
+            Guid.NewGuid(),
+            "Linha",
+            "un",
+            minimumStockLevel: 10,
+            criticalStockLevel: 2);
+        var rawMaterials = new BlockingRawMaterialRepository(material);
+        var stockMovements = new StockMovementRepository(dbContext);
+        var alertService = new StockAlertAppService(
+            rawMaterials,
+            stockMovements,
+            new OrderRepository(dbContext),
+            new ProductRepository(dbContext),
+            cache);
+        var inventoryService = new InventoryAppService(
+            rawMaterials,
+            stockMovements,
+            new UnitOfWork(dbContext),
+            cache);
+
+        var staleLoad = alertService.ListAlertsAsync();
+        await rawMaterials.WaitUntilFirstListStartsAsync();
+
+        await inventoryService.SaveRawMaterialAsync(new Craftsman.App.Models.RawMaterialInputModel
+        {
+            Id = material.Id,
+            Name = material.Name,
+            UnitOfMeasure = material.UnitOfMeasure,
+            Status = RawMaterialStatus.Inactive,
+            MinimumStockLevel = material.MinimumStockLevel,
+            CriticalStockLevel = material.CriticalStockLevel
+        });
+        rawMaterials.ReleaseFirstList();
+
+        Assert.Equal(material.Id, Assert.Single(await staleLoad).RawMaterialId);
+        Assert.Empty(await alertService.ListAlertsAsync());
+        Assert.Equal(2, rawMaterials.ListCalls);
+    }
+
+    [Fact]
     public async Task Failed_material_save_does_not_run_post_commit_cache_invalidation()
     {
         await using var dbContext = CreateDbContext();
@@ -223,6 +276,48 @@ public sealed class StockAlertAppServiceTests
         {
             throw new InvalidOperationException("Falha simulada ao salvar.");
         }
+    }
+
+    private sealed class BlockingRawMaterialRepository(RawMaterial material) : IRawMaterialRepository
+    {
+        private readonly TaskCompletionSource firstListRelease = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource firstListStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private RawMaterial current = material;
+
+        public int ListCalls { get; private set; }
+
+        public Task AddAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default)
+        {
+            current = rawMaterial;
+            return Task.CompletedTask;
+        }
+
+        public Task<RawMaterial?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => Task.FromResult<RawMaterial?>(current.Id == id ? current : null);
+
+        public async Task<IReadOnlyCollection<RawMaterial>> ListAsync(CancellationToken cancellationToken = default)
+        {
+            ListCalls++;
+            var captured = current;
+
+            if (ListCalls == 1)
+            {
+                firstListStarted.SetResult();
+                await firstListRelease.Task.WaitAsync(cancellationToken);
+            }
+
+            return new[] { captured };
+        }
+
+        public void ReleaseFirstList() => firstListRelease.SetResult();
+
+        public Task UpdateAsync(RawMaterial rawMaterial, CancellationToken cancellationToken = default)
+        {
+            current = rawMaterial;
+            return Task.CompletedTask;
+        }
+
+        public Task WaitUntilFirstListStartsAsync() => firstListStarted.Task;
     }
 
     private sealed class RecordingApplicationCache : IApplicationCache
