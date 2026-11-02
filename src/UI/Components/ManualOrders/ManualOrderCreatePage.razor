@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 @using Craftsman.UI.Components.Shared
 
 <section class="page-heading">
@@ -371,6 +372,8 @@
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public IReadOnlyCollection<string> ValidationSummaryErrors { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record CustomerOption(string Name, string? Phone, string? Email);
+    [ExcludeFromCodeCoverage]
     public sealed record ManualOrderItemRow(string? ExternalItemId, string Description, int Quantity, string UnitPriceAmount, string? ProductId);
 }

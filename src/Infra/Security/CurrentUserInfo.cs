@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 namespace Craftsman.Infra.Security;
 
+[ExcludeFromCodeCoverage]
 public sealed record CurrentUserInfo(
     int? UserId,
     string? UserName,

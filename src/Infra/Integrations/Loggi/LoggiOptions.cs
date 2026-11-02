@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Integrations.Loggi;
 
+[ExcludeFromCodeCoverage]
 public sealed class LoggiOptions
 {
     public const string SectionName = "Loggi";

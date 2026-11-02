@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Options;
 
 namespace Craftsman.Infra.Integrations.Correios;
 
+[ExcludeFromCodeCoverage]
 public sealed class CorreiosOptions
 {
     public const string SectionName = "Correios";

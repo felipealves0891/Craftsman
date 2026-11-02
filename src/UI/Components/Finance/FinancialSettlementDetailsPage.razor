@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Financeiro</span>
@@ -120,6 +121,7 @@
     [Parameter]
     public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record OrderItemRow(
         string ExternalItemId,
         string Description,

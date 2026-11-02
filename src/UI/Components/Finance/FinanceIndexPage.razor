@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Financeiro</span>
@@ -111,6 +112,7 @@
     [Parameter]
     public string? ErrorMessage { get; set; }
 
+    [ExcludeFromCodeCoverage]
     public sealed record SettlementRow(
         Guid OrderId,
         string OrderCode,
@@ -122,6 +124,7 @@
         string StatusCss,
         string CalculatedAt);
 
+    [ExcludeFromCodeCoverage]
     public sealed record KpiCard(
         string Title,
         string IconCss,

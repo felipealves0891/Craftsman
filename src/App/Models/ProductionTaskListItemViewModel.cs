@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Craftsman.Domain.Production.Entities;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed record ProductionTaskListItemViewModel(
     Guid Id,
     Guid OrderId,

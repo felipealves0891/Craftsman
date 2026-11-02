@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">@Source</span>
@@ -209,7 +210,10 @@
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record OrderItemRow(string ExternalItemId, string Description, int Quantity, string ProductId);
+    [ExcludeFromCodeCoverage]
     public sealed record ProductionTaskRow(Guid Id, Guid ProductId, int Quantity, string Status);
+    [ExcludeFromCodeCoverage]
     public sealed record ShipmentRow(string? TrackingCode, string Status, string CreatedAt);
 }

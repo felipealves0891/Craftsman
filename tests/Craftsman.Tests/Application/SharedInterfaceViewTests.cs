@@ -15,7 +15,7 @@ public sealed class SharedInterfaceViewTests
     [InlineData("src/App/Views/ManualOrders/LinkItems.cshtml", "typeof(ManualOrderLinkItemsPage)")]
     [InlineData("src/App/Views/Orders/Details.cshtml", "typeof(OrderDetailsPage)")]
     [InlineData("src/App/Views/Orders/Index.cshtml", "typeof(OrdersIndexPage)")]
-    [InlineData("src/App/Views/Production/Index.cshtml", "typeof(ProductionIndexPage)")]
+    [InlineData("src/App/Views/Production/_Calendar.cshtml", "typeof(ProductionIndexPage)")]
     [InlineData("src/App/Views/Products/Index.cshtml", "typeof(ProductsIndexPage)")]
     [InlineData("src/App/Views/Shipments/Create.cshtml", "typeof(ShipmentCreatePage)")]
     [InlineData("src/App/Views/Shipments/Index.cshtml", "typeof(ShipmentsIndexPage)")]
@@ -64,7 +64,7 @@ public sealed class SharedInterfaceViewTests
         var inventoryView = File.ReadAllText(ProjectPath("src", "App", "Views", "Inventory", "Index.cshtml"));
         var financeView = File.ReadAllText(ProjectPath("src", "App", "Views", "Finance", "Index.cshtml"));
         var ordersView = File.ReadAllText(ProjectPath("src", "App", "Views", "Orders", "Index.cshtml"));
-        var productionView = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "Index.cshtml"));
+        var productionView = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "_Calendar.cshtml"));
         var shipmentsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Shipments", "Index.cshtml"));
 
         Assert.Contains("new ProductsIndexPage.ProductRow", productsView);
@@ -75,6 +75,22 @@ public sealed class SharedInterfaceViewTests
         Assert.Contains("new OrdersIndexPage.OrderRow", ordersView);
         Assert.Contains("new ProductionIndexPage.CalendarDay", productionView);
         Assert.Contains("new ShipmentsIndexPage.ShipmentRow", shipmentsView);
+    }
+
+    [Fact]
+    public void Production_calendar_partial_exposes_month_refresh_contract()
+    {
+        var view = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "_Calendar.cshtml"));
+        var page = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "Index.cshtml"));
+        var script = File.ReadAllText(ProjectPath("src", "App", "wwwroot", "js", "production-calendar.js"));
+
+        Assert.Contains("id=\"production-calendar-fragment\"", view);
+        Assert.Contains("data-current-month=\"@monthKey\"", view);
+        Assert.Contains("Url.Action(\"Calendar\", \"Production\")", view);
+        Assert.Contains("production-calendar.js", page);
+        Assert.Contains("input[name='plannedDate']", script);
+        Assert.Contains("document.visibilityState", script);
+        Assert.Contains("replaceWith(replacement)", script);
     }
 
     [Fact]
@@ -133,7 +149,7 @@ public sealed class SharedInterfaceViewTests
     [Fact]
     public void Operational_post_pages_display_backend_errors_from_temp_data()
     {
-        var productionView = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "Index.cshtml"));
+        var productionView = File.ReadAllText(ProjectPath("src", "App", "Views", "Production", "_Calendar.cshtml"));
         var productionComponent = File.ReadAllText(ProjectPath("src", "UI", "Components", "Production", "ProductionIndexPage.razor"));
         var productionController = File.ReadAllText(ProjectPath("src", "App", "Controllers", "ProductionController.cs"));
         var shipmentsView = File.ReadAllText(ProjectPath("src", "App", "Views", "Shipments", "Index.cshtml"));

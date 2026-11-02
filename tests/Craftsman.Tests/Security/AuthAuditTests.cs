@@ -8,6 +8,7 @@ using Craftsman.Infra.Security;
 using Craftsman.Infra.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craftsman.Tests.Security;
@@ -143,6 +144,10 @@ public sealed class AuthAuditTests
 
         Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<OrdersController>(nameof(OrdersController.SendToProduction)));
         Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<ProductionController>(nameof(ProductionController.Advance)));
+        Assert.IsType<HttpGetAttribute>(typeof(ProductionController).GetMethod(nameof(ProductionController.CurrentMonth))!
+            .GetCustomAttributes(typeof(HttpGetAttribute), inherit: true).Single());
+        Assert.IsType<HttpGetAttribute>(typeof(ProductionController).GetMethod(nameof(ProductionController.Calendar))!
+            .GetCustomAttributes(typeof(HttpGetAttribute), inherit: true).Single());
         Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<ShipmentsController>(nameof(ShipmentsController.UpdateStatus)));
     }
 

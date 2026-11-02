@@ -1,0 +1,110 @@
+@using Craftsman.Domain.Production.Entities
+@using Craftsman.UI.Components.Shared
+@using System.Globalization
+@model IReadOnlyCollection<Craftsman.App.Models.ProductionTaskListItemViewModel>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+
+@{
+    var culture = CultureInfo.GetCultureInfo("pt-BR");
+    var tasks = Model.OrderBy(task => task.PlannedStartAt.ToLocalTime()).ToList();
+    DateOnly? selectedDate = ViewBag.PlannedDate is DateOnly plannedDateDateOnly ? plannedDateDateOnly : null;
+    var referenceDate = ViewBag.ReferenceDate is DateTime providedReferenceDate
+        ? providedReferenceDate
+        : selectedDate?.ToDateTime(TimeOnly.MinValue) ?? DateTime.Today;
+    var monthStart = new DateTime(referenceDate.Year, referenceDate.Month, 1);
+    var monthKey = monthStart.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+    var monthTitle = culture.TextInfo.ToTitleCase(monthStart.ToString("MMMM yyyy", culture));
+    var daysInMonth = DateTime.DaysInMonth(monthStart.Year, monthStart.Month);
+    var leadingBlankDays = ((int)monthStart.DayOfWeek + 6) % 7;
+    var tasksByDay = tasks
+        .SelectMany(task =>
+        {
+            var startDate = DateOnly.FromDateTime(task.PlannedStartAt.ToLocalTime().Date);
+            var endDate = DateOnly.FromDateTime(task.PlannedAt.ToLocalTime().Date);
+            var durationDays = Math.Max(1, endDate.DayNumber - startDate.DayNumber + 1);
+
+            return Enumerable.Range(0, durationDays)
+                .Select(offset => new
+                {
+                    Date = startDate.AddDays(offset),
+                    Task = task,
+                    IsStart = offset == 0,
+                    IsEnd = offset == durationDays - 1
+                });
+        })
+        .GroupBy(item => item.Date)
+        .ToDictionary(group => group.Key, group => group.ToList());
+    var today = ViewBag.Today is DateOnly currentDate
+        ? currentDate
+        : DateOnly.FromDateTime(DateTime.Today);
+    var visibleTaskCount = tasksByDay
+        .Where(group => group.Key.Year == monthStart.Year && group.Key.Month == monthStart.Month)
+        .SelectMany(group => group.Value.Select(item => item.Task.Id))
+        .Distinct()
+        .Count();
+
+    object? statusFilter = ViewBag.Status;
+    var selectedStatus = statusFilter is ProductionTaskStatus productionTaskStatus ? productionTaskStatus : (ProductionTaskStatus?)null;
+    var statusOptions = Craftsman.App.Presentation.EnumPresentation.SelectList(selectedStatus)
+        .Select(status => new SelectOption(status.Value ?? string.Empty, status.Text, status.Selected))
+        .ToArray();
+    var days = Enumerable.Range(1, daysInMonth)
+        .Select(day =>
+        {
+            var currentDate = DateOnly.FromDateTime(new DateTime(monthStart.Year, monthStart.Month, day));
+            var hasTasks = tasksByDay.TryGetValue(currentDate, out var dayTasks);
+            var dayClass = currentDate == today ? "calendar-day today" : "calendar-day";
+            var taskRows = (hasTasks && dayTasks is not null ? dayTasks : [])
+                .Select(item =>
+                {
+                    var task = item.Task;
+                    var startAt = task.PlannedStartAt.ToLocalTime();
+                    var endAt = task.PlannedAt.ToLocalTime();
+                    var rangeLabel = item.IsStart && item.IsEnd
+                        ? $"{startAt:HH\\:mm} - {endAt:HH\\:mm}"
+                        : item.IsStart
+                            ? $"Inicio {startAt:HH\\:mm}"
+                            : item.IsEnd
+                                ? $"Fim {endAt:HH\\:mm}"
+                                : "Em producao";
+
+                    return new ProductionIndexPage.ProductionTaskRow(
+                        task.Id,
+                        Craftsman.App.Presentation.EnumPresentation.Label(typeof(ProductionTaskStatus), task.Status),
+                        task.Status.ToLowerInvariant(),
+                        rangeLabel,
+                        task.OrderReference,
+                        task.ItemDescription,
+                        task.Quantity,
+                        task.ProductionDurationHours,
+                        task.CanStart,
+                        task.CanComplete,
+                        task.CanCancel);
+                })
+                .ToArray();
+
+            return new ProductionIndexPage.CalendarDay(day, dayClass, taskRows);
+        })
+        .ToArray();
+    var requestVerificationToken = Antiforgery.GetAndStoreTokens(Context).RequestToken ?? string.Empty;
+    var plannedDate = selectedDate?.ToString("yyyy-MM-dd");
+    var errorMessage = TempData["Error"] as string;
+    var autoUpdate = selectedDate is null;
+}
+
+<div id="production-calendar-fragment"
+     data-current-month="@monthKey"
+     data-auto-update="@autoUpdate.ToString().ToLowerInvariant()"
+     data-month-url="@Url.Action("CurrentMonth", "Production")"
+     data-calendar-url="@Url.Action("Calendar", "Production")">
+    <component type="typeof(ProductionIndexPage)" render-mode="Static"
+               param-StatusOptions="@statusOptions"
+               param-PlannedDate="@plannedDate"
+               param-MonthTitle="@monthTitle"
+               param-VisibleTaskCount="@visibleTaskCount"
+               param-HasTasks="@tasks.Any()"
+               param-LeadingBlankDays="@leadingBlankDays"
+               param-RequestVerificationToken="@requestVerificationToken"
+               param-ErrorMessage="@errorMessage"
+               param-Days="@days" />
+</div>

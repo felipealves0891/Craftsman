@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 @using Craftsman.UI.Components.Shared
 
 <section class="page-heading">
@@ -125,8 +126,10 @@
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public IReadOnlyCollection<CalendarDay> Days { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record CalendarDay(int DayNumber, string CssClass, IReadOnlyCollection<ProductionTaskRow> Tasks);
 
+    [ExcludeFromCodeCoverage]
     public sealed record ProductionTaskRow(
         Guid Id,
         string StatusLabel,

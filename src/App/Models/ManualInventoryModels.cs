@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 using Craftsman.Domain.Inventory.Entities;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed record RawMaterialListItemViewModel(
     Guid Id,
     string Name,
@@ -12,8 +14,10 @@ public sealed record RawMaterialListItemViewModel(
     decimal? CriticalStockLevel,
     StockAlertLevel? AlertLevel);
 
+[ExcludeFromCodeCoverage]
 public sealed record RawMaterialOptionViewModel(Guid Id, string Name, string UnitOfMeasure);
 
+[ExcludeFromCodeCoverage]
 public sealed record InventoryBalanceViewModel(
     Guid RawMaterialId,
     string RawMaterialName,
@@ -22,6 +26,7 @@ public sealed record InventoryBalanceViewModel(
     StockAlertLevel AlertLevel,
     decimal? ReachedLimit);
 
+[ExcludeFromCodeCoverage]
 public sealed record StockAlertViewModel(
     Guid RawMaterialId,
     string RawMaterialName,
@@ -38,6 +43,7 @@ public sealed record StockAlertViewModel(
     };
 }
 
+[ExcludeFromCodeCoverage]
 public sealed record StockMovementViewModel(
     Guid Id,
     Guid RawMaterialId,
@@ -50,6 +56,7 @@ public sealed record StockMovementViewModel(
     string? BusinessReference,
     DateTimeOffset OccurredAt);
 
+[ExcludeFromCodeCoverage]
 public sealed class RawMaterialInputModel : IValidatableObject
 {
     public Guid? Id { get; set; }
@@ -86,6 +93,7 @@ public sealed class RawMaterialInputModel : IValidatableObject
     }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class StockMovementInputModel : IValidatableObject
 {
     [Required]
