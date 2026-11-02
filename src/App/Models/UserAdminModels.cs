@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed record UserListItemViewModel(int Id, string Email, IReadOnlyCollection<string> Roles);
 
+[ExcludeFromCodeCoverage]
 public sealed class CreateUserInputModel
 {
     [Required(ErrorMessage = "Informe o e-mail.")]

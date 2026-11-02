@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Craftsman.Infra.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Craftsman.Infra.Persistence.Configurations;
 
+[ExcludeFromCodeCoverage]
 public sealed class BillOfMaterialsItemConfiguration : IEntityTypeConfiguration<BillOfMaterialsItemEntity>
 {
     public void Configure(EntityTypeBuilder<BillOfMaterialsItemEntity> builder)

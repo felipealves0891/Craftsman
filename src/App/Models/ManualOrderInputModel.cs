@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed class ManualOrderInputModel
 {
     public Guid? Id { get; set; }
@@ -43,12 +45,14 @@ public sealed class ManualOrderInputModel
     ];
 }
 
+[ExcludeFromCodeCoverage]
 public sealed record CustomerOptionViewModel(
     Guid Id,
     string Name,
     string? Phone,
     string? Email);
 
+[ExcludeFromCodeCoverage]
 public sealed class OrderSourceInputModel
 {
     [Required]
@@ -56,6 +60,7 @@ public sealed class OrderSourceInputModel
     public string Name { get; set; } = string.Empty;
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class ManualOrderItemInputModel
 {
     [Display(Name = "Codigo externo")]

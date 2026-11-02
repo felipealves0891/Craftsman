@@ -4,6 +4,7 @@ using Craftsman.Infra.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -13,6 +14,7 @@ namespace Craftsman.Infra.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260927161037_AddOrderDeletionProcesses")]
+    [ExcludeFromCodeCoverage]
     partial class AddOrderDeletionProcesses
     {
         /// <inheritdoc />

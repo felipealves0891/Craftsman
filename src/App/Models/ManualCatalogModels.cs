@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel.DataAnnotations;
 using Craftsman.Domain.ProductCatalog.Entities;
 
 namespace Craftsman.App.Models;
 
+[ExcludeFromCodeCoverage]
 public sealed record ProductListItemViewModel(
     Guid Id,
     string Name,
@@ -11,8 +13,10 @@ public sealed record ProductListItemViewModel(
     decimal HourlyRate,
     int BillOfMaterialsItems);
 
+[ExcludeFromCodeCoverage]
 public sealed record ProductOptionViewModel(Guid Id, string Name);
 
+[ExcludeFromCodeCoverage]
 public sealed record ProductMappingListItemViewModel(
     Guid Id,
     string Source,
@@ -20,6 +24,7 @@ public sealed record ProductMappingListItemViewModel(
     Guid ProductId,
     string ProductName);
 
+[ExcludeFromCodeCoverage]
 public sealed class ProductInputModel
 {
     public Guid? Id { get; set; }
@@ -40,6 +45,7 @@ public sealed class ProductInputModel
     public decimal HourlyRate { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class BillOfMaterialsInputModel
 {
     public Guid ProductId { get; set; }
@@ -54,6 +60,7 @@ public sealed class BillOfMaterialsInputModel
     ];
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class BillOfMaterialsItemInputModel
 {
     [Display(Name = "Materia-prima")]
@@ -64,6 +71,7 @@ public sealed class BillOfMaterialsItemInputModel
     public int QuantityPerUnit { get; set; }
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class ProductMappingInputModel
 {
     [Required]

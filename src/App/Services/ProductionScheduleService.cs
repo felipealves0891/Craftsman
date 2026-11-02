@@ -14,17 +14,20 @@ public sealed class ProductionScheduleService
     private readonly IProductRepository productRepository;
     private readonly IOrderRepository orderRepository;
     private readonly IUnitOfWork unitOfWork;
+    private readonly TimeProvider timeProvider;
 
     public ProductionScheduleService(
         IProductionTaskRepository productionTaskRepository,
         IProductRepository productRepository,
         IOrderRepository orderRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        TimeProvider timeProvider)
     {
         this.productionTaskRepository = productionTaskRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
         this.unitOfWork = unitOfWork;
+        this.timeProvider = timeProvider;
     }
 
     public async Task<IReadOnlyCollection<ProductionTaskListItemViewModel>> ListAsync(
@@ -33,7 +36,7 @@ public sealed class ProductionScheduleService
         CancellationToken cancellationToken = default)
     {
         
-        var referenceDate = plannedDate ?? DateOnly.FromDateTime(DateTime.Now);
+        var referenceDate = plannedDate ?? DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         var start = new DateOnly(referenceDate.Year, referenceDate.Month, 1);
         var end = start.AddMonths(1).AddDays(-1);
 

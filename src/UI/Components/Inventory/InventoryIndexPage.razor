@@ -1,3 +1,4 @@
+@using System.Diagnostics.CodeAnalysis
 <section class="page-heading">
     <div>
         <span class="eyebrow">Cat&aacute;logo</span>
@@ -61,6 +62,7 @@
     [Parameter]
     public IReadOnlyCollection<MaterialRow> Materials { get; set; } = [];
 
+    [ExcludeFromCodeCoverage]
     public sealed record MaterialRow(
         Guid Id,
         string Name,

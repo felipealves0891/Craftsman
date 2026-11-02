@@ -34,7 +34,8 @@ public sealed class EfCoreConcurrencyExceptionTests
             productionTaskRepository,
             new EmptyProductRepository(),
             orderRepository,
-            new UnitOfWork(dbContext));
+            new UnitOfWork(dbContext),
+            TimeProvider.System);
 
         await orderRepository.AddAsync(order);
         await productionTaskRepository.AddAsync(task);

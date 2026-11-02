@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Craftsman.App.Services;
 using Craftsman.App.Security;
 using Craftsman.Infra.Persistence;
@@ -106,3 +107,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+[ExcludeFromCodeCoverage]
+public partial class Program { }
