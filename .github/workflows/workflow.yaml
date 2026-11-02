@@ -74,8 +74,8 @@ jobs:
           
           python .github/scripts/validate-coverage.py \
             --directory ./TestResults \
-            --min-lines 70 \
-            --min-branches 50
+            --min-lines 75 \
+            --min-branches 55
       
       - name: Create Pull Request
         env:
