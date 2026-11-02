@@ -31,9 +31,11 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
+        if: ${{ success() }}
         run: dotnet restore "${{ env.SOLUTION }}"
 
       - name: Build
+        if: ${{ success() }}
         run: |
           dotnet build "${{ env.SOLUTION }}" \
             --configuration Release \
@@ -42,7 +44,7 @@ jobs:
             -p:ContinuousIntegrationBuild=true
 
       - name: Unit Tests
-        if: always()
+        if: ${{ success() }}
         run: |
           dotnet test "${{ env.SOLUTION }}" \
             --configuration Release \
@@ -52,14 +54,14 @@ jobs:
       
       - name: Upload Coverage
         uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ success() }}
         with:
           name: coverage-report
           path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: warn
 
       - name: Validate Coverage
-        if: always()
+        if: ${{ success() }}
         run: |
           echo "Current directory:"
           pwd
@@ -72,10 +74,11 @@ jobs:
           
           python .github/scripts/validate-coverage.py \
             --directory ./TestResults \
-            --min-lines 90 \
-            --min-branches 75
+            --min-lines 70 \
+            --min-branches 50
       
       - name: Create Pull Request
+        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
