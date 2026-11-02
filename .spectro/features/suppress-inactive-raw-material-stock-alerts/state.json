@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "suppress-inactive-raw-material-stock-alerts",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261102T221123Z",
+      "report": ".spectro/features/suppress-inactive-raw-material-stock-alerts/gates.json"
+    }
+  },
+  "attempts": {},
+  "invalidated_executions": [],
+  "last_failure": null,
+  "last_execution_id": "gate-20261102T221123Z",
+  "updated_at": "2026-11-02T22:13:17.501Z"
+}
