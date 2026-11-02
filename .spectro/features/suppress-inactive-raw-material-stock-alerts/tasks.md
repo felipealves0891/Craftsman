@@ -30,8 +30,10 @@
 - `TASK-002`: testes cobrem cache de alertas previamente aquecido, duas invalidações do prefixo `inventory:` no fluxo bem-sucedido (repositório e pós-commit) e ausência da invalidação pós-commit quando a unidade de trabalho falha.
 - `TASK-003`: teste confirma que status, limites, saldo e movimento permanecem consultáveis e inalterados depois da inativação, enquanto o material não aparece nos alertas.
 - `TASK-REV-001`: o cache usa uma geração por chave para impedir que uma factory iniciada antes de uma invalidação publique seu resultado depois dela. O teste concorrente bloqueia a leitura antiga, conclui a inativação e confirma que a consulta seguinte recompõe os alertas sem a matéria-prima inativa.
+- Cobertura direcionada após o diagnóstico de `GATE-004`: novo teste idempotente do `DevelopmentDataSeeder`, cenários de `OrderQueryService`/`ShippingAppService`, `HttpCurrentUserContext`, `IdentitySeeder`, `EnumPresentation`, `ShipmentsController` e `ManualOrdersController` exercitam ramos anteriormente não cobertos sem alterar produção.
 - Regressão direcionada: 11 testes aprovados, incluindo os cenários antigos de ordenação dos alertas e aviso de estoque ao enviar pedido para produção.
-- Verificação da correção: 9 testes direcionados e a suíte completa com 311 testes aprovados; build com `--warnaserror` aprovado sem avisos.
+- Verificação da correção: suíte completa com 330 testes aprovados; build com `--warnaserror` aprovado sem avisos.
+- Medição local da cobertura com `-AllowDirtyTree`: linhas totais `81,72%`, branches totais `55,30%`, linhas novas `99,30%` e branches novos `91,43%`; todos os limiares configurados passaram. A execução formal de `spectro-gates` ainda precisa ser renovada em uma revisão commitada.
 - `git diff --check`: aprovado sem erros de espaçamento.
 - `TASK-004`: pendente para execução formal pelo estágio `spectro-gates`.
 

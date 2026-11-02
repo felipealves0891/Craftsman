@@ -27,6 +27,15 @@ public sealed class EnumPresentationTests
     [InlineData(ShipmentStatus.InTransit, "Em transito")]
     [InlineData(ShipmentStatus.DeliveryAttempted, "Tentativa de entrega")]
     [InlineData(FinancialSettlementStatus.Calculated, "Calculado")]
+    [InlineData(FinancialSettlementStatus.Failed, "Falhou")]
+    [InlineData(ProductionTaskStatus.Cancelled, "Cancelada")]
+    [InlineData(ShipmentStatus.Created, "Criado")]
+    [InlineData(ShipmentStatus.Cancelled, "Cancelado")]
+    [InlineData(StockAlertLevel.Normal, "Normal")]
+    [InlineData(OrderStatus.Normalized, "Normalizado")]
+    [InlineData(OrderStatus.Shipped, "Enviado")]
+    [InlineData(OrderStatus.Delivered, "Entregue")]
+    [InlineData(OrderStatus.Cancelled, "Cancelado")]
     public void Domain_enum_labels_are_presented_in_brazilian_portuguese(Enum value, string expectedLabel)
     {
         Assert.Equal(expectedLabel, EnumPresentation.Label(value));
@@ -46,5 +55,20 @@ public sealed class EnumPresentationTests
     public void String_values_are_translated_when_the_enum_type_is_known()
     {
         Assert.Equal("Entregue", EnumPresentation.Label(typeof(ShipmentStatus), nameof(ShipmentStatus.Delivered)));
+    }
+
+    [Fact]
+    public void String_values_keep_unknown_or_invalid_input()
+    {
+        Assert.Equal("NotAStatus", EnumPresentation.Label(typeof(ShipmentStatus), "NotAStatus"));
+        Assert.Equal("", EnumPresentation.Label(typeof(ShipmentStatus), ""));
+        Assert.Equal("42", EnumPresentation.Label(typeof(string), "42"));
+        Assert.Equal("-", EnumPresentation.Label(typeof(ShipmentStatus), null));
+    }
+
+    [Fact]
+    public void Unknown_enum_values_fall_back_to_their_string_value()
+    {
+        Assert.Equal("99", EnumPresentation.Label((ShipmentStatus)99));
     }
 }
