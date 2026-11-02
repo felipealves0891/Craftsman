@@ -19,12 +19,14 @@
 ## Progresso
 
 - Concluídas: `TASK-001`, `TASK-002`
-- Em andamento: `TASK-003` (aguardando aceitação manual em navegador)
-- Bloqueadas: `TASK-004` (aguardando aceitação manual pendente de `TASK-003`; gates técnicos aprovados)
+- Em andamento: `TASK-003` (polling e testes de comportamento concluídos; aguardando aceitação manual em navegador)
+- Bloqueadas: `TASK-004` (aguardando aceitação manual de `TASK-003` e nova execução dos gates após a alteração do script)
 
 ## Evidências desta execução
 
 - Cobertura adicional: 21 novos cenários para entidades de finanças, estoque, catálogo e pedidos; 2 cenários para fallback de data e tarefas de vários dias no partial; sucesso do handler de liquidação.
+- `TASK-003`: polling pausado enquanto a aba está oculta; ao voltar à aba, a consulta é imediata; seleção de data ou status alterada durante a requisição impede substituição por uma resposta antiga; falha de rede mantém o calendário atual.
+- Testes de comportamento do script: 7 aprovados com `node --test tests/production-calendar.test.mjs`; testes direcionados de `ProductionCalendarPartialViewTests` e `ProductionControllerTests`: 7 aprovados.
 - Testes direcionados: 11 testes de `ProductionScheduleService` aprovados, incluindo os fallbacks de pedido/item ausente.
 - Suíte completa: 305 aprovados, 0 falhas.
 - Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
@@ -33,3 +35,4 @@
 - Snapshot e classes das migrations EF, DTOs, opções/configurações, registros de linha da UI, registros de composição de serviços e `Program` estão marcados com `[ExcludeFromCodeCoverage]`, conforme decisão humana.
 - Gate de cobertura, com os limiares atuais do `.spectro/config.yaml`: aprovado com cobertura total de linhas 72,94% (mínimo 70%) e branches 50,00% (mínimo 50%). Para o código novo comparado a `main`, cobertura de linhas 99,14% (mínimo 90%) e branches 90,32% (mínimo 85%) também passaram.
 - Aceitação de virada ao vivo no navegador (`AC-001`, `AC-004`): pendente; a suíte não contém harness de navegador.
+- Os gates foram aprovados em `d43cf43`, antes das alterações atuais de `production-calendar.js`; essa evidência não cobre o script atualizado e deve ser renovada.

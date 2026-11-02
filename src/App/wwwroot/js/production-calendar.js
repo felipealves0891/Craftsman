@@ -12,13 +12,20 @@
     let requestInProgress = false;
     let pollTimer;
 
+    function hasExplicitPlannedDate() {
+        return Boolean(document.querySelector("input[name='plannedDate']")?.value);
+    }
+
+    function getSelectedStatus() {
+        return document.querySelector("select[name='status']")?.value ?? "";
+    }
+
     async function checkForMonthChange() {
         if (requestInProgress || document.visibilityState !== "visible") {
             return;
         }
 
-        const plannedDateInput = document.querySelector("input[name='plannedDate']");
-        if (plannedDateInput?.value) {
+        if (hasExplicitPlannedDate()) {
             return;
         }
 
@@ -34,14 +41,17 @@
             const currentMonth = `${month.year}-${String(month.month).padStart(2, "0")}`;
             const currentFragment = document.getElementById(fragmentId);
 
-            if (!currentFragment || currentFragment.dataset.autoUpdate !== "true" || currentFragment.dataset.currentMonth === currentMonth) {
+            if (hasExplicitPlannedDate()
+                || !currentFragment
+                || currentFragment.dataset.autoUpdate !== "true"
+                || currentFragment.dataset.currentMonth === currentMonth) {
                 return;
             }
 
+            const requestedStatus = getSelectedStatus();
             const url = new URL(calendarUrl, window.location.origin);
-            const status = document.querySelector("select[name='status']")?.value;
-            if (status) {
-                url.searchParams.set("status", status);
+            if (requestedStatus) {
+                url.searchParams.set("status", requestedStatus);
             }
 
             const calendarResponse = await fetch(url, { cache: "no-store" });
@@ -53,9 +63,14 @@
             const template = document.createElement("template");
             template.innerHTML = markup;
             const replacement = template.content.querySelector(`#${fragmentId}`);
+            const latestFragment = document.getElementById(fragmentId);
 
-            if (replacement?.dataset.currentMonth === currentMonth) {
-                currentFragment.replaceWith(replacement);
+            if (!hasExplicitPlannedDate()
+                && latestFragment === currentFragment
+                && latestFragment.dataset.autoUpdate === "true"
+                && getSelectedStatus() === requestedStatus
+                && replacement?.dataset.currentMonth === currentMonth) {
+                latestFragment.replaceWith(replacement);
             }
         } catch {
             // Keep the current calendar visible and retry on the next poll.
@@ -66,6 +81,11 @@
 
     function scheduleNextCheck() {
         window.clearTimeout(pollTimer);
+        pollTimer = undefined;
+        if (document.visibilityState !== "visible") {
+            return;
+        }
+
         pollTimer = window.setTimeout(async () => {
             await checkForMonthChange();
             scheduleNextCheck();
@@ -75,6 +95,10 @@
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
             void checkForMonthChange();
+            scheduleNextCheck();
+        } else {
+            window.clearTimeout(pollTimer);
+            pollTimer = undefined;
         }
     });
 

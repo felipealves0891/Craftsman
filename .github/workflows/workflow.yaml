@@ -1,0 +1,248 @@
+name: .NET CI/CD
+
+on:
+  push:
+    branches:
+      - feat/**
+      - develop
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION: 'Craftsman.slnx'
+  PROJECT: 'src\App\Craftsman.csproj'
+
+jobs:
+  ci:
+    name: Build and Tests 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore "${{ env.SOLUTION }}"
+
+      - name: Build
+        run: |
+          dotnet build "${{ env.SOLUTION }}" \
+            --configuration Release \
+            --no-restore \
+            -p:Version=1.0.${{ github.run_number }} \
+            -p:ContinuousIntegrationBuild=true
+
+      - name: Unit Tests
+        if: always()
+        run: |
+          dotnet test "${{ env.SOLUTION }}" \
+            --configuration Release \
+            --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults
+      
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+      - name: Validate Coverage
+        if: always()
+        run: |
+          echo "Current directory:"
+          pwd
+
+          echo "Files in .github:"
+          ls -la .github/
+
+          echo "Scripts:"
+          ls -la .github/scripts/
+          
+          python .github/scripts/validate-coverage.py \
+            --directory ./TestResults \
+            --min-lines 90 \
+            --min-branches 75
+      
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        if: always() &&
+            github.event_name == 'push' &&
+            github.ref != 'refs/heads/main'
+        run: |
+          SOURCE="${GITHUB_REF_NAME}"
+
+          case "$SOURCE" in
+            feat/*)
+              TARGET="develop"
+              ;;
+            develop)
+              TARGET="main"
+              ;;
+            main)
+              echo "Branch main não possui PR"
+              exit 1
+              ;;
+            *)
+              echo "Branch não configurada: $SOURCE"
+              exit 0
+              ;;
+          esac
+
+          echo "Origem: $SOURCE"
+          echo "Destino: $TARGET"
+
+          # Verificar se já existe PR aberto
+          PR=$(gh pr list \
+            --base "$TARGET" \
+            --head "$SOURCE" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$PR" ]; then
+            echo "PR #$PR já existe."
+            exit 0
+          fi
+
+          # Verificar se há diferenças entre branches
+          git fetch origin "$TARGET"
+
+          if git diff --quiet "origin/$TARGET...HEAD"; then
+            echo "Nenhuma alteração para integrar."
+            exit 0
+          fi
+
+          # Criar PR
+          gh pr create \
+            --base "$TARGET" \
+            --head "$SOURCE" \
+            --title "merge: $SOURCE into $TARGET" \
+            --body "Pull Request criado automaticamente após aprovação do CI."
+
+  publish:
+    name: Pusblish
+    runs-on: ubuntu-latest
+    needs: ci
+    timeout-minutes: 20
+
+    env:
+      DOKPLOY_URL: ${{ vars.DOKPLOY_URL }}
+      APP_ID: ${{ vars.DOKPLOY_APP_ID }}
+      API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Trigger and monitor deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          API="${DOKPLOY_URL%/}/api"
+
+          get_deployments() {
+            curl --fail --silent --show-error \
+              --retry 3 \
+              --get "$API/deployment.all" \
+              -H "x-api-key: $API_KEY" \
+              --data-urlencode "applicationId=$APP_ID"
+          }
+
+          # Registra os deployments anteriores
+          BEFORE=$(get_deployments)
+
+          echo "$BEFORE" | jq -e 'type == "array"' > /dev/null
+
+          OLD_IDS=$(echo "$BEFORE" | jq -c \
+            '[.[].deploymentId]')
+
+          echo "Triggering deployment..."
+          
+          # Solicita o deploy
+          curl --fail --silent --show-error \
+            -X POST "$API/application.deploy" \
+            -H "x-api-key: $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg id "$APP_ID" \
+              '{applicationId: $id}')" > /dev/null
+
+          echo "Waiting for new deployment..."
+
+          DEPLOYMENT_ID=""
+
+          # Até 20 tentativas para encontrar o registro
+          for attempt in $(seq 1 20); do
+            sleep 3
+
+            DEPLOYMENTS=$(get_deployments)
+
+            DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | jq -r \
+              --argjson old "$OLD_IDS" \
+              '[.[] | select(
+                (.deploymentId as $id |
+                  $old | index($id) | not)
+              )] | first | .deploymentId // empty')
+
+            if [[ -n "$DEPLOYMENT_ID" ]]; then
+              break
+            fi
+          done
+
+          if [[ -z "$DEPLOYMENT_ID" ]]; then
+            echo "::error::New deployment not found"
+            exit 1
+          fi
+
+          echo "Tracking deployment: $DEPLOYMENT_ID"
+
+          # 180 * 5 segundos = 15 minutos
+          for attempt in $(seq 1 180); do
+            DEPLOYMENTS=$(get_deployments)
+
+            STATUS=$(echo "$DEPLOYMENTS" | jq -r \
+              --arg id "$DEPLOYMENT_ID" \
+              '.[] | select(.deploymentId == $id) |
+               .status // empty')
+
+            echo "Deployment status: ${STATUS:-unknown}"
+
+            case "$STATUS" in
+              done)
+                echo "Deployment successful!"
+                exit 0
+                ;;
+              error|failed|cancelled|canceled)
+                echo "::error::Deployment failed: $STATUS"
+                exit 1
+                ;;
+            esac
+
+            sleep 5
+          done
+
+          echo "::error::Deployment timeout"
+          exit 1
+
+      
+
+    
+
