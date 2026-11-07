@@ -488,3 +488,7 @@ $RECYCLE.BIN/
 .nuget
 .aspnet
 .codex/startbootstrap-sb-admin-2-gh-pages
+
+
+.spectro/features/**/reviews/*
+.spectro/features/**/outputs/*

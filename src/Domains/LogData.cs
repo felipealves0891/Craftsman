@@ -12,6 +12,7 @@ public class LogData : IDisposable
     public string Version { get; private set; }
     public string RequestMethod { get; private set; }
     public string RequestPath { get; private set; }
+    public string? CorrelationId { get; private set; }
     public IDictionary<string, string> RequestQuery { get; private set; }
     public object RequestBody { get; private set; }
     
@@ -22,12 +23,18 @@ public class LogData : IDisposable
 
     public object? Error { get; private set; }    
 
-    public LogData(string method, string path, IDictionary<string, string> query, object body)
+    public LogData(
+        string method,
+        string path,
+        IDictionary<string, string> query,
+        object body,
+        string? correlationId = null)
     {
         _stopwatch = Stopwatch.StartNew();
         RequestBody = body;
         RequestPath = path;
         RequestMethod = method;
+        CorrelationId = correlationId;
         RequestQuery = query;
         Steps = new Dictionary<string, IDictionary<string, object>>();
         Version = Assembly.GetExecutingAssembly()?.GetName()?.Version?.ToString() ?? "0.0.0.0";
@@ -41,9 +48,13 @@ public class LogData : IDisposable
 
     public void FinishLogWithSuccess(object response)
     {
+        if (!_stopwatch.IsRunning)
+            return;
+
         if(_stopwatch.IsRunning)
             _stopwatch.Stop();
 
+        EleapsedTime = _stopwatch.ElapsedMilliseconds;
         Status = "Success";
         ResponseBody = response;
         var log = JsonSerializer.Serialize(this, new JsonSerializerOptions
@@ -56,9 +67,13 @@ public class LogData : IDisposable
     
     public void FinishLogWithError(Exception exception)
     {
+        if (!_stopwatch.IsRunning)
+            return;
+
         if(_stopwatch.IsRunning)
             _stopwatch.Stop();
 
+        EleapsedTime = _stopwatch.ElapsedMilliseconds;
         Status = "Error";
         Error = MapError(exception);    
         var log = JsonSerializer.Serialize(this, new JsonSerializerOptions
@@ -73,8 +88,7 @@ public class LogData : IDisposable
     {
         return new
         {
-            Message = exception.Message,
-            StackTrace = exception.StackTrace,
+            ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
             InnerException = exception.InnerException is not null ? MapError(exception.InnerException) : null 
         };
     }

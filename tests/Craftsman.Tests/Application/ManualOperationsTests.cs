@@ -216,6 +216,13 @@ public sealed class ManualOperationsTests
         await settlementRepository.AddAsync(new FinancialSettlement(Guid.NewGuid(), orderId, 60, 0, 0, discountAmount: 5));
         await dbContext.SaveChangesAsync();
 
+        using var updateLog = new LogData(
+            "POST",
+            "/ManualOrders/Edit",
+            new Dictionary<string, string>(),
+            new { OrderId = orderId, Operation = "ManualOrder.Edit" },
+            "trace-manual-edit");
+
         await service.UpdateAsync(orderId, new ManualOrderInputModel
         {
             Source = "Manual",
@@ -232,12 +239,15 @@ public sealed class ManualOperationsTests
                     UnitPriceAmount = 30
                 }
             ]
-        });
+        }, log: updateLog);
 
         var settlement = await settlementRepository.GetByOrderIdAsync(orderId);
 
         Assert.Equal(12, settlement?.DiscountAmount);
         Assert.Equal(48, settlement?.MarginAmount);
+        Assert.Equal("trace-manual-edit", updateLog.CorrelationId);
+        Assert.Equal("Success", updateLog.Steps["ManualOrderService.UpdateAsync.PersistOrder"]["Status"]);
+        Assert.Equal("Success", updateLog.Steps["ManualOrderService.UpdateAsync.PersistSettlement"]["Status"]);
     }
 
     [Fact]
