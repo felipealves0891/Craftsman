@@ -22,5 +22,5 @@ gates:
   commands:
     build: 'dotnet build --no-restore --warnaserror -v minimal'
     test: 'dotnet test --no-restore --no-build'
-    coverage: 'pwsh -NoProfile -ExecutionPolicy Bypass -File ".spectro/tools/coverage-gate.ps1" -Project "." -BaseBranch "develop" -MinLineCoverage 75 -MinBranchCoverage 55 -MinNewLineCoverage 90 -MinNewBranchCoverage 85'
+    coverage: 'pwsh -NoProfile -ExecutionPolicy Bypass -File ".spectro/tools/coverage-gate.ps1" -Project "." -BaseBranch "develop" -MinLineCoverage 81 -MinBranchCoverage 55 -MinNewLineCoverage 90 -MinNewBranchCoverage 85'
     security: 'dotnet list package --vulnerable'
