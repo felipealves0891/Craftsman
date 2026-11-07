@@ -15,9 +15,9 @@
 - Plano: `.spectro/features/revert-order-production-planning/plan.md`
 - Tarefas: `.spectro/features/revert-order-production-planning/tasks.md`
 - Gates: `.spectro/features/revert-order-production-planning/gates.json`
-- Pacote independente: `.spectro/features/revert-order-production-planning/reviews/review-20261107T183000Z/`
-- Revisão do código: `git diff 39c7e97^..a88e084`
-- Evidência de gates: execução `gate-20261107T182411Z`, revisão de código `a88e084`; a diferença posterior contém apenas os artefatos de gates e estado.
+- Pacote independente: `.spectro/features/revert-order-production-planning/reviews/review-20261107T183500Z/`
+- Revisão do código: `git diff 39c7e97^..e592d71`
+- Evidência de gates: execução `gate-20261107T182615Z`, revisão de código `38aac93`; a diferença posterior contém apenas os artefatos de gates e estado.
 
 ## Requisitos verificados
 
@@ -35,7 +35,7 @@
 
 | ID | Severidade | Categoria | Localização | Evidência | Impacto | Correção recomendada | Etapa de retorno | Status |
 |---|---|---|---|---|---|---|---|---|
-| `FINDING-001` | Medium | Functional / Security | `src/Domains/Production/Services/OrderProductionPlanningService.cs:96-150` | `RevertAsync` valida tarefa `Completed` e status do pedido, mas não consulta `IShipmentRepository`. A interface apenas oculta a ação com `!Shipments.Any()` em `src/UI/Components/Orders/OrderDetailsPage.razor`. `ShippingService.CreateAsync` permite criar uma remessa sem alterar o status do pedido. | Uma chamada direta ao endpoint pode reverter tarefas e estoque de um pedido que já possui remessa criada, contrariando o escopo que exclui reversão de envios. | Validar remessas no servidor antes de qualquer compensação/exclusão; rejeitar qualquer pedido com remessa relacionada e adicionar teste de endpoint direto. | `implement` | resolved |
+| `FINDING-001` | Medium | Functional / Security | `src/Domains/Production/Services/OrderProductionPlanningService.cs:96-150` | `RevertAsync` agora consulta `IShipmentRepository` antes de compensar estoque ou excluir tarefas; o teste `Revert_production_rejects_order_with_created_shipment_before_changes` confirma a rejeição sem efeitos parciais. | Resolvido: chamadas diretas não revertem pedidos que já possuem remessa criada. | Validar remessas no servidor antes de qualquer compensação/exclusão; rejeitar qualquer pedido com remessa relacionada e adicionar teste de endpoint direto. | `implement` | resolved |
 
 ## Riscos residuais
 
@@ -46,4 +46,4 @@
 ## Decisão
 
 - `approved`
-- Justificativa: `TASK-REV-001` adicionou a validação server-side de remessas antes da compensação/exclusão e um teste de regressão do endpoint direto. Os gates foram renovados com sucesso na revisão corrigida.
+- Justificativa: `TASK-REV-001` foi concluída, o finding está resolvido, a rastreabilidade não possui lacunas e os gates obrigatórios foram renovados com sucesso na revisão corrigida.
