@@ -18,6 +18,7 @@ RUN dotnet publish "Craftsman.csproj" -c Release --no-restore -o /app/publish /p
 FROM runtime AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+ENV TZ=America/Sao_Paulo
 ENV ASPNETCORE_URLS=http://+:80
 
 ENTRYPOINT ["dotnet", "Craftsman.dll"]

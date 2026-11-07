@@ -296,6 +296,28 @@ public sealed class CatalogAndFinanceComponentTests
     }
 
     [Fact]
+    public async Task Order_details_shows_revert_production_action_when_order_is_eligible()
+    {
+        var orderId = Guid.NewGuid();
+        var html = await RenderAsync<OrderDetailsPage>(new Dictionary<string, object?>
+        {
+            [nameof(OrderDetailsPage.OrderId)] = orderId,
+            [nameof(OrderDetailsPage.Source)] = "Manual",
+            [nameof(OrderDetailsPage.ExternalOrderId)] = "MAN-REVERT-1",
+            [nameof(OrderDetailsPage.Status)] = "Pronto para producao",
+            [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-revert",
+            [nameof(OrderDetailsPage.ProductionTasks)] = new[]
+            {
+                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 1, "Planejada")
+            }
+        });
+
+        Assert.Contains("/Orders/RevertProduction/" + orderId, html);
+        Assert.Contains("csrf-revert", html);
+        Assert.Contains("Reverter envio para producao", html);
+    }
+
+    [Fact]
     public async Task Settlement_details_renders_summary_and_empty_items_state()
     {
         var orderId = Guid.NewGuid();

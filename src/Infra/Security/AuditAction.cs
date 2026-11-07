@@ -11,6 +11,7 @@ public static class AuditAction
     public const string AccessDenied = "AccessDenied";
     public const string ManualImport = "ManualImport";
     public const string SendToProduction = "SendToProduction";
+    public const string ProductionPlanningReverted = "ProductionPlanningReverted";
     public const string ProductionAdvanced = "ProductionAdvanced";
     public const string ShipmentStatusUpdated = "ShipmentStatusUpdated";
     public const string UserRoleChanged = "UserRoleChanged";
