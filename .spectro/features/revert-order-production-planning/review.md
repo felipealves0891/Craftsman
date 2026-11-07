@@ -16,8 +16,8 @@
 - Tarefas: `.spectro/features/revert-order-production-planning/tasks.md`
 - Gates: `.spectro/features/revert-order-production-planning/gates.json`
 - Pacote independente: `.spectro/features/revert-order-production-planning/reviews/review-20261107T183000Z/`
-- Revisão do código: `git diff 39c7e97^..ae30cf7`
-- Evidência de gates: execução `gate-20261107T181952Z`, revisão de código `884dd44`; a diferença posterior contém apenas os artefatos de gates e estado.
+- Revisão do código: `git diff 39c7e97^..a88e084`
+- Evidência de gates: execução `gate-20261107T182411Z`, revisão de código `a88e084`; a diferença posterior contém apenas os artefatos de gates e estado.
 
 ## Requisitos verificados
 
@@ -46,4 +46,4 @@
 ## Decisão
 
 - `approved`
-- Justificativa: `TASK-REV-001` adicionou a validação server-side de remessas antes da compensação/exclusão e um teste de regressão do endpoint direto. A aprovação final depende da renovação dos gates após esta correção.
+- Justificativa: `TASK-REV-001` adicionou a validação server-side de remessas antes da compensação/exclusão e um teste de regressão do endpoint direto. Os gates foram renovados com sucesso na revisão corrigida.
