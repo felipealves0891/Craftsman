@@ -54,6 +54,8 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IAuditService, AuditService>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<ITransactionalUnitOfWork>(serviceProvider =>
+            (ITransactionalUnitOfWork)serviceProvider.GetRequiredService<IUnitOfWork>());
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IOrderDeletionProcessRepository, OrderDeletionProcessRepository>();

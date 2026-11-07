@@ -152,6 +152,16 @@ public sealed class Order
         Status = OrderStatus.Normalized;
     }
 
+    public void RevertProductionPlanning()
+    {
+        if (Status is not (OrderStatus.ReadyForProduction or OrderStatus.InProduction))
+        {
+            throw new InvalidOperationException($"Order cannot revert production planning from status {Status}.");
+        }
+
+        Status = OrderStatus.Normalized;
+    }
+
     public void ClearDomainEvents()
     {
         domainEvents.Clear();

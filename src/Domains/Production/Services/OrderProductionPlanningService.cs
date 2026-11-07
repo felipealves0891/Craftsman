@@ -1,4 +1,6 @@
 using Craftsman.Domain.Events;
+using Craftsman.Domain.Inventory.Entities;
+using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
@@ -14,6 +16,7 @@ public sealed class OrderProductionPlanningService
     private readonly IOrderRepository orderRepository;
     private readonly IProductionPlanner productionPlanner;
     private readonly IProductionTaskRepository productionTaskRepository;
+    private readonly IStockMovementRepository? stockMovementRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public OrderProductionPlanningService(
@@ -22,11 +25,13 @@ public sealed class OrderProductionPlanningService
         IProductionTaskRepository productionTaskRepository,
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher,
-        ILogger<OrderProductionPlanningService> logger)
+        ILogger<OrderProductionPlanningService> logger,
+        IStockMovementRepository? stockMovementRepository = null)
     {
         this.orderRepository = orderRepository;
         this.productionPlanner = productionPlanner;
         this.productionTaskRepository = productionTaskRepository;
+        this.stockMovementRepository = stockMovementRepository;
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
         this.logger = logger;
@@ -86,5 +91,66 @@ public sealed class OrderProductionPlanningService
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return productionTasks.Count > 0;
+    }
+
+    public async Task<bool> RevertAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        if (stockMovementRepository is null)
+        {
+            throw new InvalidOperationException("Stock movement repository is required to revert production planning.");
+        }
+
+        var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
+            ?? throw new InvalidOperationException("Order was not found.");
+        var productionTasks = await productionTaskRepository.ListByOrderAsync(orderId, cancellationToken);
+
+        if (productionTasks.Any(task => task.Status == Entities.ProductionTaskStatus.Completed))
+        {
+            throw new InvalidOperationException("Order production planning cannot be reverted after a task is completed.");
+        }
+
+        if (productionTasks.Count == 0)
+        {
+            if (order.Status == OrderStatus.Normalized)
+            {
+                return false;
+            }
+
+            throw new InvalidOperationException($"Order production planning cannot be reverted from status {order.Status}.");
+        }
+
+        foreach (var productionTask in productionTasks)
+        {
+            var movements = await stockMovementRepository.ListByBusinessReferenceAsync(
+                productionTask.Id.ToString(),
+                cancellationToken);
+
+            foreach (var movement in movements.Where(movement => movement.Type == StockMovementType.Outbound))
+            {
+                var compensationReference = $"production-reversal:{movement.Id}";
+                if (await stockMovementRepository.ExistsByBusinessReferenceAsync(compensationReference, cancellationToken))
+                {
+                    continue;
+                }
+
+                await stockMovementRepository.AddAsync(
+                    new StockMovement(
+                        Guid.NewGuid(),
+                        movement.RawMaterialId,
+                        StockMovementType.Inbound,
+                        movement.Quantity,
+                        "Production planning reversal",
+                        compensationReference,
+                        unitCostAmount: movement.UnitCostAmount),
+                    cancellationToken);
+            }
+
+            await productionTaskRepository.DeleteAsync(productionTask.Id, cancellationToken);
+        }
+
+        order.RevertProductionPlanning();
+        await orderRepository.UpdateAsync(order, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

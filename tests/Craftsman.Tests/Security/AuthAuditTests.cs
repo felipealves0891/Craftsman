@@ -143,6 +143,7 @@ public sealed class AuthAuditTests
         Assert.Equal(ApplicationPolicies.AdminOnly, PolicyOn<UsersController>());
 
         Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<OrdersController>(nameof(OrdersController.SendToProduction)));
+        Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<OrdersController>(nameof(OrdersController.RevertProduction)));
         Assert.Equal(ApplicationPolicies.Write, PolicyOnAction<ProductionController>(nameof(ProductionController.Advance)));
         Assert.IsType<HttpGetAttribute>(typeof(ProductionController).GetMethod(nameof(ProductionController.CurrentMonth))!
             .GetCustomAttributes(typeof(HttpGetAttribute), inherit: true).Single());

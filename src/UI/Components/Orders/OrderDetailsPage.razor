@@ -23,6 +23,13 @@
                 <button type="submit" class="btn btn-primary">Enviar para producao</button>
             </form>
         }
+        @if (CanRevertProduction)
+        {
+            <form action="/Orders/RevertProduction/@OrderId" method="post">
+                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                <button type="submit" class="btn btn-outline-warning">Reverter envio para producao</button>
+            </form>
+        }
     </div>
 </section>
 
@@ -204,6 +211,7 @@
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public string? StockAlertsMessage { get; set; }
     [Parameter] public bool CanChangeOrder { get; set; }
+    [Parameter] public bool CanRevertProduction { get; set; }
     [Parameter] public Guid DeleteProcessId { get; set; }
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
