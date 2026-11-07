@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "revert-order-production-planning",
-  "execution_id": "gate-20261107T181513Z",
+  "execution_id": "gate-20261107T181952Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "08dccdb287fa788cdea4a1cfaf23dcc09e8edaae",
+  "code_revision": "884dd445523e11b518420e514e32fd80c0968fff",
   "config_hash": "sha256:54b79fdc2e183754e6ee501fb88efa997194faa4fcac326cab1cfaccea70d029",
   "artifact_hashes": {
     "spec.md": "2bd60c17b963908ba8bc31499cd88d1a28e936cb6862fc39dd327d3ce97055ad",
     "clarifications.md": "45fab3ebe55413de4da6d1cd3658b6d3cadea1dcab79e0e5eaee60d14d054a50",
     "plan.md": "761147c4900aa3600011e40383dccc22b57c040953bf58f298a14b4f78895804",
-    "tasks.md": "f7e907f2f07bbcbd4869e100847adee3d5d03541a293cd0f7c98f80ff8be33af"
+    "tasks.md": "7e7c0fb8844ce9fcee66912072d51f26681989829ce35a02a93f31e0a1c93139"
   },
-  "started_at": "2026-11-07T18:15:13.098Z",
-  "duration_ms": 59951,
+  "started_at": "2026-11-07T18:19:52.573Z",
+  "duration_ms": 56517,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 12302,
+      "duration_ms": 8856,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/evidence/01-build.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/build",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 7119,
+      "duration_ms": 7215,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/evidence/02-test.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/test",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 4825,
+      "duration_ms": 4732,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/evidence/03-security.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/security",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,12 +69,12 @@
       "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 81 -MinBranchCoverage 55 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 0,
-      "duration_ms": 35544,
+      "duration_ms": 35656,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/evidence/04-coverage.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181513Z/coverage",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T181952Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }

@@ -17,7 +17,7 @@
 - Gates: `.spectro/features/revert-order-production-planning/gates.json`
 - Pacote independente: `.spectro/features/revert-order-production-planning/reviews/review-20261107T183000Z/`
 - Revisão do código: `git diff 39c7e97^..ae30cf7`
-- Evidência de gates: execução `gate-20261107T181513Z`, revisão de código `08dccdb`; a diferença até `ae30cf7` contém apenas `gates.json` e `state.json`.
+- Evidência de gates: execução `gate-20261107T181952Z`, revisão de código `884dd44`; a diferença posterior contém apenas os artefatos de gates e estado.
 
 ## Requisitos verificados
 
