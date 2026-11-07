@@ -24,3 +24,15 @@
 
 - Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`
 - Bloqueadas: —
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** pending
+- **Finding:** FINDING-001
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** Validar a existência de remessas no servidor antes de reverter o planejamento de produção, rejeitando a operação quando houver qualquer remessa relacionada ao pedido e cobrindo o endpoint com teste de regressão.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
