@@ -16,6 +16,28 @@ namespace Craftsman.Tests.Production;
 
 public sealed class OrderProductionPlanningReversalTests
 {
+    [Theory]
+    [InlineData(OrderStatus.ReadyForProduction)]
+    [InlineData(OrderStatus.InProduction)]
+    public void Order_reverts_planning_to_normalized_from_active_production_states(OrderStatus status)
+    {
+        var order = CreateOrder(Guid.NewGuid(), status);
+
+        order.RevertProductionPlanning();
+
+        Assert.Equal(OrderStatus.Normalized, order.Status);
+    }
+
+    [Fact]
+    public void Order_rejects_planning_reversal_from_normalized_state()
+    {
+        var order = CreateOrder(Guid.NewGuid(), OrderStatus.Normalized);
+
+        var exception = Assert.Throws<InvalidOperationException>(order.RevertProductionPlanning);
+
+        Assert.Contains("Normalized", exception.Message);
+    }
+
     [Fact]
     public async Task Revert_compensates_stock_deletes_tasks_and_makes_order_plannable_again()
     {
@@ -43,6 +65,14 @@ public sealed class OrderProductionPlanningReversalTests
         await orderRepository.AddAsync(order);
         await taskRepository.AddAsync(task);
         await movementRepository.AddAsync(outbound);
+        await movementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            material.Id,
+            StockMovementType.Inbound,
+            2,
+            "Production planning reversal",
+            $"production-reversal:{outbound.Id}",
+            unitCostAmount: outbound.UnitCostAmount));
         await dbContext.SaveChangesAsync();
 
         var service = CreateService(

@@ -1,5 +1,6 @@
 using Craftsman.Domain.Repositories;
 using Craftsman.Infra.Persistence;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Craftsman.Infra.Repositories;
 
@@ -17,6 +18,7 @@ public sealed class UnitOfWork : ITransactionalUnitOfWork
         return await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    [ExcludeFromCodeCoverage]
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<Task<T>> operation,
         CancellationToken cancellationToken = default)

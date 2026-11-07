@@ -31,7 +31,6 @@
     var deleteProcessId = Guid.NewGuid();
     var canChangeOrder = !Model.Shipments.Any()
         && !Model.ProductionTasks.Any(task => task.Status is nameof(Craftsman.Domain.Production.Entities.ProductionTaskStatus.InProduction) or nameof(Craftsman.Domain.Production.Entities.ProductionTaskStatus.Completed));
-    var canRevertProduction = Model.CanRevertProduction;
 }
 
 <component type="typeof(OrderDetailsPage)" render-mode="Static"
@@ -49,7 +48,6 @@
            param-ErrorMessage="@errorMessage"
            param-StockAlertsMessage="@stockAlertsMessage"
            param-CanChangeOrder="@canChangeOrder"
-           param-CanRevertProduction="@canRevertProduction"
            param-DeleteProcessId="@deleteProcessId"
            param-RequestVerificationToken="@requestVerificationToken"
            param-Items="@items"

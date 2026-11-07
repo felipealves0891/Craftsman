@@ -305,7 +305,6 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(OrderDetailsPage.Source)] = "Manual",
             [nameof(OrderDetailsPage.ExternalOrderId)] = "MAN-REVERT-1",
             [nameof(OrderDetailsPage.Status)] = "Pronto para producao",
-            [nameof(OrderDetailsPage.CanRevertProduction)] = true,
             [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-revert",
             [nameof(OrderDetailsPage.ProductionTasks)] = new[]
             {

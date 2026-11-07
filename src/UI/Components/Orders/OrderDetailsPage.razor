@@ -211,12 +211,17 @@
     [Parameter] public string? ErrorMessage { get; set; }
     [Parameter] public string? StockAlertsMessage { get; set; }
     [Parameter] public bool CanChangeOrder { get; set; }
-    [Parameter] public bool CanRevertProduction { get; set; }
     [Parameter] public Guid DeleteProcessId { get; set; }
     [Parameter] public string RequestVerificationToken { get; set; } = string.Empty;
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
+
+    private bool CanRevertProduction =>
+        Status is "Pronto para producao" or "Em producao"
+        && ProductionTasks.Count > 0
+        && !ProductionTasks.Any(task => task.Status == "Concluida")
+        && !Shipments.Any();
 
     [ExcludeFromCodeCoverage]
     public sealed record OrderItemRow(string ExternalItemId, string Description, int Quantity, string ProductId);

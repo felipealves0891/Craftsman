@@ -16,11 +16,4 @@ public sealed record OrderDetailViewModel(
     DateOnly? ShippingDate,
     IReadOnlyCollection<OrderItemViewModel> Items,
     IReadOnlyCollection<ProductionTaskListItemViewModel> ProductionTasks,
-    IReadOnlyCollection<ShipmentListItemViewModel> Shipments)
-{
-    public bool CanRevertProduction =>
-        Status is nameof(Craftsman.Domain.Sales.Entities.OrderStatus.ReadyForProduction) or nameof(Craftsman.Domain.Sales.Entities.OrderStatus.InProduction)
-        && ProductionTasks.Count > 0
-        && !ProductionTasks.Any(task => task.Status == nameof(Craftsman.Domain.Production.Entities.ProductionTaskStatus.Completed))
-        && !Shipments.Any();
-}
+    IReadOnlyCollection<ShipmentListItemViewModel> Shipments);

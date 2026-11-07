@@ -6,6 +6,7 @@ using Craftsman.Domain.Inventory.Services;
 using Craftsman.Domain.ProductCatalog.Entities;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Services;
+using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Integration.Services;
@@ -65,7 +66,23 @@ public sealed class OrdersControllerRevertProductionTests
         Assert.Equal(AuditAction.ProductionPlanningReverted, audit.Action);
     }
 
-    private static OrdersController CreateController(AppDbContext dbContext, IAuditService auditService)
+    [Fact]
+    public async Task Revert_production_executes_audit_inside_transactional_unit_of_work()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = await SeedOrderAsync(dbContext, OrderStatus.ReadyForProduction, ProductionTaskStatus.Planned);
+        var transaction = new RecordingTransactionalUnitOfWork();
+        var controller = CreateController(dbContext, new RecordingAuditService(), transaction);
+
+        await controller.RevertProduction(order.Id, CancellationToken.None);
+
+        Assert.True(transaction.Executed);
+    }
+
+    private static OrdersController CreateController(
+        AppDbContext dbContext,
+        IAuditService auditService,
+        ITransactionalUnitOfWork? transactionalUnitOfWork = null)
     {
         var orderRepository = new OrderRepository(dbContext);
         var productRepository = new ProductRepository(dbContext);
@@ -88,7 +105,8 @@ public sealed class OrdersControllerRevertProductionTests
             null!,
             planningService,
             null!,
-            auditService)
+            auditService,
+            transactionalUnitOfWork)
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
         };
@@ -178,5 +196,21 @@ public sealed class OrdersControllerRevertProductionTests
     {
         public Task PublishAsync<TEvent>(TEvent domainEvent, CancellationToken cancellationToken = default)
             where TEvent : IDomainEvent => Task.CompletedTask;
+    }
+
+    private sealed class RecordingTransactionalUnitOfWork : ITransactionalUnitOfWork
+    {
+        public bool Executed { get; private set; }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
+        public async Task<T> ExecuteInTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            return await operation();
+        }
     }
 }

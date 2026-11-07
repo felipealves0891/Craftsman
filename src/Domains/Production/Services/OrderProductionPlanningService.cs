@@ -16,7 +16,7 @@ public sealed class OrderProductionPlanningService
     private readonly IOrderRepository orderRepository;
     private readonly IProductionPlanner productionPlanner;
     private readonly IProductionTaskRepository productionTaskRepository;
-    private readonly IStockMovementRepository? stockMovementRepository;
+    private readonly IStockMovementRepository stockMovementRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public OrderProductionPlanningService(
@@ -26,7 +26,7 @@ public sealed class OrderProductionPlanningService
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher,
         ILogger<OrderProductionPlanningService> logger,
-        IStockMovementRepository? stockMovementRepository = null)
+        IStockMovementRepository stockMovementRepository = null!)
     {
         this.orderRepository = orderRepository;
         this.productionPlanner = productionPlanner;
@@ -95,11 +95,6 @@ public sealed class OrderProductionPlanningService
 
     public async Task<bool> RevertAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        if (stockMovementRepository is null)
-        {
-            throw new InvalidOperationException("Stock movement repository is required to revert production planning.");
-        }
-
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
             ?? throw new InvalidOperationException("Order was not found.");
         var productionTasks = await productionTaskRepository.ListByOrderAsync(orderId, cancellationToken);
