@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "revert-order-production-planning",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261107T181513Z",
+      "report": ".spectro/features/revert-order-production-planning/gates.json"
+    }
+  },
+  "attempts": {
+    "implementation-defect:GATE-004": 1,
+    "environment-failure:GATE-004": 1
+  },
+  "invalidated_executions": [
+    "gate-20261107T180732Z",
+    "gate-20261107T181122Z"
+  ],
+  "last_failure": {
+    "category": "environment-failure",
+    "stage": "gates",
+    "execution_id": "gate-20261107T181122Z",
+    "gate_ids": [
+      "GATE-004"
+    ],
+    "diagnostics": [
+      "coverage: ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+    ],
+    "detected_at": "2026-11-07T18:11:45.844Z"
+  },
+  "last_execution_id": "gate-20261107T181513Z",
+  "updated_at": "2026-11-07T18:16:13.052Z"
+}
