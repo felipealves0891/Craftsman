@@ -2,6 +2,7 @@ using Craftsman.App.Models;
 using Craftsman.App.Services;
 using Craftsman.Domain.Integration.Services;
 using Craftsman.Domain.Production.Services;
+using Craftsman.Domain.Repositories;
 using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ public sealed class OrdersController : Controller
     private readonly OrderProductionPlanningService productionPlanningService;
     private readonly StockAlertAppService stockAlertAppService;
     private readonly IAuditService auditService;
+    private readonly ITransactionalUnitOfWork? transactionalUnitOfWork;
 
     public OrdersController(
         OrderQueryService orderQueryService,
@@ -24,7 +26,8 @@ public sealed class OrdersController : Controller
         IOrderImportPipeline orderImportPipeline,
         OrderProductionPlanningService productionPlanningService,
         StockAlertAppService stockAlertAppService,
-        IAuditService auditService)
+        IAuditService auditService,
+        ITransactionalUnitOfWork? transactionalUnitOfWork = null)
     {
         this.orderQueryService = orderQueryService;
         this.manualOrderService = manualOrderService;
@@ -32,6 +35,7 @@ public sealed class OrdersController : Controller
         this.productionPlanningService = productionPlanningService;
         this.stockAlertAppService = stockAlertAppService;
         this.auditService = auditService;
+        this.transactionalUnitOfWork = transactionalUnitOfWork;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -91,6 +95,41 @@ public sealed class OrdersController : Controller
             TempData["StockAlerts"] = string.Join(
                 " | ",
                 stockAlerts.Select(alert => $"{alert.LevelLabel}: {alert.RawMaterialName} com saldo {alert.Balance} {alert.UnitOfMeasure} (limite {alert.ReachedLimit})"));
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevertProduction(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            async Task<bool> RevertAndAuditAsync()
+            {
+                var result = await productionPlanningService.RevertAsync(id, cancellationToken);
+                await auditService.RecordAsync(
+                    AuditAction.ProductionPlanningReverted,
+                    "Order",
+                    id.ToString(),
+                    after: new { Reverted = result },
+                    cancellationToken: cancellationToken);
+                return result;
+            }
+
+            var reverted = transactionalUnitOfWork is null
+                ? await RevertAndAuditAsync()
+                : await transactionalUnitOfWork.ExecuteInTransactionAsync(RevertAndAuditAsync, cancellationToken);
+
+            TempData[reverted ? "Success" : "Error"] = reverted
+                ? "Planejamento de producao revertido."
+                : "O planejamento de producao ja estava revertido.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
         }
 
         return RedirectToAction(nameof(Details), new { id });

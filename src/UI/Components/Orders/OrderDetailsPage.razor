@@ -23,6 +23,13 @@
                 <button type="submit" class="btn btn-primary">Enviar para producao</button>
             </form>
         }
+        @if (CanRevertProduction)
+        {
+            <form action="/Orders/RevertProduction/@OrderId" method="post">
+                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                <button type="submit" class="btn btn-outline-warning">Reverter envio para producao</button>
+            </form>
+        }
     </div>
 </section>
 
@@ -209,6 +216,12 @@
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
+
+    private bool CanRevertProduction =>
+        Status is "Pronto para producao" or "Em producao"
+        && ProductionTasks.Count > 0
+        && !ProductionTasks.Any(task => task.Status == "Concluida")
+        && !Shipments.Any();
 
     [ExcludeFromCodeCoverage]
     public sealed record OrderItemRow(string ExternalItemId, string Description, int Quantity, string ProductId);
