@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Craftsman.App.Models;
 using Craftsman.Domain;
 using Craftsman.Domain.Events;
@@ -164,32 +165,36 @@ public sealed class ManualOrderService
         return order.Id;
     }
 
-    public async Task UpdateAsync(Guid orderId, ManualOrderInputModel input, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        Guid orderId,
+        ManualOrderInputModel input,
+        CancellationToken cancellationToken = default,
+        LogData? log = null)
     {
-        var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
+        var order = await ExecuteLoggedAsync(log, orderId, "ReadOrder", () => orderRepository.GetByIdAsync(orderId, cancellationToken))
             ?? throw new InvalidOperationException("Pedido nao encontrado.");
 
-        var source = await ResolveSourceAsync(input.Source, cancellationToken);
+        var source = await ExecuteLoggedAsync(log, orderId, "ResolveOrderSource", () => ResolveSourceAsync(input.Source, cancellationToken));
         var externalOrderId = ResolveExternalOrderId(input.Reference);
 
-        var existingOrder = await orderRepository.GetByOriginAsync(new OrderOrigin(source.Name, externalOrderId), cancellationToken);
+        var existingOrder = await ExecuteLoggedAsync(log, orderId, "CheckDuplicateOrderOrigin", () => orderRepository.GetByOriginAsync(new OrderOrigin(source.Name, externalOrderId), cancellationToken));
         if (existingOrder is not null && existingOrder.Id != orderId)
         {
             throw new InvalidOperationException("Referencia manual ja existe.");
         }
 
-        var items = await BuildOrderItemsAsync(input, externalOrderId, cancellationToken, order.Items);
+        var items = await ExecuteLoggedAsync(log, orderId, "BuildOrderItems", () => BuildOrderItemsAsync(input, externalOrderId, cancellationToken, order.Items));
         var shippingDate = ResolveShippingDate(input.ShippingDate);
-        var customer = await ResolveCustomerAsync(input, cancellationToken);
+        var customer = await ExecuteLoggedAsync(log, orderId, "ResolveCustomer", () => ResolveCustomerAsync(input, cancellationToken));
         var discount = ResolveDiscount(input, items);
         var operationalDataChanged = HasOperationalChanges(order, source.Name, externalOrderId, shippingDate, items);
 
-        await EnsureOrderCanChangeAsync(orderId, operationalDataChanged, cancellationToken);
+        await ExecuteLoggedAsync(log, orderId, "ValidateOrderChange", () => EnsureOrderCanChangeAsync(orderId, operationalDataChanged, cancellationToken));
 
         if (operationalDataChanged)
         {
-            await ReversePlannedProductionAsync(orderId, cancellationToken);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await ExecuteLoggedAsync(log, orderId, "ReversePlannedProduction", () => ReversePlannedProductionAsync(orderId, cancellationToken));
+            await ExecuteLoggedAsync(log, orderId, "PersistProductionReversal", () => unitOfWork.SaveChangesAsync(cancellationToken));
         }
 
         order.Replace(new OrderOrigin(source.Name, externalOrderId), items, shippingDate, customer, customer?.Id, discount);
@@ -198,13 +203,82 @@ public sealed class ManualOrderService
             order.MarkNormalized();
         }
 
-        await orderRepository.UpdateAsync(order, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-        await RecalculateSettlementIfNeededAsync(orderId, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await ExecuteLoggedAsync(log, orderId, "UpdateOrder", () => orderRepository.UpdateAsync(order, cancellationToken));
+        await ExecuteLoggedAsync(log, orderId, "PersistOrder", () => unitOfWork.SaveChangesAsync(cancellationToken));
+        await ExecuteLoggedAsync(log, orderId, "RecalculateSettlement", () => RecalculateSettlementIfNeededAsync(orderId, cancellationToken));
+        await ExecuteLoggedAsync(log, orderId, "PersistSettlement", () => unitOfWork.SaveChangesAsync(cancellationToken));
         if (operationalDataChanged)
         {
-            await productionPlanningService.TryPlanAsync(order.Id, cancellationToken);
+            await ExecuteLoggedAsync(log, orderId, "PlanProduction", () => productionPlanningService.TryPlanAsync(order.Id, cancellationToken));
+        }
+    }
+
+    private static async Task ExecuteLoggedAsync(LogData? log, Guid orderId, string operation, Func<Task> action)
+    {
+        var step = log?.AddStep($"{nameof(ManualOrderService)}.UpdateAsync.{operation}");
+        var stopwatch = Stopwatch.StartNew();
+        if (step is not null)
+        {
+            step["OrderId"] = orderId;
+            step["Operation"] = operation;
+            step["Status"] = "Started";
+        }
+
+        try
+        {
+            await action();
+            if (step is not null)
+                step["Status"] = "Success";
+        }
+        catch (Exception exception)
+        {
+            if (step is not null)
+            {
+                step["Status"] = "Error";
+                step["ExceptionType"] = exception.GetType().FullName ?? exception.GetType().Name;
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (step is not null)
+                step["DurationMilliseconds"] = stopwatch.ElapsedMilliseconds;
+        }
+    }
+
+    private static async Task<T> ExecuteLoggedAsync<T>(LogData? log, Guid orderId, string operation, Func<Task<T>> action)
+    {
+        var step = log?.AddStep($"{nameof(ManualOrderService)}.UpdateAsync.{operation}");
+        var stopwatch = Stopwatch.StartNew();
+        if (step is not null)
+        {
+            step["OrderId"] = orderId;
+            step["Operation"] = operation;
+            step["Status"] = "Started";
+        }
+
+        try
+        {
+            var result = await action();
+            if (step is not null)
+                step["Status"] = "Success";
+            return result;
+        }
+        catch (Exception exception)
+        {
+            if (step is not null)
+            {
+                step["Status"] = "Error";
+                step["ExceptionType"] = exception.GetType().FullName ?? exception.GetType().Name;
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (step is not null)
+                step["DurationMilliseconds"] = stopwatch.ElapsedMilliseconds;
         }
     }
 

@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "handle-manual-order-edit-concurrency",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261107T141446Z",
+      "report": ".spectro/features/handle-manual-order-edit-concurrency/gates.json"
+    }
+  },
+  "attempts": {
+    "environment-failure:GATE-004": 1
+  },
+  "invalidated_executions": [
+    "gate-20261107T140923Z"
+  ],
+  "last_failure": {
+    "category": "environment-failure",
+    "stage": "gates",
+    "execution_id": "gate-20261107T140923Z",
+    "gate_ids": [
+      "GATE-004"
+    ],
+    "diagnostics": [
+      "coverage: ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+    ],
+    "detected_at": "2026-11-07T14:10:01.353Z"
+  },
+  "last_execution_id": "gate-20261107T141446Z",
+  "updated_at": "2026-11-07T14:16:33.585Z"
+}

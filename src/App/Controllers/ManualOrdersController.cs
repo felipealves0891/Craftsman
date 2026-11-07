@@ -6,6 +6,7 @@ using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Craftsman.App.Controllers;
 
@@ -71,13 +72,14 @@ public sealed class ManualOrdersController : Controller
         }
     }
 
-    private LogData CreateLog(object body)
+    private LogData CreateLog(object body, string? correlationId = null)
     {
         return new LogData(
             Request.Method,
             Request.Path,
             Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
-            body);
+            body,
+            correlationId ?? Request.HttpContext.TraceIdentifier);
     }
 
     public async Task<IActionResult> Edit(Guid id, CancellationToken cancellationToken)
@@ -106,13 +108,32 @@ public sealed class ManualOrdersController : Controller
             return View("Create", input);
         }
 
+        using var log = CreateLog(new
+        {
+            OrderId = id,
+            Operation = "ManualOrder.Edit"
+        });
+        var data = log.AddStep($"{nameof(ManualOrdersController)}.{nameof(Edit)}");
+        data["OrderId"] = id;
+        data["Operation"] = "ManualOrder.Edit";
+        data["ModelState.IsValid"] = true;
+
         try
         {
-            await manualOrderService.UpdateAsync(id, input, cancellationToken);
+            await manualOrderService.UpdateAsync(id, input, cancellationToken, log);
+            log.FinishLogWithSuccess(id);
             return RedirectToAction("Details", "Orders", new { id });
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            log.FinishLogWithError(exception);
+            ModelState.AddModelError(string.Empty, "O pedido foi alterado ou removido durante a edição. Recarregue os dados e tente novamente.");
+            await PopulateFormOptionsAsync(cancellationToken);
+            return View("Create", input);
         }
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
         {
+            log.FinishLogWithError(exception);
             ModelState.AddModelError(string.Empty, exception.Message);
             await PopulateFormOptionsAsync(cancellationToken);
             return View("Create", input);
