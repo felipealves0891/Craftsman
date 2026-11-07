@@ -6,7 +6,7 @@
   "phases": {
     "gates": {
       "status": "completed",
-      "execution_id": "gate-20261107T182411Z",
+      "execution_id": "gate-20261107T182615Z",
       "report": ".spectro/features/revert-order-production-planning/gates.json"
     }
   },
@@ -30,6 +30,6 @@
     ],
     "detected_at": "2026-11-07T18:11:45.844Z"
   },
-  "last_execution_id": "gate-20261107T182411Z",
-  "updated_at": "2026-11-07T18:25:08.167Z"
+  "last_execution_id": "gate-20261107T182615Z",
+  "updated_at": "2026-11-07T18:27:16.358Z"
 }

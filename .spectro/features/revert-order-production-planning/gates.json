@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "feature_id": "revert-order-production-planning",
-  "execution_id": "gate-20261107T182411Z",
+  "execution_id": "gate-20261107T182615Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "a88e084ce87e6d4118cd002cebe02fa85c0b4a2f",
+  "code_revision": "38aac936d69893f7cc68f34f86f1daed71170e49",
   "config_hash": "sha256:54b79fdc2e183754e6ee501fb88efa997194faa4fcac326cab1cfaccea70d029",
   "artifact_hashes": {
     "spec.md": "2bd60c17b963908ba8bc31499cd88d1a28e936cb6862fc39dd327d3ce97055ad",
@@ -11,8 +11,8 @@
     "plan.md": "761147c4900aa3600011e40383dccc22b57c040953bf58f298a14b4f78895804",
     "tasks.md": "20ebc3668693bf0d1ecaad07e9fe60d97b98ef23155836f539614a5f15296de0"
   },
-  "started_at": "2026-11-07T18:24:11.060Z",
-  "duration_ms": 57104,
+  "started_at": "2026-11-07T18:26:15.927Z",
+  "duration_ms": 60428,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 9850,
+      "duration_ms": 9003,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/evidence/01-build.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/build",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 7154,
+      "duration_ms": 6978,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/evidence/02-test.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/test",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 4681,
+      "duration_ms": 4717,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/evidence/03-security.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/security",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,12 +69,12 @@
       "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 81 -MinBranchCoverage 55 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 0,
-      "duration_ms": 35188,
+      "duration_ms": 38995,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/evidence/04-coverage.log"
+        ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182411Z/coverage",
+      "output_directory": ".spectro/features/revert-order-production-planning/outputs/gate-20261107T182615Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
