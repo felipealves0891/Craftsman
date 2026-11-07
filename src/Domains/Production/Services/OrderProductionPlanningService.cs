@@ -5,6 +5,7 @@ using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
+using Craftsman.Domain.Shipping.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace Craftsman.Domain.Production.Services;
@@ -17,6 +18,7 @@ public sealed class OrderProductionPlanningService
     private readonly IProductionPlanner productionPlanner;
     private readonly IProductionTaskRepository productionTaskRepository;
     private readonly IStockMovementRepository stockMovementRepository;
+    private readonly IShipmentRepository? shipmentRepository;
     private readonly IUnitOfWork unitOfWork;
 
     public OrderProductionPlanningService(
@@ -26,7 +28,8 @@ public sealed class OrderProductionPlanningService
         IUnitOfWork unitOfWork,
         IDomainEventPublisher domainEventPublisher,
         ILogger<OrderProductionPlanningService> logger,
-        IStockMovementRepository stockMovementRepository = null!)
+        IStockMovementRepository stockMovementRepository = null!,
+        IShipmentRepository? shipmentRepository = null)
     {
         this.orderRepository = orderRepository;
         this.productionPlanner = productionPlanner;
@@ -35,6 +38,7 @@ public sealed class OrderProductionPlanningService
         this.unitOfWork = unitOfWork;
         this.domainEventPublisher = domainEventPublisher;
         this.logger = logger;
+        this.shipmentRepository = shipmentRepository;
 
         this.logger = logger;
     }
@@ -98,6 +102,15 @@ public sealed class OrderProductionPlanningService
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken)
             ?? throw new InvalidOperationException("Order was not found.");
         var productionTasks = await productionTaskRepository.ListByOrderAsync(orderId, cancellationToken);
+
+        if (shipmentRepository is not null)
+        {
+            var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
+            if (shipments.Any(shipment => shipment.OrderId == orderId))
+            {
+                throw new InvalidOperationException("Order production planning cannot be reverted after a shipment is created.");
+            }
+        }
 
         if (productionTasks.Any(task => task.Status == Entities.ProductionTaskStatus.Completed))
         {

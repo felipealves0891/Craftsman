@@ -22,12 +22,12 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`, `TASK-REV-001`
 - Bloqueadas: —
 
 ## TASK-REV-001 - Remediate FINDING-001
 
-- **Status:** pending
+- **Status:** completed
 - **Finding:** FINDING-001
 - **Severity:** Medium
 - **Return stage:** implement

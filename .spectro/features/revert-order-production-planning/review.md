@@ -35,7 +35,7 @@
 
 | ID | Severidade | Categoria | Localização | Evidência | Impacto | Correção recomendada | Etapa de retorno | Status |
 |---|---|---|---|---|---|---|---|---|
-| `FINDING-001` | Medium | Functional / Security | `src/Domains/Production/Services/OrderProductionPlanningService.cs:96-150` | `RevertAsync` valida tarefa `Completed` e status do pedido, mas não consulta `IShipmentRepository`. A interface apenas oculta a ação com `!Shipments.Any()` em `src/UI/Components/Orders/OrderDetailsPage.razor`. `ShippingService.CreateAsync` permite criar uma remessa sem alterar o status do pedido. | Uma chamada direta ao endpoint pode reverter tarefas e estoque de um pedido que já possui remessa criada, contrariando o escopo que exclui reversão de envios. | Validar remessas no servidor antes de qualquer compensação/exclusão; rejeitar qualquer pedido com remessa relacionada e adicionar teste de endpoint direto. | `implement` | open |
+| `FINDING-001` | Medium | Functional / Security | `src/Domains/Production/Services/OrderProductionPlanningService.cs:96-150` | `RevertAsync` valida tarefa `Completed` e status do pedido, mas não consulta `IShipmentRepository`. A interface apenas oculta a ação com `!Shipments.Any()` em `src/UI/Components/Orders/OrderDetailsPage.razor`. `ShippingService.CreateAsync` permite criar uma remessa sem alterar o status do pedido. | Uma chamada direta ao endpoint pode reverter tarefas e estoque de um pedido que já possui remessa criada, contrariando o escopo que exclui reversão de envios. | Validar remessas no servidor antes de qualquer compensação/exclusão; rejeitar qualquer pedido com remessa relacionada e adicionar teste de endpoint direto. | `implement` | resolved |
 
 ## Riscos residuais
 
@@ -45,5 +45,5 @@
 
 ## Decisão
 
-- `changes_requested`
-- Justificativa: há um finding funcional de severidade média que não bloqueia o fluxo principal, mas permite contornar a proteção visual e reverter um pedido com remessa criada. A correção está registrada como `TASK-REV-001` e deve retornar à implementação antes da aprovação final.
+- `approved`
+- Justificativa: `TASK-REV-001` adicionou a validação server-side de remessas antes da compensação/exclusão e um teste de regressão do endpoint direto. A aprovação final depende da renovação dos gates após esta correção.

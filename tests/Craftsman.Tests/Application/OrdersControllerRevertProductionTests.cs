@@ -10,6 +10,7 @@ using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Integration.Services;
+using Craftsman.Domain.Shipping.Entities;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
 using Craftsman.Infra.Security;
@@ -79,6 +80,23 @@ public sealed class OrdersControllerRevertProductionTests
         Assert.True(transaction.Executed);
     }
 
+    [Fact]
+    public async Task Revert_production_rejects_order_with_created_shipment_before_changes()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = await SeedOrderAsync(dbContext, OrderStatus.ReadyForProduction, ProductionTaskStatus.Planned);
+        await new ShipmentRepository(dbContext).AddAsync(new Shipment(Guid.NewGuid(), order.Id, "TRACK-1"));
+        await dbContext.SaveChangesAsync();
+        var audit = new RecordingAuditService();
+        var controller = CreateController(dbContext, audit);
+
+        await controller.RevertProduction(order.Id, CancellationToken.None);
+
+        Assert.Contains("shipment", controller.TempData["Error"]?.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.NotEmpty(await new ProductionTaskRepository(dbContext).ListByOrderAsync(order.Id));
+        Assert.Equal(OrderStatus.ReadyForProduction, (await new OrderRepository(dbContext).GetByIdAsync(order.Id))?.Status);
+    }
+
     private static OrdersController CreateController(
         AppDbContext dbContext,
         IAuditService auditService,
@@ -88,6 +106,7 @@ public sealed class OrdersControllerRevertProductionTests
         var productRepository = new ProductRepository(dbContext);
         var taskRepository = new ProductionTaskRepository(dbContext);
         var movementRepository = new StockMovementRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
         var planningService = new OrderProductionPlanningService(
             orderRepository,
             new ProductionPlanner(
@@ -97,10 +116,11 @@ public sealed class OrdersControllerRevertProductionTests
             new UnitOfWork(dbContext),
             new NoOpDomainEventPublisher(),
             NullLogger<OrderProductionPlanningService>.Instance,
-            movementRepository);
+            movementRepository,
+            shipmentRepository);
 
         return new OrdersController(
-            new OrderQueryService(orderRepository, productRepository, taskRepository, new ShipmentRepository(dbContext)),
+            new OrderQueryService(orderRepository, productRepository, taskRepository, shipmentRepository),
             null!,
             null!,
             planningService,
