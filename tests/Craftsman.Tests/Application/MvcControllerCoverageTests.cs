@@ -5,6 +5,10 @@ using Craftsman.App.Services;
 using Craftsman.Controllers;
 using Craftsman.Domain.Events;
 using Craftsman.Domain.Finance.Services;
+using Craftsman.Domain.Integration.Services;
+using Craftsman.Domain.Inventory.Services;
+using Craftsman.Domain.Production.Services;
+using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Domain.Services;
@@ -139,6 +143,99 @@ public sealed class MvcControllerCoverageTests
         Assert.NotNull(controller.TempData["Error"]);
     }
 
+    [Fact]
+    public async Task Orders_controller_covers_import_details_and_failure_redirects()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "CTRL-ORDERS-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Produto", 1, new Money(10, "BRL"))]);
+        await new OrderRepository(dbContext).AddAsync(order);
+        await dbContext.SaveChangesAsync();
+
+        var controller = CreateOrdersController(dbContext);
+
+        var index = Assert.IsType<ViewResult>(await controller.Index(CancellationToken.None));
+        Assert.IsType<OrdersIndexViewModel>(index.Model);
+
+        var import = Assert.IsType<ViewResult>(await controller.Import(CancellationToken.None));
+        var importModel = Assert.IsType<OrdersIndexViewModel>(import.Model);
+        Assert.Equal("Index", import.ViewName);
+        Assert.NotNull(importModel.LastImport);
+        Assert.Equal(1, importModel.LastImport.ImportedCount);
+
+        Assert.IsType<ViewResult>(await controller.Details(order.Id, CancellationToken.None));
+        Assert.IsType<NotFoundResult>(await controller.Details(Guid.NewGuid(), CancellationToken.None));
+
+        var send = Assert.IsType<RedirectToActionResult>(await controller.SendToProduction(order.Id, CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Details), send.ActionName);
+        Assert.NotNull(controller.TempData["Error"]);
+
+        var revert = Assert.IsType<RedirectToActionResult>(await controller.RevertProduction(Guid.NewGuid(), CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Details), revert.ActionName);
+        Assert.NotNull(controller.TempData["Error"]);
+
+        var noTransactionController = CreateOrdersController(dbContext, useTransaction: false);
+        var noPlan = Assert.IsType<RedirectToActionResult>(await noTransactionController.RevertProduction(order.Id, CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Details), noPlan.ActionName);
+        Assert.Equal("O planejamento de producao ja estava revertido.", noTransactionController.TempData["Error"]);
+
+        var delete = Assert.IsType<RedirectToActionResult>(await controller.Delete(Guid.NewGuid(), null, CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Details), delete.ActionName);
+        Assert.NotNull(controller.TempData["Error"]);
+
+        var deleted = Assert.IsType<RedirectToActionResult>(await controller.Delete(order.Id, null, CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Index), deleted.ActionName);
+        Assert.Equal("Pedido excluido.", controller.TempData["Success"]);
+    }
+
+    private static OrdersController CreateOrdersController(AppDbContext dbContext, bool useTransaction = true)
+    {
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var shipmentRepository = new ShipmentRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var unitOfWork = new UnitOfWork(dbContext);
+        var planningService = new OrderProductionPlanningService(
+            orderRepository,
+            new ProductionPlanner(productRepository, new InventoryService(rawMaterialRepository, stockMovementRepository), productionTaskRepository),
+            productionTaskRepository,
+            unitOfWork,
+            new NoOpDomainEventPublisher(),
+            NullLogger<OrderProductionPlanningService>.Instance,
+            stockMovementRepository,
+            shipmentRepository);
+        var manualOrderService = new ManualOrderService(
+            orderRepository,
+            new OrderSourceCatalogRepository(dbContext),
+            productRepository,
+            productionTaskRepository,
+            stockMovementRepository,
+            shipmentRepository,
+            new FinancialSettlementRepository(dbContext),
+            new OrderDeletionProcessRepository(dbContext),
+            planningService,
+            unitOfWork,
+            new NoOpDomainEventPublisher(),
+            new StaticCurrentUserContext(CurrentUserInfo.Anonymous()));
+
+        return new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, productionTaskRepository, shipmentRepository),
+            manualOrderService,
+            new StubOrderImportPipeline(),
+            planningService,
+            new StockAlertAppService(rawMaterialRepository, stockMovementRepository, orderRepository, productRepository),
+            new NoOpAuditService(),
+            useTransaction ? unitOfWork : null)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+    }
+
     private static FinanceAppService CreateFinanceService(AppDbContext dbContext)
     {
         var settlementRepository = new FinancialSettlementRepository(dbContext);
@@ -204,5 +301,14 @@ public sealed class MvcControllerCoverageTests
             object? after = null,
             CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+    }
+
+    private sealed class StubOrderImportPipeline : IOrderImportPipeline
+    {
+        public Task<OrderImportResult> ImportAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new OrderImportResult(
+                1,
+                2,
+                [new ImportFailure("Shopee", "EXT-1", "Falha de teste")]));
     }
 }

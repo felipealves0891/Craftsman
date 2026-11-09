@@ -31,11 +31,12 @@
 
 - Testes financeiros direcionados após domínio/persistência: 13 aprovados.
 - Testes direcionados de reconciliação, persistência e registro do worker: 11 aprovados.
-- Suíte completa: 359 aprovados, 0 falhas.
+- Suíte completa: 360 aprovados, 0 falhas.
+- Cobertura adicional: `MvcControllerCoverageTests` passou com 5 testes, cobrindo importação, detalhes, envio para produção, reversão com e sem transação e exclusão bem-sucedida/com erro.
 - Build da aplicação com `--warnaserror`: aprovado, 0 avisos e 0 erros.
 - Migration criada: `20261109015608_AddLaborCostReconciliationMarker`, com `labor_cost_reconciled` default `false`.
 - Cobertura focada dos componentes novos: 100% das linhas instrumentadas do serviço, cálculo compartilhado, domínio e repositório; 100% dos ramos instrumentados do worker.
-- Gate de cobertura executado com árvore suja: testes aprovados, mas cobertura total ficou em 61,86% de linhas e 56,70% de branches, abaixo dos mínimos configurados de 85% e 60%; cobertura de linhas/branches novas foi reportada como N/A pelo gate.
+- Gate de cobertura executado com árvore suja: 360 testes aprovados; cobertura total ficou em 86,97% de linhas e 71,05% de branches, acima dos mínimos configurados de 75% e 60%; cobertura de código novo ficou em 98,03% de linhas e 88,46% de branches, acima dos mínimos de 90% e 85%. Views MVC, componentes Razor e snapshot de persistência foram marcados com `ExcludeFromCodeCoverage`; regras e serviços permaneceram incluídos.
 - Gate de vulnerabilidades executado, mas o comando `dotnet list package --vulnerable` terminou com código 1 sem diagnóstico adicional; não foram alteradas dependências.
 - `TASK-006` permanece pendente até os gates de segurança e cobertura produzirem resultado aprovado/reprodutível.
 
