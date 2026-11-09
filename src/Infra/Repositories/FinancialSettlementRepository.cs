@@ -97,7 +97,8 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             entity.DiscountAmount,
             Enum.Parse<FinancialSettlementStatus>(entity.Status),
             entity.CalculatedAt,
-            raiseCalculatedEvent: false);
+            raiseCalculatedEvent: false,
+            laborCostAmount: entity.LaborCostAmount);
     }
 
     private static FinancialSettlementEntity ToEntity(FinancialSettlement settlement)
@@ -108,6 +109,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             OrderId = settlement.OrderId,
             RevenueAmount = settlement.RevenueAmount,
             ProductionCostAmount = settlement.ProductionCostAmount,
+            LaborCostAmount = settlement.LaborCostAmount,
             ShippingCostAmount = settlement.ShippingCostAmount,
             DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,

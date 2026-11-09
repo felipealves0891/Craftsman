@@ -243,6 +243,13 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("discount_amount");
 
+                    b.Property<decimal>("LaborCostAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("labor_cost_amount");
+
                     b.Property<decimal>("MarginAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")

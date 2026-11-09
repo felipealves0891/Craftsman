@@ -146,10 +146,11 @@ public sealed class MvcControllerCoverageTests
         var orderRepository = new OrderRepository(dbContext);
         var productionTaskRepository = new ProductionTaskRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
 
         return new FinanceAppService(
             settlementRepository,
-            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository),
+            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository),
             shipmentRepository,
             orderRepository,
             new UnitOfWork(dbContext),

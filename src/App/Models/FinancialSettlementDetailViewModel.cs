@@ -7,6 +7,7 @@ public sealed record FinancialSettlementDetailViewModel(
     Guid OrderId,
     decimal RevenueAmount,
     decimal ProductionCostAmount,
+    decimal LaborCostAmount,
     decimal ShippingCostAmount,
     decimal DiscountAmount,
     decimal TotalCostAmount,

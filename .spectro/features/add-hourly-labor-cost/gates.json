@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "add-hourly-labor-cost",
+  "execution_id": "gate-20261109T010643Z",
+  "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
+  "code_revision": "0986f8203544ea9946686b762537d4ff71ec1088",
+  "config_hash": "sha256:20efd587508ddbc666e7947b6e6c01fb4e6a70296addc20b0d7942846b379257",
+  "artifact_hashes": {
+    "spec.md": "917b5ebdc6e6966499784968f1a7fa5b25698488f47e7f29ed57966b9dae1ab1",
+    "clarifications.md": "19af31a3b7c555a919fc26c0218b9c42f493c77853486d241003efec24d97509",
+    "plan.md": "6bd2fbc508c970e119c7e2fb2712f7a4ff3ae057f131bd009e293f3a8d29a3cd",
+    "tasks.md": "b5eff14574c14b85927997257ff358cfc937b7c029e76ef781d49c7914c88170"
+  },
+  "started_at": "2026-11-09T01:06:43.779Z",
+  "duration_ms": 71717,
+  "gates": [
+    {
+      "id": "GATE-001",
+      "name": "build",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet build --no-restore --warnaserror -v minimal",
+      "exit_code": 0,
+      "duration_ms": 21752,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/evidence/01-build.log"
+      ],
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/build",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-002",
+      "name": "test",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet test --no-restore --no-build",
+      "exit_code": 0,
+      "duration_ms": 8329,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/evidence/02-test.log"
+      ],
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/test",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-003",
+      "name": "security",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet list package --vulnerable",
+      "exit_code": 0,
+      "duration_ms": 6445,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/evidence/03-security.log"
+      ],
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/security",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-004",
+      "name": "coverage",
+      "required": true,
+      "status": "passed",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 82 -MinBranchCoverage 56 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
+      "exit_code": 0,
+      "duration_ms": 34978,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/evidence/04-coverage.log"
+      ],
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261109T010643Z/coverage",
+      "output_files": [],
+      "output_file_count": 0
+    }
+  ],
+  "result": "passed"
+}

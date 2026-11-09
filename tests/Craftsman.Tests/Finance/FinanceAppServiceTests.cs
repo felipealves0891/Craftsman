@@ -73,6 +73,7 @@ public sealed class FinanceAppServiceTests
             revenueAmount: 37.5m,
             productionCostAmount: 10,
             shippingCostAmount: 5,
+            laborCostAmount: 15,
             raiseCalculatedEvent: false));
         await dbContext.SaveChangesAsync();
         var service = CreateService(dbContext);
@@ -82,6 +83,7 @@ public sealed class FinanceAppServiceTests
         Assert.NotNull(detail);
         Assert.Equal(order.Id, detail!.OrderId);
         Assert.Equal(37.5m, detail.RevenueAmount);
+        Assert.Equal(15, detail.LaborCostAmount);
         Assert.Equal(15, detail.TotalCostAmount);
         var item = Assert.Single(detail.Items);
         Assert.Equal("ITEM-FIN-1", item.ExternalItemId);
@@ -151,10 +153,11 @@ public sealed class FinanceAppServiceTests
         var orderRepository = new OrderRepository(dbContext);
         var productionTaskRepository = new ProductionTaskRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
 
         return new FinanceAppService(
             settlementRepository,
-            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository),
+            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository),
             shipmentRepository,
             orderRepository,
             new UnitOfWork(dbContext),

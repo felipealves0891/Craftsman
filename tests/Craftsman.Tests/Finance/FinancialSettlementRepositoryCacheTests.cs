@@ -34,6 +34,31 @@ public sealed class FinancialSettlementRepositoryCacheTests
         Assert.Contains("finance:", cache.RemovedPrefixes);
     }
 
+    [Fact]
+    public async Task Add_and_get_preserve_labor_cost_amount()
+    {
+        await using var dbContext = CreateDbContext();
+        var orderId = Guid.NewGuid();
+        var repository = new FinancialSettlementRepository(dbContext);
+        var settlement = new FinancialSettlement(
+            Guid.NewGuid(),
+            orderId,
+            revenueAmount: 100,
+            productionCostAmount: 35,
+            shippingCostAmount: 5,
+            laborCostAmount: 15,
+            raiseCalculatedEvent: false);
+
+        await repository.AddAsync(settlement);
+        await dbContext.SaveChangesAsync();
+
+        var loaded = await repository.GetByOrderIdAsync(orderId);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(15, loaded!.LaborCostAmount);
+        Assert.Equal(40, loaded.TotalCostAmount);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

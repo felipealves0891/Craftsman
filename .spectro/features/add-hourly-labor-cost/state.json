@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "add-hourly-labor-cost",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261109T010643Z",
+      "report": ".spectro/features/add-hourly-labor-cost/gates.json"
+    }
+  },
+  "attempts": {},
+  "invalidated_executions": [],
+  "last_failure": null,
+  "last_execution_id": "gate-20261109T010643Z",
+  "updated_at": "2026-11-09T01:07:55.499Z"
+}
