@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "backfill-historical-labor-costs",
-  "current_phase": "gates",
-  "status": "failed",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "failed",
-      "execution_id": "gate-20261109T023435Z",
+      "status": "completed",
+      "execution_id": "gate-20261109T025217Z",
       "report": ".spectro/features/backfill-historical-labor-costs/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261109T023435Z",
-  "updated_at": "2026-11-09T02:35:50.109Z"
+  "last_execution_id": "gate-20261109T025217Z",
+  "updated_at": "2026-11-09T02:53:20.491Z"
 }

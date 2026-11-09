@@ -8,7 +8,7 @@
 | `TASK-003` | Implementar o processador de reconciliação usando a regra compartilhada de custo de materiais + horas e `Product.HourlyRate`, com validação de associações e transação isolada por acerto. | `FR-002`, `FR-003`, `FR-004`, `FR-006`, `FR-007`, `NFR-002`, `NFR-003`, `CON-001`, `CON-002` | `AC-002`, `AC-003`, `AC-004`, `AC-005`, `AC-007`, `AC-008` | `TASK-001`, `TASK-002` | `SettlementCalculator`/componente compartilhado, novo serviço de aplicação, repositórios de pedidos/tarefas/produtos/estoque, testes de finanças | O cálculo usa a duração persistida diretamente, não duplica `Quantity`, não soma materiais novamente, trata `HourlyRate` zero, falha antes de salvar para associações inválidas e permite reexecução determinística. Risco: divergência entre cálculo novo e histórico; cobrir ambos com a mesma unidade de cálculo. | completed |
 | `TASK-004` | Criar o worker de background que cria escopos, processa pendências sem bloquear a aplicação, captura falhas individuais, registra diagnóstico e respeita cancelamento. | `FR-001`, `FR-007`, `NFR-001`, `NFR-004` | `AC-001`, `AC-007`, `AC-008` | `TASK-003` | `src/App/Services`, registro DI em `ApplicationServiceCollectionExtensions`, testes do hosted service | O worker inicia em paralelo ao host, continua após erro de um acerto, não propaga exceção fatal, não compartilha `DbContext` entre operações e encerra com cancelamento. Risco: exceções fora do loop; proteger o ciclo principal e registrar falha operacional. | completed |
 | `TASK-005` | Adicionar migration/configuração/snapshot para o marcador de reconciliação com default `false`, marcar novos acertos como reconciliados e validar compatibilidade dos dados existentes. | `FR-003`, `FR-005`, `NFR-002`, `CON-004`, `CON-005` | `AC-003`, `AC-006`, `AC-009` | `TASK-001`, `TASK-002` | `FinancialSettlementEntity`, `FinancialSettlementConfiguration`, `src/Infra/Persistence/Migrations`, conversões de repositório, testes de integração | Migration `Up`/`Down` é reversível, legados entram como pendentes, novos acertos não entram indevidamente no worker e o snapshot corresponde ao modelo. Risco: acertos recém-criados durante a implantação; revalidar o marcador antes de atualizar. | completed |
-| `TASK-006` | Executar testes de aceitação/regressão e gates obrigatórios, registrar evidências e revisar a cobertura requisito-critério-tarefa. | `FR-001` a `FR-007`, `NFR-001` a `NFR-005`, `CON-001` a `CON-005` | `AC-001` a `AC-009` | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005` | `tests/Craftsman.Tests`, `.spectro/config.yaml`, evidências Spectro | Build com `--warnaserror`, testes, segurança e cobertura passam; cenários válidos/ inválidos, idempotência, falha isolada, migração e execução paralela ficam evidenciados. Risco: cobertura nova abaixo dos limiares; adicionar testes comportamentais antes de rodar os gates. | pending |
+| `TASK-006` | Executar testes de aceitação/regressão e gates obrigatórios, registrar evidências e revisar a cobertura requisito-critério-tarefa. | `FR-001` a `FR-007`, `NFR-001` a `NFR-005`, `CON-001` a `CON-005` | `AC-001` a `AC-009` | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005` | `tests/Craftsman.Tests`, `.spectro/config.yaml`, evidências Spectro | Build com `--warnaserror`, testes, segurança e cobertura passam; cenários válidos/ inválidos, idempotência, falha isolada, migração e execução paralela ficam evidenciados. Risco: cobertura nova abaixo dos limiares; adicionar testes comportamentais antes de rodar os gates. | completed |
 
 ## Regras de execução
 
@@ -37,8 +37,8 @@
 - Migration criada: `20261109015608_AddLaborCostReconciliationMarker`, com `labor_cost_reconciled` default `false`.
 - Cobertura focada dos componentes novos: 100% das linhas instrumentadas do serviço, cálculo compartilhado, domínio e repositório; 100% dos ramos instrumentados do worker.
 - Gate de cobertura executado com árvore suja: 360 testes aprovados; cobertura total ficou em 86,97% de linhas e 71,05% de branches, acima dos mínimos configurados de 75% e 60%; cobertura de código novo ficou em 98,03% de linhas e 88,46% de branches, acima dos mínimos de 90% e 85%. Views MVC, componentes Razor e snapshot de persistência foram marcados com `ExcludeFromCodeCoverage`; regras e serviços permaneceram incluídos.
-- Gate de vulnerabilidades executado, mas o comando `dotnet list package --vulnerable` terminou com código 1 sem diagnóstico adicional; não foram alteradas dependências.
-- `TASK-006` permanece pendente até os gates de segurança e cobertura produzirem resultado aprovado/reprodutível.
+- Gate de vulnerabilidades executado na revisão `gate-20261109T025217Z`: aprovado, sem vulnerabilidades reportadas; não foram alteradas dependências.
+- `TASK-006` concluída com `gates.json` válido e resultado `passed` na execução `gate-20261109T025217Z`.
 
 
 ## TASK-REV-001 - Remediate FINDING-001
@@ -56,7 +56,7 @@
 
 ## TASK-REV-002 - Remediate FINDING-002
 
-- **Status:** pending
+- **Status:** completed
 - **Finding:** FINDING-002
 - **Severity:** High
 - **Return stage:** gates
@@ -64,11 +64,12 @@
 - **Dependencies:** none
 - **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
 - **Expected tests:** Add or update behavior-focused coverage as required.
+- **Evidence:** Gates `gate-20261109T025217Z` passaram para build, testes, segurança e cobertura; relatório validado com sucesso.
 
 
 ## TASK-REV-003 - Remediate FINDING-003
 
-- **Status:** pending
+- **Status:** completed
 - **Finding:** FINDING-003
 - **Severity:** Medium
 - **Return stage:** human_review
@@ -76,4 +77,5 @@
 - **Dependencies:** none
 - **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
 - **Expected tests:** Add or update behavior-focused coverage as required.
+- **Evidence:** Aprovação humana recebida para manter os limiares configurados de 85% de linhas e 60% de branches nesta revisão.
 
