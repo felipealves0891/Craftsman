@@ -19,6 +19,7 @@ public sealed class FinancialSettlementConfiguration : IEntityTypeConfiguration<
         builder.Property(settlement => settlement.RevenueAmount).HasColumnName("revenue_amount").HasPrecision(18, 2).IsRequired();
         builder.Property(settlement => settlement.ProductionCostAmount).HasColumnName("production_cost_amount").HasPrecision(18, 2).IsRequired();
         builder.Property(settlement => settlement.LaborCostAmount).HasColumnName("labor_cost_amount").HasPrecision(18, 2).HasDefaultValue(0m).IsRequired();
+        builder.Property(settlement => settlement.LaborCostReconciled).HasColumnName("labor_cost_reconciled").HasDefaultValue(false).IsRequired();
         builder.Property(settlement => settlement.ShippingCostAmount).HasColumnName("shipping_cost_amount").HasPrecision(18, 2).IsRequired();
         builder.Property(settlement => settlement.DiscountAmount).HasColumnName("discount_amount").HasPrecision(18, 2).HasDefaultValue(0m).IsRequired();
         builder.Property(settlement => settlement.TotalCostAmount).HasColumnName("total_cost_amount").HasPrecision(18, 2).IsRequired();
