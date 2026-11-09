@@ -39,3 +39,40 @@
 - Gate de vulnerabilidades executado, mas o comando `dotnet list package --vulnerable` terminou com código 1 sem diagnóstico adicional; não foram alteradas dependências.
 - `TASK-006` permanece pendente até os gates de segurança e cobertura produzirem resultado aprovado/reprodutível.
 
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** A migration deve preservar a distinção entre acertos já reconciliados pela funcionalidade add-hourly-labor-cost e acertos legados. Ajustar o backfill do marcador labor_cost_reconciled e cobrir labor cost positivo, custo zero e reexecução sem reescrever histórico já reconciliado.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+- **Evidence:** Migration now marks existing settlements with `labor_cost_amount > 0` as reconciled; migration SQL test and full suite pass.
+
+
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** pending
+- **Finding:** FINDING-002
+- **Severity:** High
+- **Return stage:** gates
+- **Description:** Executar os gates obrigatórios na mesma revisão, produzir gates.json e resolver ou documentar de forma reproduzível os bloqueios de cobertura global e vulnerabilidades antes da aprovação.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+
+## TASK-REV-003 - Remediate FINDING-003
+
+- **Status:** pending
+- **Finding:** FINDING-003
+- **Severity:** Medium
+- **Return stage:** human_review
+- **Description:** Confirm se a alteração de .spectro/config.yaml que elevou os limiares de cobertura de 82/56 para 85/60 foi aprovada como mudança de política de qualidade; separar ou documentar a aprovação caso não pertença à feature.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+

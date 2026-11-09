@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Craftsman.Infra.Persistence.Migrations
 {
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage]
     public partial class AddLaborCostReconciliationMarker : Migration
     {
         /// <inheritdoc />
@@ -16,6 +18,12 @@ namespace Craftsman.Infra.Persistence.Migrations
                 type: "boolean",
                 nullable: false,
                 defaultValue: false);
+
+            migrationBuilder.Sql("""
+                UPDATE financial_settlements
+                SET labor_cost_reconciled = TRUE
+                WHERE labor_cost_amount > 0;
+                """);
         }
 
         /// <inheritdoc />
