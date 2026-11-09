@@ -26,6 +26,12 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
         return entity is null ? null : ToModel(entity);
     }
 
+    public async Task<FinancialSettlement?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.FinancialSettlements.FirstOrDefaultAsync(settlement => settlement.Id == id, cancellationToken);
+        return entity is null ? null : ToModel(entity);
+    }
+
     public async Task<IReadOnlyCollection<FinancialSettlement>> ListAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken cancellationToken = default)
     {
         var key = $"finance:settlements:{from?.ToString("yyyyMMdd") ?? "all"}:{to?.ToString("yyyyMMdd") ?? "all"}";
@@ -36,6 +42,16 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
         }
 
         return await ListCoreAsync(from, to, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<FinancialSettlement>> ListPendingLaborCostReconciliationAsync(CancellationToken cancellationToken = default)
+    {
+        var entities = await dbContext.FinancialSettlements
+            .Where(settlement => !settlement.LaborCostReconciled)
+            .OrderBy(settlement => settlement.CalculatedAt)
+            .ToListAsync(cancellationToken);
+
+        return entities.Select(ToModel).ToList().AsReadOnly();
     }
 
     public async Task AddAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
@@ -62,6 +78,20 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
 
         dbContext.FinancialSettlements.RemoveRange(entities);
         await dbContext.FinancialSettlements.AddAsync(ToEntity(settlement), cancellationToken);
+        cache?.RemoveByPrefix("finance:");
+    }
+
+    public async Task UpdateAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.FinancialSettlements
+            .FirstOrDefaultAsync(existing => existing.Id == settlement.Id, cancellationToken)
+            ?? throw new InvalidOperationException($"Financial settlement '{settlement.Id}' was not found.");
+
+        entity.ProductionCostAmount = settlement.ProductionCostAmount;
+        entity.LaborCostAmount = settlement.LaborCostAmount;
+        entity.LaborCostReconciled = settlement.LaborCostReconciled;
+        entity.TotalCostAmount = settlement.TotalCostAmount;
+        entity.MarginAmount = settlement.MarginAmount;
         cache?.RemoveByPrefix("finance:");
     }
 
@@ -98,7 +128,8 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             Enum.Parse<FinancialSettlementStatus>(entity.Status),
             entity.CalculatedAt,
             raiseCalculatedEvent: false,
-            laborCostAmount: entity.LaborCostAmount);
+            laborCostAmount: entity.LaborCostAmount,
+            laborCostReconciled: entity.LaborCostReconciled);
     }
 
     private static FinancialSettlementEntity ToEntity(FinancialSettlement settlement)
@@ -110,6 +141,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             RevenueAmount = settlement.RevenueAmount,
             ProductionCostAmount = settlement.ProductionCostAmount,
             LaborCostAmount = settlement.LaborCostAmount,
+            LaborCostReconciled = settlement.LaborCostReconciled,
             ShippingCostAmount = settlement.ShippingCostAmount,
             DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,

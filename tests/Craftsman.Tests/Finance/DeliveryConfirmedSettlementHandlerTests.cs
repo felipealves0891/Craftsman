@@ -72,9 +72,19 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
             return Task.FromResult(Settlements.FirstOrDefault(settlement => settlement.OrderId == orderId));
         }
 
+        public Task<FinancialSettlement?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(Settlements.FirstOrDefault(settlement => settlement.Id == id));
+        }
+
         public Task<IReadOnlyCollection<FinancialSettlement>> ListAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyCollection<FinancialSettlement>>(Settlements.AsReadOnly());
+        }
+
+        public Task<IReadOnlyCollection<FinancialSettlement>> ListPendingLaborCostReconciliationAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyCollection<FinancialSettlement>>(Settlements.Where(settlement => !settlement.LaborCostReconciled).ToList().AsReadOnly());
         }
 
         public Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -87,6 +97,17 @@ public sealed class DeliveryConfirmedSettlementHandlerTests
         {
             Settlements.RemoveAll(existing => existing.OrderId == settlement.OrderId);
             Settlements.Add(settlement);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
+        {
+            var index = Settlements.FindIndex(existing => existing.Id == settlement.Id);
+            if (index >= 0)
+            {
+                Settlements[index] = settlement;
+            }
+
             return Task.CompletedTask;
         }
     }

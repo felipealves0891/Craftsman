@@ -59,6 +59,67 @@ public sealed class FinancialSettlementRepositoryCacheTests
         Assert.Equal(40, loaded.TotalCostAmount);
     }
 
+    [Fact]
+    public async Task Pending_query_returns_only_unreconciled_settlements()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new FinancialSettlementRepository(dbContext);
+        var pending = new FinancialSettlement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            100,
+            25,
+            5,
+            raiseCalculatedEvent: false,
+            laborCostReconciled: false);
+        var reconciled = new FinancialSettlement(Guid.NewGuid(), Guid.NewGuid(), 100, 25, 5);
+
+        await repository.AddAsync(pending);
+        await repository.AddAsync(reconciled);
+        await dbContext.SaveChangesAsync();
+
+        var result = await repository.ListPendingLaborCostReconciliationAsync();
+
+        var loaded = Assert.Single(result);
+        Assert.Equal(pending.Id, loaded.Id);
+        Assert.False(loaded.LaborCostReconciled);
+    }
+
+    [Fact]
+    public async Task Update_preserves_settlement_identity_and_invalidates_finance_cache()
+    {
+        await using var dbContext = CreateDbContext();
+        var cache = new RecordingApplicationCache();
+        var repository = new FinancialSettlementRepository(dbContext, cache);
+        var calculatedAt = DateTimeOffset.Parse("2026-10-15T12:00:00+00:00");
+        var pending = new FinancialSettlement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            1000,
+            300,
+            10,
+            discountAmount: 5,
+            calculatedAt: calculatedAt,
+            raiseCalculatedEvent: false,
+            laborCostReconciled: false);
+
+        await repository.AddAsync(pending);
+        await dbContext.SaveChangesAsync();
+        pending.ReconcileLaborCost(250, 550);
+        await repository.UpdateAsync(pending);
+        await dbContext.SaveChangesAsync();
+
+        var loaded = await repository.GetByOrderIdAsync(pending.OrderId);
+        Assert.NotNull(loaded);
+        Assert.Equal(pending.Id, loaded!.Id);
+        Assert.Equal(pending.OrderId, loaded.OrderId);
+        Assert.Equal(calculatedAt, loaded.CalculatedAt);
+        Assert.Equal(250, loaded.LaborCostAmount);
+        Assert.Equal(550, loaded.ProductionCostAmount);
+        Assert.True(loaded.LaborCostReconciled);
+        Assert.Contains("finance:", cache.RemovedPrefixes);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

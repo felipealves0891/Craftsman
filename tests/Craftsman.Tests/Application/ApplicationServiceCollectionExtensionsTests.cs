@@ -1,5 +1,6 @@
 using Craftsman.App.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Craftsman.Tests.Application;
 
@@ -17,7 +18,7 @@ public sealed class ApplicationServiceCollectionExtensionsTests
             descriptor.ServiceType == typeof(TimeProvider)
             && ReferenceEquals(descriptor.ImplementationInstance, TimeProvider.System));
         Assert.All(
-            services.Where(descriptor => descriptor.ServiceType != typeof(TimeProvider)),
+            services.Where(descriptor => descriptor.ServiceType != typeof(TimeProvider) && descriptor.ServiceType != typeof(IHostedService)),
             descriptor => Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ProductionScheduleService));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(OrderQueryService));
@@ -27,5 +28,8 @@ public sealed class ApplicationServiceCollectionExtensionsTests
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(ProductCatalogAppService));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(InventoryAppService));
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(StockAlertAppService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(HistoricalLaborCostReconciliationService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IHostedService)
+            && descriptor.ImplementationType == typeof(HistoricalLaborCostReconciliationWorker));
     }
 }

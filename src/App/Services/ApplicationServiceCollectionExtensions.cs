@@ -15,6 +15,10 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ProductCatalogAppService>();
         services.AddScoped<InventoryAppService>();
         services.AddScoped<StockAlertAppService>();
+        services.AddScoped<HistoricalLaborCostReconciliationService>();
+        services.AddScoped<IHistoricalLaborCostReconciliationService>(serviceProvider =>
+            serviceProvider.GetRequiredService<HistoricalLaborCostReconciliationService>());
+        services.AddHostedService<HistoricalLaborCostReconciliationWorker>();
 
         return services;
     }
