@@ -326,6 +326,7 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(FinancialSettlementDetailsPage.OrderId)] = orderId,
             [nameof(FinancialSettlementDetailsPage.RevenueAmount)] = 100m,
             [nameof(FinancialSettlementDetailsPage.ProductionCostAmount)] = 25m,
+            [nameof(FinancialSettlementDetailsPage.LaborCostAmount)] = 15m,
             [nameof(FinancialSettlementDetailsPage.ShippingCostAmount)] = 10m,
             [nameof(FinancialSettlementDetailsPage.DiscountAmount)] = 5m,
             [nameof(FinancialSettlementDetailsPage.TotalCostAmount)] = 40m,
@@ -337,6 +338,7 @@ public sealed class CatalogAndFinanceComponentTests
         Assert.Contains(orderId.ToString(), html);
         Assert.Contains("Calculated", html);
         Assert.Contains("Nenhum item", html);
+        Assert.Contains("Custo de horas", html);
         Assert.Contains("/Finance", html);
     }
 

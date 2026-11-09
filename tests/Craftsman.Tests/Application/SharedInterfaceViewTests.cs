@@ -52,6 +52,7 @@ public sealed class SharedInterfaceViewTests
 
         Assert.Contains("param-OrderId=\"@Model.OrderId\"", view);
         Assert.Contains("param-RevenueAmount=\"@Model.RevenueAmount\"", view);
+        Assert.Contains("param-LaborCostAmount=\"@Model.LaborCostAmount\"", view);
         Assert.Contains("param-CalculatedAt=\"@Model.CalculatedAt\"", view);
         Assert.Contains("new FinancialSettlementDetailsPage.OrderItemRow", view);
         Assert.Contains("param-Items=\"@items\"", view);

@@ -12,19 +12,21 @@ public sealed class FinancialSettlementTests
         var orderId = Guid.NewGuid();
         var calculatedAt = DateTimeOffset.Parse("2026-10-15T12:00:00+00:00");
 
-        var settlement = new FinancialSettlement(settlementId, orderId, 100, 30, 10, 5,
-            calculatedAt: calculatedAt);
+        var settlement = new FinancialSettlement(settlementId, orderId, 100, 37, 10, 5,
+            calculatedAt: calculatedAt,
+            laborCostAmount: 7);
 
         Assert.Equal(settlementId, settlement.Id);
         Assert.Equal(orderId, settlement.OrderId);
-        Assert.Equal(45, settlement.TotalCostAmount);
-        Assert.Equal(55, settlement.MarginAmount);
+        Assert.Equal(7, settlement.LaborCostAmount);
+        Assert.Equal(52, settlement.TotalCostAmount);
+        Assert.Equal(48, settlement.MarginAmount);
         Assert.Equal(FinancialSettlementStatus.Calculated, settlement.Status);
         Assert.Equal(calculatedAt, settlement.CalculatedAt);
         var calculatedEvent = Assert.IsType<FinancialSettlementCalculatedEvent>(Assert.Single(settlement.DomainEvents));
         Assert.Equal(settlementId, calculatedEvent.SettlementId);
         Assert.Equal(orderId, calculatedEvent.OrderId);
-        Assert.Equal(55, calculatedEvent.Margin);
+        Assert.Equal(48, calculatedEvent.Margin);
 
         settlement.ClearDomainEvents();
 
@@ -65,5 +67,6 @@ public sealed class FinancialSettlementTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new FinancialSettlement(settlementId, orderId, 0, -1, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => new FinancialSettlement(settlementId, orderId, 0, 0, -1));
         Assert.Throws<ArgumentOutOfRangeException>(() => new FinancialSettlement(settlementId, orderId, 0, 0, 0, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new FinancialSettlement(settlementId, orderId, 0, 0, 0, laborCostAmount: -1));
     }
 }
