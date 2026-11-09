@@ -2,6 +2,7 @@ using Craftsman.Domain.Finance.Services;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Services;
 using Craftsman.Domain.ProductCatalog.Entities;
+using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Services;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
@@ -15,11 +16,43 @@ namespace Craftsman.Tests.Finance;
 public sealed class SettlementCalculatorTests
 {
     [Fact]
+    public async Task Calculator_rejects_production_task_with_missing_product()
+    {
+        await using var dbContext = CreateDbContext();
+        var productId = Guid.NewGuid();
+        var orderItem = new OrderItem(Guid.NewGuid(), "ITEM-MISSING", "Produto ausente", 1, new Money(25, "BRL"), productId);
+        var order = new Order(Guid.NewGuid(), new OrderOrigin("Manual", "MISSING-PRODUCT"), [orderItem], OrderStatus.Delivered);
+        var orderRepository = new OrderRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+
+        await orderRepository.AddAsync(order);
+        await productionTaskRepository.AddAsync(new ProductionTask(
+            Guid.NewGuid(),
+            order.Id,
+            orderItem.Id,
+            productId,
+            quantity: 1,
+            productionDurationHours: 2));
+        await dbContext.SaveChangesAsync();
+
+        var calculator = new SettlementCalculator(
+            orderRepository,
+            productionTaskRepository,
+            new StockMovementRepository(dbContext),
+            new ShipmentRepository(dbContext),
+            new ProductRepository(dbContext));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => calculator.CalculateAsync(order.Id));
+
+        Assert.Contains(productId.ToString(), exception.Message);
+    }
+
+    [Fact]
     public async Task Calculator_uses_revenue_and_consumed_material_cost_to_calculate_margin()
     {
         await using var dbContext = CreateDbContext();
         var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
-        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 2)]);
+        var product = new Product(Guid.NewGuid(), "Bolsa", hourlyRate: 25, billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 2)]);
         var orderItem = new OrderItem(Guid.NewGuid(), "EXT-1", "Bolsa externa", 2, new Money(50, "BRL"), product.Id);
         var order = new Order(Guid.NewGuid(), new OrderOrigin("Elo7", "E-1"), [orderItem], OrderStatus.Delivered);
         var orderRepository = new OrderRepository(dbContext);
@@ -41,13 +74,14 @@ public sealed class SettlementCalculatorTests
         await shipmentRepository.AddAsync(new Shipment(Guid.NewGuid(), order.Id, "TRACK-1", ShipmentStatus.Delivered, deliveredAt: DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync();
 
-        var calculator = new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository);
+        var calculator = new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository);
 
         var settlement = await calculator.CalculateAsync(order.Id);
 
         Assert.Equal(100, settlement.RevenueAmount);
-        Assert.Equal(12, settlement.ProductionCostAmount);
-        Assert.Equal(88, settlement.MarginAmount);
+        Assert.Equal(62, settlement.ProductionCostAmount);
+        Assert.Equal(50, settlement.LaborCostAmount);
+        Assert.Equal(38, settlement.MarginAmount);
     }
 
     [Fact]
@@ -65,7 +99,8 @@ public sealed class SettlementCalculatorTests
             orderRepository,
             new ProductionTaskRepository(dbContext),
             new StockMovementRepository(dbContext),
-            new ShipmentRepository(dbContext));
+            new ShipmentRepository(dbContext),
+            new ProductRepository(dbContext));
 
         await orderRepository.AddAsync(order);
         await dbContext.SaveChangesAsync();

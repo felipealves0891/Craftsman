@@ -210,6 +210,7 @@ public sealed class FinanceAppService
             settlement.OrderId,
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
+            settlement.LaborCostAmount,
             settlement.ShippingCostAmount,
             settlement.DiscountAmount,
             settlement.TotalCostAmount,

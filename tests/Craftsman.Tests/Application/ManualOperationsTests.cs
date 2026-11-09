@@ -1162,7 +1162,8 @@ public sealed class ManualOperationsTests
                 orderRepository,
                 productionTaskRepository,
                 stockMovementRepository,
-                new ShipmentRepository(dbContext)));
+                new ShipmentRepository(dbContext),
+                productRepository));
     }
 
     private static ICurrentUserContext AnonymousUserContext()

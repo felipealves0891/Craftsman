@@ -1,5 +1,6 @@
 using Craftsman.Domain.Finance.Entities;
 using Craftsman.Domain.Inventory.Repositories;
+using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
@@ -14,17 +15,20 @@ public sealed class SettlementCalculator : ISettlementCalculator
     private readonly IProductionTaskRepository productionTaskRepository;
     private readonly IShipmentRepository shipmentRepository;
     private readonly IStockMovementRepository stockMovementRepository;
+    private readonly IProductRepository productRepository;
 
     public SettlementCalculator(
         IOrderRepository orderRepository,
         IProductionTaskRepository productionTaskRepository,
         IStockMovementRepository stockMovementRepository,
-        IShipmentRepository shipmentRepository)
+        IShipmentRepository shipmentRepository,
+        IProductRepository productRepository)
     {
         this.orderRepository = orderRepository;
         this.productionTaskRepository = productionTaskRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.shipmentRepository = shipmentRepository;
+        this.productRepository = productRepository;
     }
 
     public async Task<FinancialSettlement> CalculateAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -42,10 +46,23 @@ public sealed class SettlementCalculator : ISettlementCalculator
             .Where(task => task.OrderId == orderId)
             .ToList();
         var stockMovements = await stockMovementRepository.ListAsync(cancellationToken);
-        var productionCost = productionTasks.Sum(task =>
+        var productionMaterialCost = productionTasks.Sum(task =>
             stockMovements
                 .Where(movement => movement.BusinessReference == task.Id.ToString())
                 .Sum(movement => movement.TotalCostAmount));
+        var products = productionTasks.Count == 0
+            ? new Dictionary<Guid, Craftsman.Domain.ProductCatalog.Entities.Product>()
+            : (await productRepository.ListAsync(cancellationToken)).ToDictionary(product => product.Id);
+        var laborCost = productionTasks.Sum(task =>
+        {
+            if (!products.TryGetValue(task.ProductId, out var product))
+            {
+                throw new InvalidOperationException($"Product '{task.ProductId}' for production task '{task.Id}' was not found.");
+            }
+
+            return task.ProductionDurationHours * product.HourlyRate;
+        });
+        var productionCost = productionMaterialCost + laborCost;
         var revenue = order.Items.Sum(item => item.Quantity * item.UnitPrice.Amount);
         var discount = order.Discount?.Amount.Amount ?? 0;
 
@@ -55,6 +72,7 @@ public sealed class SettlementCalculator : ISettlementCalculator
             revenue,
             productionCost,
             shippingCostAmount: 0,
-            discountAmount: discount);
+            discountAmount: discount,
+            laborCostAmount: laborCost);
     }
 }

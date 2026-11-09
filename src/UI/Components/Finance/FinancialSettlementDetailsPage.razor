@@ -43,6 +43,10 @@
                 <dd>@ProductionCostAmount.ToString("C")</dd>
             </div>
             <div>
+                <dt>Custo de horas</dt>
+                <dd>@LaborCostAmount.ToString("C")</dd>
+            </div>
+            <div>
                 <dt>Custo de envio</dt>
                 <dd>@ShippingCostAmount.ToString("C")</dd>
             </div>
@@ -99,6 +103,9 @@
 
     [Parameter]
     public decimal ProductionCostAmount { get; set; }
+
+    [Parameter]
+    public decimal LaborCostAmount { get; set; }
 
     [Parameter]
     public decimal ShippingCostAmount { get; set; }

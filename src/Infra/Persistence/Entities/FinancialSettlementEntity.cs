@@ -10,6 +10,8 @@ public sealed class FinancialSettlementEntity : IPersistenceEntity<Guid>
 
     public decimal ProductionCostAmount { get; set; }
 
+    public decimal LaborCostAmount { get; set; }
+
     public decimal ShippingCostAmount { get; set; }
 
     public decimal DiscountAmount { get; set; }
