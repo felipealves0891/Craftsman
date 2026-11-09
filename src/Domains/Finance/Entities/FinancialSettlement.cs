@@ -12,9 +12,11 @@ public sealed class FinancialSettlement
 
     public decimal RevenueAmount { get; }
 
-    public decimal ProductionCostAmount { get; }
+    public decimal ProductionCostAmount { get; private set; }
 
-    public decimal LaborCostAmount { get; }
+    public decimal LaborCostAmount { get; private set; }
+
+    public bool LaborCostReconciled { get; private set; }
 
     public decimal ShippingCostAmount { get; }
 
@@ -40,7 +42,8 @@ public sealed class FinancialSettlement
         FinancialSettlementStatus status = FinancialSettlementStatus.Calculated,
         DateTimeOffset? calculatedAt = null,
         bool raiseCalculatedEvent = true,
-        decimal laborCostAmount = 0)
+        decimal laborCostAmount = 0,
+        bool laborCostReconciled = true)
     {
         if (id == Guid.Empty)
         {
@@ -82,6 +85,7 @@ public sealed class FinancialSettlement
         RevenueAmount = revenueAmount;
         ProductionCostAmount = productionCostAmount;
         LaborCostAmount = laborCostAmount;
+        LaborCostReconciled = laborCostReconciled;
         ShippingCostAmount = shippingCostAmount;
         DiscountAmount = discountAmount;
         Status = status;
@@ -91,6 +95,28 @@ public sealed class FinancialSettlement
         {
             domainEvents.Add(new FinancialSettlementCalculatedEvent(Id, OrderId, MarginAmount));
         }
+    }
+
+    public void ReconcileLaborCost(decimal laborCostAmount, decimal productionCostAmount)
+    {
+        if (LaborCostReconciled)
+        {
+            throw new InvalidOperationException("Labor cost has already been reconciled.");
+        }
+
+        if (laborCostAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(laborCostAmount), "Labor cost cannot be negative.");
+        }
+
+        if (productionCostAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(productionCostAmount), "Production cost cannot be negative.");
+        }
+
+        LaborCostAmount = laborCostAmount;
+        ProductionCostAmount = productionCostAmount;
+        LaborCostReconciled = true;
     }
 
     public void ClearDomainEvents()

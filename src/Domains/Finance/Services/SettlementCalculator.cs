@@ -46,22 +46,11 @@ public sealed class SettlementCalculator : ISettlementCalculator
             .Where(task => task.OrderId == orderId)
             .ToList();
         var stockMovements = await stockMovementRepository.ListAsync(cancellationToken);
-        var productionMaterialCost = productionTasks.Sum(task =>
-            stockMovements
-                .Where(movement => movement.BusinessReference == task.Id.ToString())
-                .Sum(movement => movement.TotalCostAmount));
+        var productionMaterialCost = SettlementCostCalculator.CalculateMaterialCost(productionTasks, stockMovements);
         var products = productionTasks.Count == 0
             ? new Dictionary<Guid, Craftsman.Domain.ProductCatalog.Entities.Product>()
             : (await productRepository.ListAsync(cancellationToken)).ToDictionary(product => product.Id);
-        var laborCost = productionTasks.Sum(task =>
-        {
-            if (!products.TryGetValue(task.ProductId, out var product))
-            {
-                throw new InvalidOperationException($"Product '{task.ProductId}' for production task '{task.Id}' was not found.");
-            }
-
-            return task.ProductionDurationHours * product.HourlyRate;
-        });
+        var laborCost = SettlementCostCalculator.CalculateLaborCost(productionTasks, products);
         var productionCost = productionMaterialCost + laborCost;
         var revenue = order.Items.Sum(item => item.Quantity * item.UnitPrice.Amount);
         var discount = order.Discount?.Amount.Amount ?? 0;
