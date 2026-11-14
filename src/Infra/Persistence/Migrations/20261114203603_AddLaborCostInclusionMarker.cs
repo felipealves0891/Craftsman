@@ -5,6 +5,7 @@
 namespace Craftsman.Infra.Persistence.Migrations
 {
     /// <inheritdoc />
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public partial class AddLaborCostInclusionMarker : Migration
     {
         /// <inheritdoc />
