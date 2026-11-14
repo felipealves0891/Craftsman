@@ -1,18 +1,34 @@
 {
   "schema_version": "1.0",
   "feature_id": "add-hourly-labor-cost",
-  "current_phase": "review",
-  "status": "completed",
+  "current_phase": "waiting_input",
+  "status": "waiting_input",
   "phases": {
     "gates": {
-      "status": "completed",
-      "execution_id": "gate-20261109T010643Z",
+      "status": "failed",
+      "execution_id": "gate-20261114T193617Z",
       "report": ".spectro/features/add-hourly-labor-cost/gates.json"
     }
   },
-  "attempts": {},
-  "invalidated_executions": [],
-  "last_failure": null,
-  "last_execution_id": "gate-20261109T010643Z",
-  "updated_at": "2026-11-09T01:07:55.499Z"
+  "attempts": {
+    "needs-human-review:GATE-004": 1
+  },
+  "invalidated_executions": [
+    "gate-20261114T193617Z"
+  ],
+  "last_failure": {
+    "category": "needs-human-review",
+    "stage": "waiting_input",
+    "execution_id": "gate-20261114T193617Z",
+    "gate_ids": [
+      "GATE-004"
+    ],
+    "diagnostics": [
+      "coverage: ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+    ],
+    "detected_at": "2026-11-14T19:37:29.439Z"
+  },
+  "last_execution_id": "gate-20261114T193617Z",
+  "updated_at": "2026-11-14T19:37:29.440Z",
+  "invalidation_reason": "Recovery invalidated evidence for gate-20261114T193617Z."
 }

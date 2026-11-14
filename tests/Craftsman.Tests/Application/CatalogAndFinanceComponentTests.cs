@@ -50,13 +50,15 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(FinanceIndexPage.Settlements)] = new[]
             {
                 new FinanceIndexPage.SettlementRow(
-                    orderId, "SO-42", "R$ 100,00", "R$ 5,00", "R$ 35,00", "R$ 60,00",
+                    orderId, "SO-42", "R$ 100,00", "R$ 5,00", "R$ 35,00", "R$ 15,00", "R$ 60,00",
                     "Calculada", "calculated", "15/06/2031")
             }
         });
 
         Assert.Contains("SO-42", html);
         Assert.Contains("R$ 60,00", html);
+        Assert.Contains("M&atilde;o de obra", html);
+        Assert.Contains("R$ 15,00", html);
         Assert.Contains("status-calculated", html);
         Assert.Contains($"/Finance/Details?orderId={orderId}", html);
         Assert.DoesNotContain("Nenhuma apuração encontrada", html);

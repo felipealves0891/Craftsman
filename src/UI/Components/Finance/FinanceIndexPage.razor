@@ -54,6 +54,7 @@
                     <th>Receita</th>
                     <th>Desconto</th>
                     <th>Custos</th>
+                    <th>M&atilde;o de obra</th>
                     <th>Margem</th>
                     <th>Status</th>
                     <th>Calculado em</th>
@@ -64,7 +65,7 @@
                 @if (!Settlements.Any())
                 {
                     <tr>
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <strong>Nenhuma apura&ccedil;&atilde;o encontrada</strong>
                                 <span>Ajuste o per&iacute;odo ou aguarde entregas confirmadas para calcular margem.</span>
@@ -81,6 +82,7 @@
                             <td>@settlement.RevenueAmount</td>
                             <td>@settlement.DiscountAmount</td>
                             <td>@settlement.TotalCostAmount</td>
+                            <td>@settlement.LaborCostAmount</td>
                             <td><strong>@settlement.MarginAmount</strong></td>
                             <td><span class="status-badge status-@settlement.StatusCss">@settlement.StatusLabel</span></td>
                             <td>@settlement.CalculatedAt</td>
@@ -119,6 +121,7 @@
         string RevenueAmount,
         string DiscountAmount,
         string TotalCostAmount,
+        string LaborCostAmount,
         string MarginAmount,
         string StatusLabel,
         string StatusCss,

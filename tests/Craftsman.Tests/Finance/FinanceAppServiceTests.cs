@@ -95,6 +95,29 @@ public sealed class FinanceAppServiceTests
     }
 
     [Fact]
+    public async Task List_includes_labor_amount_without_changing_financial_totals()
+    {
+        await using var dbContext = CreateDbContext();
+        var settlement = new FinancialSettlement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            revenueAmount: 100,
+            productionCostAmount: 10,
+            shippingCostAmount: 5,
+            laborCostAmount: 15,
+            raiseCalculatedEvent: false);
+        await new FinancialSettlementRepository(dbContext).AddAsync(settlement);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var item = Assert.Single(await service.ListAsync());
+
+        Assert.Equal(15, item.LaborCostAmount);
+        Assert.Equal(15, item.TotalCostAmount);
+        Assert.Equal(85, item.MarginAmount);
+    }
+
+    [Fact]
     public async Task Index_summary_returns_totals_for_selected_period()
     {
         await using var dbContext = CreateDbContext();
