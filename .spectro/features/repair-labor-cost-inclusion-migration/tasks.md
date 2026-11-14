@@ -36,6 +36,7 @@
 - Build da solução com `--no-restore --warnaserror`: aprovado, 0 avisos e 0 erros.
 - Suíte completa: 349 testes aprovados, 0 falhas.
 - `dotnet ef migrations script --idempotent`: executado com sucesso; `migrations list` encontrou a factory, mas não conseguiu consultar o status aplicado por connection string local inválida.
+- `TASK-004`: com as credenciais do `infra/docker-compose.yml`, `dotnet ef migrations list --project src/Infra/Craftsman.Infra.csproj --context Craftsman.Infra.Persistence.AppDbContext` encontrou a factory e listou as migrations; `dotnet ef database update` falhou ao autenticar no PostgreSQL local com `NpgsqlException: Exception while reading from stream`/timeout. Repetido com `127.0.0.1`, SSL desabilitado e timeout explícito, com o mesmo resultado.
 - Cobertura com `-AllowDirtyTree`: falhou no limiar global existente, com 62,57% de linhas (mínimo 85%) e 70,64% de branches (mínimo 60%); não houve linhas novas instrumentadas reportadas.
 - Segurança NuGet: o comando configurado terminou com código 1 sem produzir diagnóstico; precisa ser repetido em ambiente que exponha a saída do comando.
 

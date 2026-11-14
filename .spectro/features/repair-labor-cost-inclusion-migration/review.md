@@ -41,7 +41,7 @@
 - Severidade: `Medium`
 - Categoria: Test / Persistence
 - Localização: `.spectro/features/repair-labor-cost-inclusion-migration/tasks.md`, `TASK-004`; migration `20261114223224_RepairLaborCostInclusionMigration.cs`.
-- Evidência: os gates validaram compilação, testes e segurança, mas não houve aplicação de `dotnet ef database update` contra uma instância PostgreSQL válida; também não há teste de integração que execute `Up` e `Down` e verifique os valores financeiros no banco.
+- Evidência: `dotnet ef migrations list --project src/Infra/Craftsman.Infra.csproj --context Craftsman.Infra.Persistence.AppDbContext` encontrou a factory e listou as migrations, mas `dotnet ef database update` com as credenciais do compose falhou durante autenticação Npgsql com `Exception while reading from stream`/timeout, inclusive usando `127.0.0.1` e SSL desabilitado. Também não há teste de integração que execute `Up` e `Down` e verifique os valores financeiros no banco.
 - Impacto: a semântica SQL específica do PostgreSQL, o cálculo material por joins e o rollback permanecem sem validação de execução real.
 - Recomendação: executar `Up`/`Down` em banco PostgreSQL descartável com dados representativos e adicionar teste de integração ou evidência reproduzível para cenários com e sem mão de obra.
 - Return stage: `gates`
