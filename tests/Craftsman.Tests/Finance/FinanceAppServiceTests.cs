@@ -124,8 +124,7 @@ public sealed class FinanceAppServiceTests
         var repository = new FinancialSettlementRepository(dbContext);
         await repository.AddAsync(new FinancialSettlement(
             Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
-            raiseCalculatedEvent: false,
-            laborCostReconciled: false));
+            raiseCalculatedEvent: false));
         await repository.AddAsync(new FinancialSettlement(
             Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
             laborCostAmount: 0));
