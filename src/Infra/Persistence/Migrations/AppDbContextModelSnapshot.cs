@@ -11,7 +11,6 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Craftsman.Infra.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     partial class AppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -249,17 +248,17 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("labor_cost_amount");
 
-                    b.Property<bool>("LaborCostReconciled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("labor_cost_reconciled");
-
                     b.Property<bool>("LaborCostIncludedInProduction")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
                         .HasColumnName("labor_cost_included_in_production");
+
+                    b.Property<bool>("LaborCostReconciled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("labor_cost_reconciled");
 
                     b.Property<decimal>("MarginAmount")
                         .HasPrecision(18, 2)
