@@ -18,7 +18,7 @@
 - Use nomes e conceitos coerentes com os domínios e estados já existentes. Transições de status e invariantes pertencem ao domínio, não devem ser contornadas pela interface ou pela infraestrutura.
 - Registre custos, referências e eventos de forma que operações de estoque, produção, envio e financeiro possam ser rastreadas até sua origem.
 - Preserve compatibilidade com a versão .NET e os padrões de organização já adotados. Não introduza convenções de estilo ou abstrações novas sem necessidade demonstrável.
-- Toda migração deve ser adicionada via cli `dotnet ef`, nunca deve ser adicionada manualmente
+- Toda migração deve ser adicionada via cli `dotnet ef ... --project src/Infra/Craftsman.Infra.csproj` para indicar que o projeto que possui o Design é o de infra. Nunca deve ser adicionada manualmente
 
 ## Tratamento de erros
 
