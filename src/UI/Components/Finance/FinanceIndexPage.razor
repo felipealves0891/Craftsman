@@ -82,7 +82,7 @@
                             <td>@settlement.RevenueAmount</td>
                             <td>@settlement.DiscountAmount</td>
                             <td>@settlement.TotalCostAmount</td>
-                            <td>@settlement.LaborCostAmount</td>
+                            <td>@(settlement.LaborCostAmount ?? "Sem valor")</td>
                             <td><strong>@settlement.MarginAmount</strong></td>
                             <td><span class="status-badge status-@settlement.StatusCss">@settlement.StatusLabel</span></td>
                             <td>@settlement.CalculatedAt</td>
@@ -121,7 +121,7 @@
         string RevenueAmount,
         string DiscountAmount,
         string TotalCostAmount,
-        string LaborCostAmount,
+        string? LaborCostAmount,
         string MarginAmount,
         string StatusLabel,
         string StatusCss,

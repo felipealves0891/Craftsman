@@ -1,42 +1,76 @@
 <!-- spectro-managed: true -->
-# Revisão: Adicionar valor das horas ao custo financeiro
+# Revisão: Exibir mão de obra na tabela sem incorporá-la aos custos
 
-## Escopo e evidências
+## Resumo
 
-- Especificação: `.spectro/features/add-hourly-labor-cost/spec.md` — hash `917b5ebdc6e6966499784968f1a7fa5b25698488f47e7f29ed57966b9dae1ab1`.
-- Clarificações: `.spectro/features/add-hourly-labor-cost/clarifications.md` — hash `19af31a3b7c555a919fc26c0218b9c42f493c77853486d241003efec24d97509`.
-- Plano/tarefas: `.spectro/features/add-hourly-labor-cost/plan.md` e `tasks.md` — hashes registrados no pacote de revisão.
-- Gates: `.spectro/features/add-hourly-labor-cost/gates.json` — execução `gate-20261109T010643Z`, todos os 4 gates obrigatórios aprovados.
-- Pacote independente: `.spectro/features/add-hourly-labor-cost/reviews/review-20261109T011500Z/`.
-- Revisão do código: `5fdacfe621e4aa755f348240bb186e675fd78a7a`.
-- Rastreabilidade: `traceability.json` não identificou requisitos ou critérios de aceite sem tarefa/validação.
-- Continuidade das evidências: `gates.json` foi executado na revisão de código `0986f82`; o commit posterior `5fdacfe` contém somente `gates.json`/`state.json`, sem alterações de código, testes ou configuração.
+- Decisão: `changes_requested`
+- Código revisado: `0e4ee96842153b9756f7a889327b462401889638`
+- Base da revisão: `develop`
+- Pacote independente: `.spectro/features/add-hourly-labor-cost/reviews/review-20261114T194721Z/`
+- Rastreabilidade: completa, sem requisitos ou critérios de aceite descobertos.
+- Gates obrigatórios: build, testes, segurança e cobertura aprovados no `gate-20261114T194617Z`.
+
+A implementação atende ao comportamento principal: o valor monetário de mão de obra continua disponível, mas não compõe custo de produção, custo total, margem ou cards; a tabela financeira apresenta a nova coluna. Os achados abaixo precisam ser resolvidos antes da aprovação final.
+
+## Artefatos examinados
+
+- `.spectro/features/add-hourly-labor-cost/spec.md`
+- `.spectro/features/add-hourly-labor-cost/clarifications.md`
+- `.spectro/features/add-hourly-labor-cost/plan.md`
+- `.spectro/features/add-hourly-labor-cost/tasks.md`
+- `.spectro/features/add-hourly-labor-cost/gates.json`
+- `.spectro/features/add-hourly-labor-cost/reviews/review-20261114T194721Z/manifest.json`
+- `.spectro/features/add-hourly-labor-cost/reviews/review-20261114T194721Z/traceability.json`
+- Diff `develop..HEAD` e arquivos de domínio, aplicação, infraestrutura, UI e testes relacionados à feature.
 
 ## Requisitos verificados
 
-- O cálculo usa `ProductionTask.ProductionDurationHours * Product.HourlyRate` e não multiplica novamente por quantidade.
-- O custo de horas é somado ao custo material e persistido como `LaborCostAmount`, mantendo `ProductionCostAmount` como custo total de produção.
-- Custo total e margem continuam derivados sem dupla contagem.
-- O detalhe financeiro exibe o custo de horas separadamente.
-- Produto ausente falha antes da criação do acerto.
-- A migration adiciona `labor_cost_amount` com precisão `numeric(18,2)` e default zero para registros existentes.
-- Deduplicação, elegibilidade de entrega, receita, desconto e custo de envio existentes foram preservados.
-- A suíte registrou 347 testes aprovados; build, segurança e cobertura passaram nos gates configurados.
+- `FR-001` e `FR-002`: novos acertos usam custo material em `ProductionCostAmount`; `LaborCostAmount` permanece informativo.
+- `FR-003`: cards continuam baseados no resumo de custo/margem e não recebem a mão de obra.
+- `FR-004`: a listagem expõe `LaborCostAmount` e a tabela renderiza a coluna monetária.
+- `NFR-001` e `NFR-002`: formatação monetária e separação entre domínio, aplicação e apresentação foram preservadas.
+- `CON-001` a `CON-004`: não houve remoção de cadastro/horas, nem alteração de receita, desconto, envio ou arquitetura.
+- `AC-001` a `AC-006`: há cobertura de cálculo, reconciliação, projeção e renderização; a distinção entre ausência e zero permanece pendente conforme `FINDING-002`.
 
-## Findings
+## Achados
 
-| ID | Severidade | Categoria | Localização | Evidência | Impacto | Correção recomendada | Etapa de retorno | Status |
-|---|---|---|---|---|---|---|---|---|
-| `FINDING-001` | Medium | scope / consistency | `.spectro/config.yaml:25`; `.spectro/constitution.md:55, 64` | O conjunto revisado altera os limiares de cobertura de `81/55` para `82/56`, enquanto a constituição declara `90/75` para cobertura total. A constituição exige aprovação humana explícita para mudanças nos limiares de qualidade. | Os gates podem aprovar a feature com política configurada diferente da política declarada na constituição. A implementação financeira não é afetada, mas a aprovação final da mudança de política não está evidenciada neste pacote. | Confirmar aprovação humana explícita dos novos limiares e alinhar `.spectro/config.yaml` à constituição, ou registrar/atualizar a política constitucional antes de considerar a mudança de qualidade aprovada. | `human_review` | open |
+### `FINDING-001` — Migration pode normalizar acertos novos em implantação fora de ordem
+
+- Severidade: `High`
+- Categoria: Functional / Persistence
+- Localização: `src/Infra/Persistence/Migrations/20261114120000_RevertLaborCostFromFinancialTotals.cs:14-19`
+- Evidência: a migration subtrai `labor_cost_amount` de todo registro com `labor_cost_reconciled = TRUE` e valor positivo. Acertos criados pela regra nova também podem satisfazer essa condição, pois continuam persistindo o valor monetário e o marcador como reconciliado.
+- Impacto: se a migration for aplicada depois de a versão nova começar a criar acertos, ela pode reduzir indevidamente o custo material, o custo total e a margem desses acertos.
+- Recomendação: adicionar um marcador explícito ou uma condição baseada em dados inequívocos que diferencie registros produzidos pela regra antiga; cobrir a ordem migration/deploy e rollback com teste de persistência. Não depender somente da ordem operacional de implantação.
+- Return stage: `implement`
+- Remediação: `TASK-REV-001`.
+
+### `FINDING-002` — A tabela não distingue ausência de valor monetário de valor zero
+
+- Severidade: `Medium`
+- Categoria: Functional / UI
+- Localização: `src/App/Models/FinancialSettlementListItemViewModel.cs:10`, `src/UI/Components/Finance/FinanceIndexPage.razor:85`
+- Evidência: `LaborCostAmount` é `decimal` obrigatório e a célula sempre renderiza seu valor formatado. Assim, registros sem valor disponível aparecem como `R$ 0,00`, enquanto `AC-005` exige o estado vazio adotado pela tabela.
+- Impacto: o usuário não consegue diferenciar uma mão de obra monetária realmente igual a zero de uma informação ausente ou ainda não reconciliada.
+- Recomendação: representar ausência explicitamente no contrato de listagem e renderizar o placeholder padrão, mantendo zero como valor monetário válido; adicionar testes para ambos os casos.
+- Return stage: `implement`
+- Remediação: `TASK-REV-002`.
+
+## Testes e gates
+
+- Suíte completa: 361 testes aprovados.
+- Build com `--warnaserror`: aprovado.
+- Segurança de pacotes: aprovado.
+- Cobertura: aprovada pelos limiares configurados.
+- Evidências: `.spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/evidence/`.
+- Relatório: `.spectro/features/add-hourly-labor-cost/gates.json`.
 
 ## Riscos residuais
 
-- O cálculo consulta a lista de produtos para resolver `HourlyRate`; o custo é adequado ao fluxo atual, mas o impacto de desempenho em catálogos muito grandes não foi medido.
-- Alterações posteriores em `HourlyRate` afetam apenas novos acertos; acertos persistidos conservam o custo calculado.
-- A cobertura total e a cobertura de código novo passaram conforme os limiares efetivamente configurados; a divergência entre configuração e constituição permanece o único ponto de governança.
+- A migration histórica depende atualmente de uma classificação implícita dos registros antigos; o risco está formalizado em `FINDING-001`.
+- A semântica de valor zero versus ausência precisa ser definida no contrato da listagem; o risco está formalizado em `FINDING-002`.
+- Não foram observados achados críticos de segurança, cobertura ou separação arquitetural.
 
-## Decisão
+## Próximo estágio
 
-- `needs_human_review`
-- Justificativa: A implementação atende à especificação, ao plano e aos critérios de aceite, sem findings `Critical` ou `High`. A decisão final depende apenas da aprovação humana explícita da alteração dos limiares de qualidade identificada em `FINDING-001`.
-
+Retornar a `spectro-implement` para executar `TASK-REV-001` e `TASK-REV-002`, renovar os gates e executar nova revisão. A aprovação final fica bloqueada enquanto `FINDING-001` permanecer não resolvido.

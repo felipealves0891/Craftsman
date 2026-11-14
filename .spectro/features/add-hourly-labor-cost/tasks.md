@@ -35,7 +35,7 @@
 
 ## TASK-REV-001 - Remediate FINDING-001
 
-- **Status:** pending
+- **Status:** completed
 - **Finding:** FINDING-001
 - **Severity:** High
 - **Return stage:** implement
@@ -47,7 +47,7 @@
 
 ## TASK-REV-002 - Remediate FINDING-002
 
-- **Status:** pending
+- **Status:** completed
 - **Finding:** FINDING-002
 - **Severity:** Medium
 - **Return stage:** implement
@@ -55,4 +55,12 @@
 - **Dependencies:** none
 - **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
 - **Expected tests:** Add or update behavior-focused coverage as required.
+
+## Evidências das remediações
+
+- `TASK-REV-001`: marcador `labor_cost_included_in_production` adicionado; migration consolidada normaliza registros legados uma única vez; testes de domínio, repositório e reconciliação aprovados.
+- `TASK-REV-002`: listagem usa `decimal?`; zero permanece visível como valor monetário e ausência exibe `Sem valor`; teste de aplicação e componente aprovados.
+- Testes direcionados: 35 aprovados.
+- Suíte completa: 364 aprovados, 0 falhas.
+- Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
 

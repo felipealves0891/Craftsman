@@ -65,6 +65,22 @@ public sealed class CatalogAndFinanceComponentTests
     }
 
     [Fact]
+    public async Task Finance_page_renders_empty_labor_value_without_confusing_it_with_zero()
+    {
+        var html = await RenderAsync<FinanceIndexPage>(new Dictionary<string, object?>
+        {
+            [nameof(FinanceIndexPage.Settlements)] = new[]
+            {
+                new FinanceIndexPage.SettlementRow(
+                    Guid.NewGuid(), "SO-EMPTY", "R$ 100,00", "R$ 0,00", "R$ 10,00", null, "R$ 90,00",
+                    "Calculada", "calculated", "15/06/2031")
+            }
+        });
+
+        Assert.Contains("Sem valor", html);
+    }
+
+    [Fact]
     public async Task Inventory_pages_render_empty_states_and_material_balance_and_movement_rows()
     {
         var emptyBalances = await RenderAsync<InventoryBalancesPage>(new Dictionary<string, object?>());

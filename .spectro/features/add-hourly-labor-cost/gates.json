@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "feature_id": "add-hourly-labor-cost",
-  "execution_id": "gate-20261114T194506Z",
+  "execution_id": "gate-20261114T194617Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "d82095eb4e9e9427c4c5086019f62c0e7b93e936",
+  "code_revision": "0e4ee96842153b9756f7a889327b462401889638",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "9f8cd627fb3016ef439c124bdcf07a40f1f5617b960b7f355d69b21d43e05b79",
@@ -11,8 +11,8 @@
     "plan.md": "5d57de911ebd7533a7f9336a06a81249dd048a950564549ff5ee1ec903e2c935",
     "tasks.md": "cb7b5a068be80e3781393eedf676fdb70aadb8a9e51ecf415fd673e80fcf70c8"
   },
-  "started_at": "2026-11-14T19:45:06.840Z",
-  "duration_ms": 18522,
+  "started_at": "2026-11-14T19:46:17.990Z",
+  "duration_ms": 58011,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 5615,
+      "duration_ms": 10728,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/evidence/01-build.log"
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/build",
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 6804,
+      "duration_ms": 8497,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/evidence/02-test.log"
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/test",
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 5236,
+      "duration_ms": 5632,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/evidence/03-security.log"
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/security",
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -66,20 +66,18 @@
       "id": "GATE-004",
       "name": "coverage",
       "required": true,
-      "status": "failed",
+      "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
-      "exit_code": 1,
-      "duration_ms": 808,
-      "diagnostics": [
-        "ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
-      ],
+      "exit_code": 0,
+      "duration_ms": 33078,
+      "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/evidence/04-coverage.log"
+        ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194506Z/coverage",
+      "output_directory": ".spectro/features/add-hourly-labor-cost/outputs/gate-20261114T194617Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
   ],
-  "result": "failed"
+  "result": "passed"
 }

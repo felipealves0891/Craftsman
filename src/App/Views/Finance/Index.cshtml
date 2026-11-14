@@ -14,7 +14,7 @@
                 settlement.RevenueAmount.ToString("C"),
                 settlement.DiscountAmount.ToString("C"),
                 settlement.TotalCostAmount.ToString("C"),
-                settlement.LaborCostAmount.ToString("C"),
+                settlement.LaborCostAmount?.ToString("C") ?? "Sem valor",
                 settlement.MarginAmount.ToString("C"),
                 Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Finance.Entities.FinancialSettlementStatus), settlement.Status),
                 settlement.Status.ToLowerInvariant(),

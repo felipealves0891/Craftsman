@@ -118,6 +118,27 @@ public sealed class FinanceAppServiceTests
     }
 
     [Fact]
+    public async Task List_returns_null_labor_amount_when_reconciliation_is_pending_but_preserves_zero()
+    {
+        await using var dbContext = CreateDbContext();
+        var repository = new FinancialSettlementRepository(dbContext);
+        await repository.AddAsync(new FinancialSettlement(
+            Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
+            raiseCalculatedEvent: false,
+            laborCostReconciled: false));
+        await repository.AddAsync(new FinancialSettlement(
+            Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
+            laborCostAmount: 0));
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var items = (await service.ListAsync()).OrderBy(item => item.OrderId).ToArray();
+
+        Assert.Contains(items, item => item.LaborCostAmount is null);
+        Assert.Contains(items, item => item.LaborCostAmount == 0);
+    }
+
+    [Fact]
     public async Task Index_summary_returns_totals_for_selected_period()
     {
         await using var dbContext = CreateDbContext();
