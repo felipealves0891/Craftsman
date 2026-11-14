@@ -157,7 +157,7 @@ public sealed class FinanceAppServiceTests
 
         return new FinanceAppService(
             settlementRepository,
-            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository),
+            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository),
             shipmentRepository,
             orderRepository,
             new UnitOfWork(dbContext),

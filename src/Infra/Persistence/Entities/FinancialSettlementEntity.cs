@@ -12,8 +12,6 @@ public sealed class FinancialSettlementEntity : IPersistenceEntity<Guid>
 
     public decimal LaborCostAmount { get; set; }
 
-    public bool LaborCostReconciled { get; set; }
-
     public decimal ShippingCostAmount { get; set; }
 
     public decimal DiscountAmount { get; set; }

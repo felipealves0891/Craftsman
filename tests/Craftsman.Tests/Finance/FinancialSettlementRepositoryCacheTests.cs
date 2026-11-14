@@ -60,32 +60,6 @@ public sealed class FinancialSettlementRepositoryCacheTests
     }
 
     [Fact]
-    public async Task Pending_query_returns_only_unreconciled_settlements()
-    {
-        await using var dbContext = CreateDbContext();
-        var repository = new FinancialSettlementRepository(dbContext);
-        var pending = new FinancialSettlement(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            100,
-            25,
-            5,
-            raiseCalculatedEvent: false,
-            laborCostReconciled: false);
-        var reconciled = new FinancialSettlement(Guid.NewGuid(), Guid.NewGuid(), 100, 25, 5);
-
-        await repository.AddAsync(pending);
-        await repository.AddAsync(reconciled);
-        await dbContext.SaveChangesAsync();
-
-        var result = await repository.ListPendingLaborCostReconciliationAsync();
-
-        var loaded = Assert.Single(result);
-        Assert.Equal(pending.Id, loaded.Id);
-        Assert.False(loaded.LaborCostReconciled);
-    }
-
-    [Fact]
     public async Task Update_preserves_settlement_identity_and_invalidates_finance_cache()
     {
         await using var dbContext = CreateDbContext();
@@ -101,11 +75,21 @@ public sealed class FinancialSettlementRepositoryCacheTests
             discountAmount: 5,
             calculatedAt: calculatedAt,
             raiseCalculatedEvent: false,
-            laborCostReconciled: false);
+            laborCostAmount: 0);
 
         await repository.AddAsync(pending);
         await dbContext.SaveChangesAsync();
-        pending.ReconcileLaborCost(250, 550);
+        pending = new FinancialSettlement(
+            pending.Id,
+            pending.OrderId,
+            pending.RevenueAmount,
+            productionCostAmount: 550,
+            pending.ShippingCostAmount,
+            pending.DiscountAmount,
+            pending.Status,
+            pending.CalculatedAt,
+            raiseCalculatedEvent: false,
+            laborCostAmount: 250);
         await repository.UpdateAsync(pending);
         await dbContext.SaveChangesAsync();
 
@@ -116,7 +100,6 @@ public sealed class FinancialSettlementRepositoryCacheTests
         Assert.Equal(calculatedAt, loaded.CalculatedAt);
         Assert.Equal(250, loaded.LaborCostAmount);
         Assert.Equal(550, loaded.ProductionCostAmount);
-        Assert.True(loaded.LaborCostReconciled);
         Assert.Contains("finance:", cache.RemovedPrefixes);
     }
 

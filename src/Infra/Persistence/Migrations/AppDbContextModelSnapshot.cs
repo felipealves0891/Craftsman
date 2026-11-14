@@ -249,12 +249,6 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("labor_cost_amount");
 
-                    b.Property<bool>("LaborCostReconciled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("labor_cost_reconciled");
-
                     b.Property<decimal>("MarginAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")

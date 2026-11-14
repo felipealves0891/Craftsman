@@ -44,16 +44,6 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
         return await ListCoreAsync(from, to, cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<FinancialSettlement>> ListPendingLaborCostReconciliationAsync(CancellationToken cancellationToken = default)
-    {
-        var entities = await dbContext.FinancialSettlements
-            .Where(settlement => !settlement.LaborCostReconciled)
-            .OrderBy(settlement => settlement.CalculatedAt)
-            .ToListAsync(cancellationToken);
-
-        return entities.Select(ToModel).ToList().AsReadOnly();
-    }
-
     public async Task AddAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default)
     {
         await dbContext.FinancialSettlements.AddAsync(ToEntity(settlement), cancellationToken);
@@ -89,7 +79,6 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
 
         entity.ProductionCostAmount = settlement.ProductionCostAmount;
         entity.LaborCostAmount = settlement.LaborCostAmount;
-        entity.LaborCostReconciled = settlement.LaborCostReconciled;
         entity.TotalCostAmount = settlement.TotalCostAmount;
         entity.MarginAmount = settlement.MarginAmount;
         cache?.RemoveByPrefix("finance:");
@@ -128,8 +117,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             Enum.Parse<FinancialSettlementStatus>(entity.Status),
             entity.CalculatedAt,
             raiseCalculatedEvent: false,
-            laborCostAmount: entity.LaborCostAmount,
-            laborCostReconciled: entity.LaborCostReconciled);
+            laborCostAmount: entity.LaborCostAmount);
     }
 
     private static FinancialSettlementEntity ToEntity(FinancialSettlement settlement)
@@ -141,7 +129,6 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             RevenueAmount = settlement.RevenueAmount,
             ProductionCostAmount = settlement.ProductionCostAmount,
             LaborCostAmount = settlement.LaborCostAmount,
-            LaborCostReconciled = settlement.LaborCostReconciled,
             ShippingCostAmount = settlement.ShippingCostAmount,
             DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,
