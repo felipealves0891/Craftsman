@@ -32,3 +32,27 @@
 - Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
 - Suíte completa: 361 aprovados, 0 falhas.
 - Limitação: `dotnet ef migrations list` não executou porque o startup project não referencia `Microsoft.EntityFrameworkCore.Design`; a migration foi compilada pelo build.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** pending
+- **Finding:** FINDING-001
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** Tornar a normalização histórica segura para implantação e reexecução: identificar explicitamente os acertos produzidos pela regra antiga antes de subtrair LaborCostAmount, evitando alterar acertos novos já material-only; cobrir a ordem de migration/deploy e rollback com teste de persistência.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** pending
+- **Finding:** FINDING-002
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** Representar e renderizar explicitamente ausência de valor monetário de mão de obra na listagem, sem confundir ausência com zero válido; adicionar cobertura para valor ausente e valor zero.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
