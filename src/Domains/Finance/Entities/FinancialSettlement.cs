@@ -18,6 +18,8 @@ public sealed class FinancialSettlement
 
     public bool LaborCostReconciled { get; private set; }
 
+    public bool LaborCostIncludedInProduction { get; private set; }
+
     public decimal ShippingCostAmount { get; }
 
     public decimal DiscountAmount { get; }
@@ -43,7 +45,8 @@ public sealed class FinancialSettlement
         DateTimeOffset? calculatedAt = null,
         bool raiseCalculatedEvent = true,
         decimal laborCostAmount = 0,
-        bool laborCostReconciled = true)
+        bool laborCostReconciled = true,
+        bool laborCostIncludedInProduction = false)
     {
         if (id == Guid.Empty)
         {
@@ -86,6 +89,7 @@ public sealed class FinancialSettlement
         ProductionCostAmount = productionCostAmount;
         LaborCostAmount = laborCostAmount;
         LaborCostReconciled = laborCostReconciled;
+        LaborCostIncludedInProduction = laborCostIncludedInProduction;
         ShippingCostAmount = shippingCostAmount;
         DiscountAmount = discountAmount;
         Status = status;
@@ -117,6 +121,7 @@ public sealed class FinancialSettlement
         LaborCostAmount = laborCostAmount;
         ProductionCostAmount = productionCostAmount;
         LaborCostReconciled = true;
+        LaborCostIncludedInProduction = false;
     }
 
     public void ClearDomainEvents()

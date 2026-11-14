@@ -19,6 +19,7 @@ public sealed class FinancialSettlementTests
         Assert.Equal(settlementId, settlement.Id);
         Assert.Equal(orderId, settlement.OrderId);
         Assert.Equal(7, settlement.LaborCostAmount);
+        Assert.False(settlement.LaborCostIncludedInProduction);
         Assert.Equal(52, settlement.TotalCostAmount);
         Assert.Equal(48, settlement.MarginAmount);
         Assert.Equal(FinancialSettlementStatus.Calculated, settlement.Status);
@@ -73,19 +74,19 @@ public sealed class FinancialSettlementTests
             laborCostAmount: 0,
             laborCostReconciled: false);
 
-        settlement.ReconcileLaborCost(250, 550);
+        settlement.ReconcileLaborCost(250, 300);
 
         Assert.Equal(settlementId, settlement.Id);
         Assert.Equal(orderId, settlement.OrderId);
         Assert.Equal(1000, settlement.RevenueAmount);
-        Assert.Equal(550, settlement.ProductionCostAmount);
+        Assert.Equal(300, settlement.ProductionCostAmount);
         Assert.Equal(250, settlement.LaborCostAmount);
         Assert.Equal(10, settlement.ShippingCostAmount);
         Assert.Equal(5, settlement.DiscountAmount);
         Assert.Equal(calculatedAt, settlement.CalculatedAt);
         Assert.True(settlement.LaborCostReconciled);
-        Assert.Equal(565, settlement.TotalCostAmount);
-        Assert.Equal(435, settlement.MarginAmount);
+        Assert.Equal(315, settlement.TotalCostAmount);
+        Assert.Equal(685, settlement.MarginAmount);
     }
 
     [Fact]
@@ -104,6 +105,25 @@ public sealed class FinancialSettlementTests
         Assert.Throws<InvalidOperationException>(() => reconciled.ReconcileLaborCost(1, 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => pending.ReconcileLaborCost(-1, 0));
         Assert.Throws<ArgumentOutOfRangeException>(() => pending.ReconcileLaborCost(0, -1));
+    }
+
+    [Fact]
+    public void Settlement_reconciliation_marks_labor_as_informational()
+    {
+        var settlement = new FinancialSettlement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            revenueAmount: 100,
+            productionCostAmount: 300,
+            shippingCostAmount: 0,
+            raiseCalculatedEvent: false,
+            laborCostReconciled: false,
+            laborCostIncludedInProduction: true);
+
+        settlement.ReconcileLaborCost(250, 300);
+
+        Assert.False(settlement.LaborCostIncludedInProduction);
+        Assert.Equal(300, settlement.ProductionCostAmount);
     }
 
     [Fact]

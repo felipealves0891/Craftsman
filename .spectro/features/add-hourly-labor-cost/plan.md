@@ -1,72 +1,65 @@
 <!-- spectro-managed: true -->
-# Plano: Adicionar valor das horas ao custo financeiro
+# Plano: Exibir mão de obra na tabela sem incorporá-la aos custos
 
 ## Contexto e objetivo técnico
 
-- O `SettlementCalculator` atualmente soma apenas os custos das movimentações de estoque vinculadas às `ProductionTask` e cria um `FinancialSettlement` com esse custo de produção.
-- As tarefas já persistem `ProductionDurationHours` e `ProductId`; o produto já persiste `HourlyRate` com validação de valor não negativo.
-- O `ProductionPlanner` grava em cada tarefa a duração total da produção (`ProductionDurationHours` já multiplicada pela quantidade do item). O cálculo financeiro deve usar esse valor diretamente e não multiplicá-lo novamente por `Quantity`.
-- O resultado do custo de horas deve ser preservado no acerto financeiro, para que alterações posteriores no cadastro do produto não reescrevam a composição histórica.
+- A implementação atual calcula `ProductionDurationHours * Product.HourlyRate`, soma esse valor ao custo de produção e persiste o resultado em `FinancialSettlement`.
+- O mesmo modelo já persiste `LaborCostAmount`, e a página financeira possui cards derivados de `TotalCostAmount` e `MarginAmount`.
+- O objetivo técnico é manter o valor monetário de mão de obra disponível como dado informativo da linha, mas fazer `ProductionCostAmount`, `TotalCostAmount` e `MarginAmount` refletirem somente os componentes financeiros vigentes sem o custo-hora.
+- A tabela principal de `/Finance` deve ganhar uma coluna monetária de mão de obra. Os cards continuam consumindo apenas o resumo financeiro sem mão de obra.
 
 ## Solução proposta
 
-- Estender o contrato de `FinancialSettlement` com um valor persistido de custo de horas (`LaborCostAmount`), mantendo `ProductionCostAmount` como o custo total de produção usado no acerto.
-- No cálculo, carregar os produtos referenciados pelas tarefas do pedido, obter de cada produto o `HourlyRate` vigente no momento do cálculo e somar `ProductionDurationHours * HourlyRate` por tarefa.
-- Somar o custo de horas ao custo de materiais já obtido pelas movimentações de estoque. O custo de horas será informado separadamente ao acerto e também refletido em `ProductionCostAmount`.
-- Persistir `LaborCostAmount` em `financial_settlements` com precisão `numeric(18,2)`, incluindo migration compatível com dados existentes e valor padrão zero para acertos anteriores.
-- Expor o custo de horas no detalhe financeiro para tornar a composição rastreável; a listagem e os KPIs continuarão usando os totais já derivados do acerto.
-- Manter o fluxo atual de elegibilidade, deduplicação e seleção de tarefas: `FinanceAppService` e `DeliveryConfirmedSettlementHandler` continuam impedindo novo acerto quando já existe um para o pedido.
+- Manter o cálculo monetário de mão de obra para preencher `LaborCostAmount`, usando a regra já existente de duração da tarefa multiplicada pelo `Product.HourlyRate`.
+- Alterar o cálculo do acerto para usar somente o custo de materiais em `ProductionCostAmount`; `LaborCostAmount` não será somado ao custo de produção, custo total ou margem.
+- Ajustar a reconciliação histórica para preservar/calcular o valor monetário de mão de obra na coluna e atualizar o custo de produção com materiais somente.
+- Normalizar os acertos já persistidos pela funcionalidade anterior, subtraindo de `ProductionCostAmount` o `LaborCostAmount` que foi incorporado anteriormente, sem remover o valor informativo da mão de obra.
+- Expor `LaborCostAmount` no modelo de listagem e projetá-lo para `FinanceIndexPage.SettlementRow` com o formato monetário já usado pela tabela.
+- Adicionar somente a coluna de mão de obra na tabela, atualizando o `colspan` do estado vazio. Não adicionar mão de obra aos cards nem alterar a tabela de detalhes fora do escopo.
 
 ## Arquitetura e contratos
 
-- Domínio financeiro: `FinancialSettlement` recebe o custo de horas, valida que ele não é negativo e mantém `TotalCostAmount` e `MarginAmount` derivados dos valores persistidos.
-- Cálculo financeiro: `SettlementCalculator` passa a depender de `IProductRepository`. Para cada tarefa selecionada pelo fluxo atual, resolve o produto pelo `ProductId` e calcula o custo usando a duração já registrada na tarefa. Produto ausente deve interromper o cálculo com erro identificável, sem criar acerto parcial.
-- Precisão: cada produto mantém `HourlyRate` com duas casas na persistência; os valores monetários seguem a precisão `18,2` já usada no financeiro. O plano não introduz arredondamento intermediário além do comportamento decimal existente.
-- Persistência: adicionar `LaborCostAmount` à entidade `FinancialSettlementEntity`, ao mapeamento/configuração, ao repositório de conversão e ao snapshot/migration do EF Core. Acertos existentes recebem zero.
-- Aplicação/UI: ampliar os view models, a composição da página de detalhes e o componente `FinancialSettlementDetailsPage` para exibir o custo de horas; o índice financeiro e seus resumos continuarão usando `TotalCostAmount` e `MarginAmount` persistidos.
-- Observabilidade: preservar os logs existentes do handler e do serviço. Falhas de produto ausente ou valor inválido devem identificar a operação e o produto, sem registrar segredos ou payloads sensíveis.
-- Concorrência: manter a proteção atual por consulta de acerto existente e índice único por `OrderId`; não adicionar retry, lock ou nova política de concorrência.
+- Domínio: `SettlementCostCalculator` continua sendo a fonte do cálculo monetário de mão de obra; `SettlementCalculator` passa a separar `materialCost` e `laborCost`, usando apenas `materialCost` como custo de produção.
+- Domínio/aplicação: `FinancialSettlement` continua armazenando `LaborCostAmount`; a operação de reconciliação deve receber o valor monetário de mão de obra e o custo de produção material, sem somá-los.
+- Aplicação: `FinancialSettlementListItemViewModel` recebe `LaborCostAmount`; `FinanceAppService.ToListItem` copia o valor sem incluí-lo em `FinancialSettlementSummaryViewModel`.
+- Apresentação: `src/App/Views/Finance/Index.cshtml` passa o valor formatado para `FinanceIndexPage.SettlementRow`; `src/UI/Components/Finance/FinanceIndexPage.razor` renderiza a coluna monetária.
+- Persistência: manter as colunas `labor_cost_amount` e `labor_cost_reconciled`. Criar uma migration de normalização para corrigir registros existentes que tiveram o custo-hora somado ao custo de produção.
+- Fluxo de dados: tarefa/produto e movimentações -> cálculo de mão de obra e materiais -> acerto com custos separados -> modelo da listagem -> coluna monetária; cards usam somente o resumo de custo/margem.
+- Erros: produto ausente continua sendo erro do cálculo do valor monetário da mão de obra; falhas individuais da reconciliação histórica continuam isoladas e diagnosticáveis; nenhuma falha deve salvar somente parte da correção.
+- Concorrência e cache: preservar a transação por acerto do worker e invalidar o cache financeiro por meio do repositório após correções, para que cards e tabela não exibam valores antigos.
+- Observabilidade: manter diagnósticos identificando acerto/pedido quando a reconciliação falhar, sem registrar dados sensíveis.
 
 ## Alternativas consideradas
 
-- Usar somente `ProductionCostAmount` sem campo separado de custo de horas: rejeitado porque não preserva uma composição financeira explícita nem permite rastrear o valor calculado no acerto.
-- Multiplicar `ProductionDurationHours` por `ProductionTask.Quantity`: rejeitado porque o planner já grava a duração total para a quantidade planejada; fazê-lo duplicaria o custo.
-- Usar `HourlyRate` global em `appsettings`: rejeitado pela decisão `DEC-001`; o produto é a única fonte do valor-hora.
-- Calcular horas por diferença entre `StartedAt` e `CompletedAt`: rejeitado porque a especificação exige as horas já registradas na tarefa e não altera o apontamento de produção.
-- Alterar o fluxo de seleção por status das tarefas: rejeitado pela `DEC-004`; o cálculo deve preservar a seleção vigente do financeiro.
+- Remover `LaborCostAmount` e o cálculo de valor monetário: rejeitada porque a nova coluna precisa exibir o valor monetário de mão de obra.
+- Manter o custo-hora em `ProductionCostAmount` e apenas ocultá-lo nos cards: rejeitada porque altera custo total/margem e viola a reversão solicitada.
+- Calcular o valor monetário somente na UI: rejeitada porque duplicaria regra de domínio, não atenderia o histórico persistido e poderia divergir do valor usado na apuração.
+- Excluir a coluna persistida e criar uma nova fonte paralela: rejeitada porque o modelo atual já possui o valor monetário e sua persistência, reduzindo a necessidade de nova estrutura.
 
 ## Riscos e compatibilidade
 
-- A inclusão de coluna exige migration; o valor padrão zero mantém leitura de acertos históricos e evita perda de dados.
-- Produtos removidos ou ausentes para uma tarefa indicam inconsistência entre produção e catálogo. O cálculo deve falhar de forma explícita antes de persistir o acerto, sem mascarar a origem do problema.
-- A alteração do `HourlyRate` afetará apenas novos cálculos; acertos já persistidos conservarão `LaborCostAmount` e os totais calculados.
-- O cache de produtos pode servir a leitura do catálogo, mas a implementação deve preservar cancelamento e não compartilhar operações concorrentes sobre o mesmo `DbContext`.
-- O repositório financeiro e as telas existentes têm múltiplos construtores/records usados em testes; as mudanças devem atualizar todos os usos para evitar regressões de compilação e de renderização.
-- A constituição menciona .NET 8, enquanto os projetos atuais declaram `net10.0`; o plano preserva o framework efetivamente usado pelos projetos e não propõe alteração de versão.
+- Risco alto: acertos existentes podem ter `ProductionCostAmount` inflado; a migration deve ser idempotente e preservar `LaborCostAmount`, receita, desconto, envio, identidade e datas.
+- Risco médio: chamadas e testes atuais assumem que produção é materiais + mão de obra; atualizar as expectativas sem alterar regras de receita, desconto ou envio.
+- Risco médio: o worker histórico e o fluxo de novos acertos podem divergir; ambos devem usar a mesma separação entre custo material e valor informativo de mão de obra.
+- Risco baixo: a alteração do record de listagem exige atualizar todos os construtores e testes de renderização.
+- Compatibilidade: não remover `HourlyRate`, horas de produção, colunas financeiras ou o marcador de reconciliação; a mudança é semântica para o cálculo e aditiva na tabela.
+- Fora do plano: alterações em telas/relatórios que não sejam a tabela financeira principal, novos apontamentos de horas e mudanças no cadastro de produtos.
 
 ## Estratégia de testes
 
-- Domínio: validar custo de horas não negativo, inclusão no custo total/margem e persistência do valor no objeto de acerto.
-- Cálculo financeiro: cobrir produto com `HourlyRate`, múltiplas tarefas/produtos, duração já escalada pela quantidade, ausência de tarefas, custo de materiais + horas, produto ausente e pedido não entregue.
-- Persistência: verificar round-trip de `LaborCostAmount`, valor zero para registros/objetos legados e migration/configuração com precisão `18,2`.
-- Aplicação/UI: verificar que o detalhe recebe e renderiza o custo de horas e que índice, resumo, custo total e margem continuam corretos.
-- Regressão: manter testes de deduplicação no `FinanceAppService` e no handler de entrega; garantir que o segundo cálculo não substitui o acerto existente.
-- Gates finais: executar os comandos obrigatórios de build, testes, segurança e cobertura definidos em `.spectro/config.yaml`, com `--warnaserror` no build e cobertura dos critérios de aceitação.
+- Domínio: verificar que mão de obra permanece em `LaborCostAmount`, enquanto `ProductionCostAmount`, `TotalCostAmount` e `MarginAmount` usam somente materiais, envio e desconto conforme as regras vigentes.
+- Aplicação: verificar listagem com valor monetário de mão de obra, resumo sem soma de mão de obra, cache invalidado após atualização e detalhe preservando o valor persistido.
+- Histórico/persistência: verificar migration e reconciliação com valor positivo, valor zero, ausência de tarefas, reexecução e preservação de campos não relacionados.
+- UI: verificar cabeçalho/valor da coluna, formatação monetária, estado vazio e `colspan`; verificar que os cards não exibem nem somam mão de obra.
+- Regressão: executar os gates obrigatórios configurados: build com avisos como erro, testes, vulnerabilidades de pacotes e cobertura.
 
 ## Rastreabilidade
 
 | Requisito | Critério de aceite | Tarefa |
 |---|---|---|
-| `FR-001` | `AC-001`, `AC-009` | `TASK-001`, `TASK-002`, `TASK-005` |
-| `FR-002` | `AC-002`, `AC-005` | `TASK-002`, `TASK-005` |
-| `FR-003` | `AC-003`, `AC-006` | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-005` |
-| `FR-004` | `AC-004` | `TASK-001`, `TASK-003`, `TASK-004`, `TASK-005` |
-| `FR-005` | `AC-007`, `AC-008` | `TASK-002`, `TASK-004`, `TASK-005` |
-| `NFR-001` | `AC-002`, `AC-004`, `AC-009` | `TASK-001`, `TASK-003`, `TASK-005` |
-| `NFR-002` | `AC-003`, `AC-006` | `TASK-001`, `TASK-002`, `TASK-004`, `TASK-005` |
-| `NFR-003` | `AC-009` | `TASK-002`, `TASK-005` |
-| `CON-001` | `AC-002` | `TASK-002`, `TASK-005` |
-| `CON-002` | `AC-002`, `AC-005` | `TASK-002`, `TASK-005` |
-| `CON-003` | `AC-001`, `AC-009` | `TASK-001`, `TASK-002`, `TASK-005` |
-| `CON-004` | `AC-003`, `AC-006` | `TASK-003`, `TASK-005` |
-
+| `FR-001`, `FR-002`, `CON-001`, `CON-003` | `AC-001`, `AC-006` | `TASK-001`, `TASK-002` |
+| `FR-003` | `AC-002`, `AC-006` | `TASK-003`, `TASK-004` |
+| `FR-004`, `CON-002` | `AC-003`, `AC-004`, `AC-005` | `TASK-003`, `TASK-004` |
+| `NFR-001` | `AC-004`, `AC-005` | `TASK-003`, `TASK-004` |
+| `NFR-002` | `AC-001`, `AC-006` | `TASK-001`, `TASK-003`, `TASK-004` |
+| `CON-004` | `AC-003`, `AC-004` | `TASK-003`, `TASK-004` |

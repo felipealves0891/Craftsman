@@ -51,7 +51,6 @@ public sealed class SettlementCalculator : ISettlementCalculator
             ? new Dictionary<Guid, Craftsman.Domain.ProductCatalog.Entities.Product>()
             : (await productRepository.ListAsync(cancellationToken)).ToDictionary(product => product.Id);
         var laborCost = SettlementCostCalculator.CalculateLaborCost(productionTasks, products);
-        var productionCost = productionMaterialCost + laborCost;
         var revenue = order.Items.Sum(item => item.Quantity * item.UnitPrice.Amount);
         var discount = order.Discount?.Amount.Amount ?? 0;
 
@@ -59,7 +58,7 @@ public sealed class SettlementCalculator : ISettlementCalculator
             Guid.NewGuid(),
             order.Id,
             revenue,
-            productionCost,
+            productionMaterialCost,
             shippingCostAmount: 0,
             discountAmount: discount,
             laborCostAmount: laborCost);

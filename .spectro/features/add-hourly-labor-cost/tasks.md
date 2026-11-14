@@ -1,35 +1,66 @@
 <!-- spectro-managed: true -->
-# Tarefas: Adicionar valor das horas ao custo financeiro
+# Tarefas: Exibir mão de obra na tabela sem incorporá-la aos custos
 
-| ID | Tarefa | Requisito | Critério de aceite | Dependências | Componentes afetados | Conclusão verificável, testes esperados e risco | Status |
-|---|---|---|---|---|---|---|---|
-| `TASK-001` | Estender `FinancialSettlement` para receber e preservar `LaborCostAmount`, validar o valor, manter `ProductionCostAmount` como materiais + horas e derivar custo total/margem sem alterar receita, envio ou desconto. | `FR-003`, `FR-004`, `NFR-001`, `NFR-002`, `CON-003` | `AC-003`, `AC-004`, `AC-009` | Nenhuma | `src/Domains/Finance/Entities/FinancialSettlement.cs`, testes de `FinancialSettlement` | O objeto de domínio expõe o custo de horas, rejeita valores negativos, inclui o total correto e continua emitindo o evento financeiro com a margem correta. Atualizar todos os construtores/usos de teste. Risco: alterar a assinatura pode deixar chamadas legadas inconsistentes; localizar e atualizar todos os usos sem mudar regras não relacionadas. | completed |
-| `TASK-002` | Alterar `SettlementCalculator` para resolver cada `ProductionTask.ProductId` pelo `IProductRepository`, calcular `ProductionDurationHours * Product.HourlyRate` sem multiplicar novamente por `Quantity`, somar ao custo de materiais e preservar elegibilidade/seleção atuais. | `FR-001`, `FR-002`, `FR-003`, `FR-005`, `NFR-003`, `CON-001`, `CON-002`, `CON-003` | `AC-001`, `AC-002`, `AC-005`, `AC-007`, `AC-008`, `AC-009` | `TASK-001` | `src/Domains/Finance/Services/SettlementCalculator.cs`, registro DI, repositório de produtos, testes de cálculo e de aplicação | Cobrir um produto, múltiplos produtos/tarefas, duração já escalada, ausência de tarefas, produto ausente, pedido não entregue e cálculo duplicado pelo serviço/handler. Produto ausente deve falhar antes de criar acerto. Risco: chamadas concorrentes ao mesmo `DbContext`; usar o padrão de acesso sequencial/cacheado já suportado pelos repositórios. | completed |
-| `TASK-003` | Persistir `LaborCostAmount` na entidade financeira, conversões, configuração EF Core, snapshot e nova migration com `numeric(18,2)` e default zero para acertos existentes. | `FR-003`, `FR-004`, `NFR-001`, `NFR-002`, `CON-004` | `AC-003`, `AC-004`, `AC-006` | `TASK-001` | `FinancialSettlementEntity`, `FinancialSettlementConfiguration`, `FinancialSettlementRepository`, `src/Infra/Persistence/Migrations`, testes de persistência | Migration `Up`/`Down` é reversível, o round-trip preserva o valor, registros anteriores carregam zero e o índice único de pedido permanece intacto. Risco: snapshot/migration divergentes; gerar/verificar ambos pelo fluxo EF Core existente e revisar o diff antes dos gates. | completed |
-| `TASK-004` | Expor o custo de horas nos modelos, view de detalhes e componente financeiro, mantendo custo total, margem, índice e resumos derivados do acerto persistido. | `FR-004`, `NFR-002` | `AC-003`, `AC-004`, `AC-006` | `TASK-001`, `TASK-003` | `src/App/Models/FinancialSettlementDetailViewModel.cs`, `FinanceAppService`, `src/App/Views/Finance/Details.cshtml`, `src/UI/Components/Finance/FinancialSettlementDetailsPage.razor`, testes de aplicação/UI | O detalhe exibe custo de produção total e custo de horas separadamente; o índice e KPIs exibem totais/margem atualizados; testes de renderização e mapeamento passam sem alterar rotas/autorização. Risco: records e parâmetros Razor posicionais; atualizar view, componente e testes em conjunto. | completed |
-| `TASK-005` | Executar validação integrada da feature e registrar evidências dos critérios e gates obrigatórios. | `FR-001`, `FR-002`, `FR-003`, `FR-004`, `FR-005`, `NFR-001`, `NFR-002`, `NFR-003`, `CON-001`, `CON-002`, `CON-003`, `CON-004` | `AC-001` a `AC-009` | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004` | Solução, `tests/Craftsman.Tests`, `.spectro/config.yaml`, evidências do Spectro | Build com warnings-as-errors, suíte de testes, segurança e cobertura passaram. Contra `origin/develop`, o código novo atingiu 100% de linhas e 100% de branches; cobertura total ficou em 82,18% de linhas e 56,57% de branches. | completed |
+| ID | Tarefa | Requisito | Critério de aceite | Dependências | Componentes afetados | Critério de conclusão/testes esperados | Risco | Status |
+|---|---|---|---|---|---|---|---|---|
+| `TASK-001` | Separar no domínio o valor monetário de mão de obra do custo financeiro: manter `LaborCostAmount` calculado por duração × valor-hora, mas usar somente custo de materiais em `ProductionCostAmount`, `TotalCostAmount` e `MarginAmount`; ajustar a reconciliação para a mesma semântica. | `FR-001`, `FR-002`, `NFR-002`, `CON-001`, `CON-003` | `AC-001`, `AC-006` | Nenhuma | `SettlementCostCalculator`, `SettlementCalculator`, `FinancialSettlement`, testes de domínio/finanças | Testes cobrem materiais + mão de obra, somente mão de obra, mão de obra zero, produto ausente e preservação de receita/desconto/envio; custo total e margem não incluem mão de obra. | Chamadas existentes e testes podem assumir produção = materiais + mão de obra; revisar todos os usos sem remover o valor informativo. | completed |
+| `TASK-002` | Corrigir acertos históricos afetados pela regra anterior: adaptar o serviço/worker para gravar mão de obra informativa e custo material separado, e criar migration idempotente que remova do `ProductionCostAmount` o `LaborCostAmount` anteriormente incorporado, preservando os demais campos. | `FR-002`, `NFR-002`, `CON-001`, `CON-003` | `AC-001`, `AC-006` | `TASK-001` | `HistoricalLaborCostReconciliationService`, worker, repositório financeiro, migrations/snapshot, testes de reconciliação e persistência | Registros antigos e pendentes ficam com `LaborCostAmount` preservado/calculado, `ProductionCostAmount` material-only, totais/margens coerentes; execução repetida não subtrai duas vezes; falha individual não salva parcialmente. | Dados legados podem ter estados mistos; usar o marcador existente e transação/condição idempotente, documentando qualquer registro não reconciliável. | completed |
+| `TASK-003` | Expor `LaborCostAmount` no modelo de listagem e no mapeamento da aplicação, sem incluir o valor na soma do resumo nem alterar os cards. | `FR-003`, `FR-004`, `NFR-001`, `NFR-002`, `CON-002` | `AC-002`, `AC-004`, `AC-006` | `TASK-001` | `FinancialSettlementListItemViewModel`, `FinanceAppService`, testes de `FinanceAppService` | Listagem contém o valor monetário; resumo continua somando somente `TotalCostAmount`/`MarginAmount`; cache e demais filtros permanecem compatíveis. | Alteração de assinatura do record pode deixar projeções ou testes inconsistentes; localizar e atualizar todos os construtores. | completed |
+| `TASK-004` | Adicionar a coluna monetária de mão de obra na tabela principal de `/Finance`, atualizar o estado vazio e manter os cards sem a informação. | `FR-003`, `FR-004`, `NFR-001`, `CON-002`, `CON-004` | `AC-002`, `AC-003`, `AC-004`, `AC-005` | `TASK-003` | `src/App/Views/Finance/Index.cshtml`, `FinanceIndexPage.razor`, testes de componentes e views | Cabeçalho, células e formatação monetária são renderizados; valor zero/ausente segue o padrão vazio; `colspan` é correto; cards não exibem coluna/KPI de mão de obra. | Alteração visual pode quebrar testes de HTML ou acessibilidade; cobrir tabela populada e vazia. | completed |
 
 ## Regras de execução
 
-- Não adicionar configuração global de valor-hora em `appsettings`; usar somente `Product.HourlyRate`.
-- Não multiplicar `ProductionTask.ProductionDurationHours` por `Quantity`; a duração já representa a quantidade planejada.
-- Não alterar planejamento, apontamento, status ou seleção de tarefas do fluxo financeiro existente.
-- Persistir o custo de horas calculado e manter acertos já existentes imutáveis quando o produto for editado posteriormente.
-- Preservar a separação entre domínio, aplicação e infraestrutura, usando os repositórios e padrões de EF Core já presentes.
-- Não adicionar dependências ou mudar a versão do framework. Mudanças de escopo exigem aprovação humana conforme `.spectro/config.yaml`.
+- Não remover `LaborCostAmount`, `HourlyRate`, horas de produção ou a coluna de mão de obra; o valor monetário continua sendo informação exibida.
+- Não somar `LaborCostAmount` em `ProductionCostAmount`, `TotalCostAmount`, `MarginAmount` ou nos cards.
+- Não alterar receita, descontos, custo de envio, seleção de tarefas, elegibilidade de entrega ou o formato monetário existente.
+- A correção histórica deve preservar identidade do acerto e campos não relacionados; não excluir/recriar registros para simular a reversão.
+- Não alterar telas ou relatórios fora da tabela financeira principal, salvo ajustes técnicos indispensáveis aos contratos já compartilhados.
+- Manter a separação App/Domains/Infra e atualizar testes comportamentais junto com cada mudança.
+- A aprovação humana do estágio de plano é obrigatória conforme `.spectro/config.yaml` antes da implementação.
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`.
-- Bloqueadas: nenhuma.
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`
+- Bloqueadas: nenhuma
 
 ## Evidências da execução
 
-- Testes direcionados de domínio/cálculo: 7 aprovados.
-- Testes direcionados de finanças/UI: 71 aprovados.
-- Suíte completa após a correção da expectativa de não dupla contagem e do cenário de produto ausente: 347 aprovados, 0 falhas.
+- Testes direcionados de `SettlementCalculatorTests`: 3 aprovados.
+- Testes direcionados de `FinancialSettlementTests` e `HistoricalLaborCostReconciliationServiceTests`: 9 aprovados.
+- Testes direcionados de `FinanceAppServiceTests`: 8 aprovados.
+- Testes de componentes `CatalogAndFinanceComponentTests`: 18 aprovados.
 - Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
-- Segurança NuGet: aprovada, nenhum pacote vulnerável encontrado.
-- Cobertura contra `develop`: linhas 82,18% (mínimo 81%) aprovada; branches 56,57% (mínimo 55%) aprovado.
-- Cobertura contra `origin/develop`: linhas novas 100% (mínimo 90%) aprovada; branches novos 100% (mínimo 85%) aprovado.
+- Suíte completa: 361 aprovados, 0 falhas.
+- Limitação: `dotnet ef migrations list` não executou porque o startup project não referencia `Microsoft.EntityFrameworkCore.Design`; a migration foi compilada pelo build.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** Tornar a normalização histórica segura para implantação e reexecução: identificar explicitamente os acertos produzidos pela regra antiga antes de subtrair LaborCostAmount, evitando alterar acertos novos já material-only; cobrir a ordem de migration/deploy e rollback com teste de persistência.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** completed
+- **Finding:** FINDING-002
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** Representar e renderizar explicitamente ausência de valor monetário de mão de obra na listagem, sem confundir ausência com zero válido; adicionar cobertura para valor ausente e valor zero.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+## Evidências das remediações
+
+- `TASK-REV-001`: marcador `labor_cost_included_in_production` adicionado; migration consolidada normaliza registros legados uma única vez; testes de domínio, repositório e reconciliação aprovados.
+- `TASK-REV-002`: listagem usa `decimal?`; zero permanece visível como valor monetário e ausência exibe `Sem valor`; teste de aplicação e componente aprovados.
+- Testes direcionados: 35 aprovados.
+- Suíte completa: 364 aprovados, 0 falhas.
+- Build com `--warnaserror`: aprovado, 0 avisos e 0 erros.
 
