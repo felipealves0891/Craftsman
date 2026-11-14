@@ -19,6 +19,7 @@ public sealed class FinancialSettlementTests
         Assert.Equal(settlementId, settlement.Id);
         Assert.Equal(orderId, settlement.OrderId);
         Assert.Equal(7, settlement.LaborCostAmount);
+        Assert.False(settlement.LaborCostIncludedInProduction);
         Assert.Equal(52, settlement.TotalCostAmount);
         Assert.Equal(48, settlement.MarginAmount);
         Assert.Equal(FinancialSettlementStatus.Calculated, settlement.Status);

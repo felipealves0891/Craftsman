@@ -151,6 +151,7 @@ public sealed class FinanceAppService
             settlement.OrderId,
             settlement.RevenueAmount,
             settlement.ProductionCostAmount,
+            settlement.LaborCostReconciled ? settlement.LaborCostAmount : null,
             settlement.ShippingCostAmount,
             settlement.DiscountAmount,
             settlement.TotalCostAmount,

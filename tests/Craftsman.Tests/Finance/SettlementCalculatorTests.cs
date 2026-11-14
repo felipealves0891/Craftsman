@@ -48,7 +48,7 @@ public sealed class SettlementCalculatorTests
     }
 
     [Fact]
-    public async Task Calculator_uses_revenue_and_consumed_material_cost_to_calculate_margin()
+    public async Task Calculator_keeps_labor_cost_informational_and_excludes_it_from_margin()
     {
         await using var dbContext = CreateDbContext();
         var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
