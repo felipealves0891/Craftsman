@@ -129,7 +129,8 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             entity.CalculatedAt,
             raiseCalculatedEvent: false,
             laborCostAmount: entity.LaborCostAmount,
-            laborCostReconciled: entity.LaborCostReconciled);
+            laborCostReconciled: entity.LaborCostReconciled,
+            laborCostIncludedInProduction: entity.LaborCostIncludedInProduction);
     }
 
     private static FinancialSettlementEntity ToEntity(FinancialSettlement settlement)
@@ -142,6 +143,7 @@ public sealed class FinancialSettlementRepository : IFinancialSettlementReposito
             ProductionCostAmount = settlement.ProductionCostAmount,
             LaborCostAmount = settlement.LaborCostAmount,
             LaborCostReconciled = settlement.LaborCostReconciled,
+            LaborCostIncludedInProduction = settlement.LaborCostIncludedInProduction,
             ShippingCostAmount = settlement.ShippingCostAmount,
             DiscountAmount = settlement.DiscountAmount,
             TotalCostAmount = settlement.TotalCostAmount,

@@ -47,9 +47,9 @@ public sealed class HistoricalLaborCostReconciliationServiceTests
         var loaded = await new FinancialSettlementRepository(dbContext).GetByIdAsync(settlement.Id);
         Assert.NotNull(loaded);
         Assert.Equal(250, loaded!.LaborCostAmount);
-        Assert.Equal(550, loaded.ProductionCostAmount);
-        Assert.Equal(550, loaded.TotalCostAmount);
-        Assert.Equal(-450, loaded.MarginAmount);
+        Assert.Equal(300, loaded.ProductionCostAmount);
+        Assert.Equal(300, loaded.TotalCostAmount);
+        Assert.Equal(-200, loaded.MarginAmount);
         Assert.True(loaded.LaborCostReconciled);
     }
 

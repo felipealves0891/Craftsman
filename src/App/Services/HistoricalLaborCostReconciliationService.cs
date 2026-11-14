@@ -59,7 +59,7 @@ public sealed class HistoricalLaborCostReconciliationService : IHistoricalLaborC
         var materialCost = SettlementCostCalculator.CalculateMaterialCost(productionTasks, stockMovements);
         var laborCost = SettlementCostCalculator.CalculateLaborCost(productionTasks, products);
 
-        settlement.ReconcileLaborCost(laborCost, materialCost + laborCost);
+        settlement.ReconcileLaborCost(laborCost, materialCost);
 
         await transactionalUnitOfWork.ExecuteInTransactionAsync(async () =>
         {
