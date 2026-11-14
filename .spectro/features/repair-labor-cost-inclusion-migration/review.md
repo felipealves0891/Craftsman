@@ -3,7 +3,7 @@
 
 ## Resumo
 
-- Revisão independente do estado atual não commitado, preparada em `review-20261114T230953Z`.
+- Revisão independente preparada em `review-20261114T230953Z`, com gates finais executados sobre o commit `3460dfe`.
 - A rastreabilidade foi validada como completa: 17 requisitos, 10 critérios de aceite e 6 tarefas sem lacunas automáticas.
 - O achado anterior sobre a reversibilidade semântica do `Down` foi resolvido.
 - Permanece um achado `Medium` relacionado à ausência de aplicação contra PostgreSQL real.
@@ -31,7 +31,7 @@
 - O `Down` reconstrói os valores incluindo `labor_cost_amount`.
 - O `Down` agora restaura `labor_cost_reconciled` com `labor_cost_amount > 0` em `20261114223224_RepairLaborCostInclusionMigration.cs:49-52`.
 - A validação de rastreabilidade terminou com `result: complete` e sem requisitos ou critérios descobertos.
-- Na execução `gate-20261114T230444Z`, build, testes e segurança passaram; a cobertura foi impedida pelo próprio gate devido a alterações tracked não commitadas.
+- Na execução final `gate-20261114T231601Z`, build, testes, segurança e cobertura passaram.
 - Não foram identificados segredos ou dependências indevidas no projeto App.
 
 ## Achados

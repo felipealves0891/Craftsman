@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "feature_id": "repair-labor-cost-inclusion-migration",
-  "execution_id": "gate-20261114T231517Z",
+  "execution_id": "gate-20261114T231601Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "7230f5c3e1ca746be76589cdd6bdf872ff9fef38",
+  "code_revision": "3460dfe04d0432b3b2b086ee2f9f43395b87fc85",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "0a6cec6168d9c0af4f4173333a3606fa67638dd0be7192e7efaeaba2feafcaeb",
@@ -11,8 +11,8 @@
     "plan.md": "80ed44fd5f76c3a1f80302efb1fa6ac0e22f69285f106c1c7e87302c2b8e1a44",
     "tasks.md": "174cb8ab451e190ea9914c4fee787a07b8fa09458c4c7b27cd5df57908b52760"
   },
-  "started_at": "2026-11-14T23:15:17.650Z",
-  "duration_ms": 14468,
+  "started_at": "2026-11-14T23:16:01.359Z",
+  "duration_ms": 71699,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 5193,
+      "duration_ms": 30164,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/evidence/01-build.log"
+        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/build",
+      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 4473,
+      "duration_ms": 6713,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/evidence/02-test.log"
+        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/test",
+      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 4092,
+      "duration_ms": 4654,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/evidence/03-security.log"
+        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/security",
+      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -66,20 +66,18 @@
       "id": "GATE-004",
       "name": "coverage",
       "required": true,
-      "status": "failed",
+      "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
-      "exit_code": 1,
-      "duration_ms": 655,
-      "diagnostics": [
-        "ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
-      ],
+      "exit_code": 0,
+      "duration_ms": 30113,
+      "diagnostics": [],
       "evidence": [
-        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/evidence/04-coverage.log"
+        ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231517Z/coverage",
+      "output_directory": ".spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T231601Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
   ],
-  "result": "failed"
+  "result": "passed"
 }

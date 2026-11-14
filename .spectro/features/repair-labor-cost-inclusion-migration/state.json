@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
   "feature_id": "repair-labor-cost-inclusion-migration",
-  "current_phase": "gates",
-  "status": "failed",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "failed",
-      "execution_id": "gate-20261114T231517Z",
+      "status": "completed",
+      "execution_id": "gate-20261114T231601Z",
       "report": ".spectro/features/repair-labor-cost-inclusion-migration/gates.json"
     }
   },
@@ -28,6 +28,6 @@
     ],
     "detected_at": "2026-11-14T22:49:28.985Z"
   },
-  "last_execution_id": "gate-20261114T231517Z",
-  "updated_at": "2026-11-14T23:15:32.122Z"
+  "last_execution_id": "gate-20261114T231601Z",
+  "updated_at": "2026-11-14T23:17:13.062Z"
 }
