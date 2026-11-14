@@ -6,7 +6,7 @@
   "phases": {
     "gates": {
       "status": "failed",
-      "execution_id": "gate-20261114T225104Z",
+      "execution_id": "gate-20261114T231517Z",
       "report": ".spectro/features/repair-labor-cost-inclusion-migration/gates.json"
     }
   },
@@ -28,6 +28,6 @@
     ],
     "detected_at": "2026-11-14T22:49:28.985Z"
   },
-  "last_execution_id": "gate-20261114T225104Z",
-  "updated_at": "2026-11-14T22:52:18.974Z"
+  "last_execution_id": "gate-20261114T231517Z",
+  "updated_at": "2026-11-14T23:15:32.122Z"
 }

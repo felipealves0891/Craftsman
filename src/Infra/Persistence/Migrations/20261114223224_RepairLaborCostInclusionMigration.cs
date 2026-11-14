@@ -47,6 +47,11 @@ namespace Craftsman.Infra.Persistence.Migrations
                 defaultValue: false);
 
             migrationBuilder.Sql("""
+                UPDATE financial_settlements
+                SET labor_cost_reconciled = labor_cost_amount > 0;
+                """);
+
+            migrationBuilder.Sql("""
                 WITH material_costs AS (
                     SELECT
                         settlement.id,

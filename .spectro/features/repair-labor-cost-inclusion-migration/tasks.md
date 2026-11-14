@@ -23,7 +23,7 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`.
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-REV-001`.
 - Bloqueadas: nenhuma; `TASK-004` aguarda validação CLI contra banco/configuração válida.
 
 ## Evidências da execução
@@ -31,8 +31,21 @@
 - `TASK-001`: 5 testes direcionados aprovados.
 - `TASK-002`: 71 testes direcionados de finanças/aplicação aprovados.
 - `TASK-003`: migration `20261114223224_RepairLaborCostInclusionMigration` gerada por `dotnet ef migrations add`, com `Up`/`Down` de dados e remoção do marcador.
+- `TASK-REV-001`: `Down` restaura `labor_cost_reconciled` com base em `labor_cost_amount > 0`; build e suíte completa aprovados.
+- Gates `gate-20261114T230444Z`: build, testes e segurança aprovados; cobertura impedida pelo gate enquanto houver alterações tracked não commitadas.
 - Build da solução com `--no-restore --warnaserror`: aprovado, 0 avisos e 0 erros.
 - Suíte completa: 349 testes aprovados, 0 falhas.
 - `dotnet ef migrations script --idempotent`: executado com sucesso; `migrations list` encontrou a factory, mas não conseguiu consultar o status aplicado por connection string local inválida.
 - Cobertura com `-AllowDirtyTree`: falhou no limiar global existente, com 62,57% de linhas (mínimo 85%) e 70,64% de branches (mínimo 60%); não houve linhas novas instrumentadas reportadas.
 - Segurança NuGet: o comando configurado terminou com código 1 sem produzir diagnóstico; precisa ser repetido em ambiente que exponha a saída do comando.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** A migration Down deve restaurar o estado semântico de labor_cost_reconciled conforme os dados históricos, preservando true para acertos cujo labor_cost_amount > 0, em vez de recriar todos os registros como false.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
