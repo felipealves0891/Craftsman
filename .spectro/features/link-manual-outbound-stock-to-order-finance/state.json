@@ -6,13 +6,13 @@
   "phases": {
     "gates": {
       "status": "failed",
-      "execution_id": "gate-20261115T201424Z",
+      "execution_id": "gate-20261115T204148Z",
       "report": ".spectro/features/link-manual-outbound-stock-to-order-finance/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261115T201424Z",
-  "updated_at": "2026-11-15T20:14:39.370Z"
+  "last_execution_id": "gate-20261115T204148Z",
+  "updated_at": "2026-11-15T20:43:00.220Z"
 }

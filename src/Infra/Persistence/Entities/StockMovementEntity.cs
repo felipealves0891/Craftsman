@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Craftsman.Infra.Persistence.Entities;
 
+[ExcludeFromCodeCoverage]
 public sealed class StockMovementEntity : IPersistenceEntity<Guid>
 {
     public Guid Id { get; set; }
