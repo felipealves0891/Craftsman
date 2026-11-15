@@ -6,13 +6,13 @@
   "phases": {
     "gates": {
       "status": "completed",
-      "execution_id": "gate-20261115T181048Z",
+      "execution_id": "gate-20261115T182852Z",
       "report": ".spectro/features/fix-manual-outbound-stock-cost/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261115T181048Z",
-  "updated_at": "2026-11-15T18:11:41.439Z"
+  "last_execution_id": "gate-20261115T182852Z",
+  "updated_at": "2026-11-15T18:29:38.176Z"
 }

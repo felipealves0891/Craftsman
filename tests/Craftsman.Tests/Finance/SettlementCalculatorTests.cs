@@ -142,8 +142,7 @@ public sealed class SettlementCalculatorTests
             orderRepository,
             new ProductionTaskRepository(dbContext),
             stockMovementRepository,
-            new ShipmentRepository(dbContext),
-            new ProductRepository(dbContext));
+            new ShipmentRepository(dbContext));
 
         var settlement = await calculator.CalculateAsync(order.Id);
 
