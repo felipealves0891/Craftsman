@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "feature_id": "fix-manual-outbound-stock-cost",
-  "execution_id": "gate-20261115T182529Z",
+  "execution_id": "gate-20261115T182852Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "9c1c782803e4950c2f916e00946141d555adf2b7",
+  "code_revision": "6af605ec174b6e30727be8084260c410efc22003",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "652d90d4876d1855674320030c22bd5ef8acd4b424a2b546ff3ecdf6fd468a26",
@@ -11,8 +11,8 @@
     "plan.md": "84609e536bc8953886f9bdaf1b716156645e2eb7f112dd595c077f868d80b0c9",
     "tasks.md": "a1ca9e90406b29ba9d0381752520f4ab1642c4fbbb10d29c8bd7378835a8191b"
   },
-  "started_at": "2026-11-15T18:25:29.245Z",
-  "duration_ms": 13820,
+  "started_at": "2026-11-15T18:28:52.663Z",
+  "duration_ms": 45510,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 5057,
+      "duration_ms": 8060,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/evidence/01-build.log"
+        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/build",
+      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 4152,
+      "duration_ms": 4984,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/evidence/02-test.log"
+        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/test",
+      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 3912,
+      "duration_ms": 4250,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/evidence/03-security.log"
+        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/security",
+      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -66,20 +66,18 @@
       "id": "GATE-004",
       "name": "coverage",
       "required": true,
-      "status": "failed",
+      "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
-      "exit_code": 1,
-      "duration_ms": 644,
-      "diagnostics": [
-        "ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
-      ],
+      "exit_code": 0,
+      "duration_ms": 28163,
+      "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/evidence/04-coverage.log"
+        ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182529Z/coverage",
+      "output_directory": ".spectro/features/fix-manual-outbound-stock-cost/outputs/gate-20261115T182852Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
   ],
-  "result": "failed"
+  "result": "passed"
 }
