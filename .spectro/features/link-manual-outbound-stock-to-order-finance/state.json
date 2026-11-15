@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "link-manual-outbound-stock-to-order-finance",
-  "current_phase": "gates",
-  "status": "failed",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "failed",
-      "execution_id": "gate-20261115T204148Z",
+      "status": "completed",
+      "execution_id": "gate-20261115T204709Z",
       "report": ".spectro/features/link-manual-outbound-stock-to-order-finance/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261115T204148Z",
-  "updated_at": "2026-11-15T20:43:00.220Z"
+  "last_execution_id": "gate-20261115T204709Z",
+  "updated_at": "2026-11-15T20:48:02.974Z"
 }

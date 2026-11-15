@@ -8,7 +8,7 @@
 | `TASK-003` | Atualizar controller, view e listagem/histórico para exibir o seletor condicional de pedido, repopular opções em falhas e mostrar o pedido associado sem ocultar movimentos não vinculados | `FR-001`, `FR-007`, `NFR-005` | `AC-001`, `AC-006`, `AC-008` | `TASK-002` | completed |
 | `TASK-004` | Alterar o cálculo de custo material para somar saídas com `OrderId` diretamente ao pedido, manter referências de tarefas separadas, impedir dupla contagem e deixar settlements existentes inalterados | `FR-003`, `FR-004`, `FR-005`, `FR-008`, `NFR-001`, `NFR-004`, `CON-004`, `CON-005` | `AC-003`, `AC-004`, `AC-005`, `AC-007` | `TASK-001` | completed |
 | `TASK-005` | Criar/atualizar testes de domínio, aplicação, persistência, financeiro e apresentação para sucesso, filtros de elegibilidade, erros, custo, não duplicidade, histórico nullable e regressões | `FR-001` a `FR-009`, `NFR-001` a `NFR-005`, `CON-001` a `CON-005` | `AC-001` a `AC-008` | `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004` | completed |
-| `TASK-006` | Executar revisão final e gates Spectro; verificar migration, diff, build sem warnings, testes, vulnerabilidades de pacotes, cobertura, segurança de entradas e ausência de escopo retroativo | `NFR-003`, `NFR-005`, `CON-002`, `CON-005` | Todos | `TASK-005` | blocked |
+| `TASK-006` | Executar revisão final e gates Spectro; verificar migration, diff, build sem warnings, testes, vulnerabilidades de pacotes, cobertura, segurança de entradas e ausência de escopo retroativo | `NFR-003`, `NFR-005`, `CON-002`, `CON-005` | Todos | `TASK-005` | completed |
 
 ## Regras de execução
 
@@ -24,4 +24,5 @@
 ## Progresso
 
 - Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`.
-- Bloqueadas: `TASK-006` — o gate oficial de cobertura exige working tree sem alterações tracked não commitadas; a execução com `-AllowDirtyTree` confirmou 365 testes aprovados, 62,83% de cobertura de linhas e 71,46% de branches (mínimos 85% e 60%). O build, testes e segurança de dependências passaram; a cobertura global de linhas permanece abaixo do limiar por dívida ampla do projeto.
+- Gates: build, testes, segurança de dependências e cobertura passaram em `gate-20261115T204709Z`; 365 testes aprovados, 86,80% de cobertura de linhas, 71,46% de branches, 97,47% de linhas novas e 100% de branches novos.
+- Bloqueadas: nenhuma.
