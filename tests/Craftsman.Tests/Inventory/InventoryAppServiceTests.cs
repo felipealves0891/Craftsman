@@ -29,6 +29,40 @@ public sealed class InventoryAppServiceTests
     }
 
     [Fact]
+    public async Task Manual_outbound_preserves_unit_cost_and_reports_positive_total_cost()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var service = CreateService(dbContext);
+
+        await service.RegisterMovementAsync(new StockMovementInputModel
+        {
+            RawMaterialId = rawMaterial.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 3,
+            Reason = "Consumo manual",
+            UnitCostAmount = 2.5m
+        });
+
+        var repository = new StockMovementRepository(dbContext);
+        var movement = Assert.Single(
+            await repository.GetByRawMaterialAsync(rawMaterial.Id),
+            item => item.Type == StockMovementType.Outbound);
+        var listedMovement = Assert.Single(
+            await service.ListMovementsAsync(rawMaterial.Id),
+            item => item.Type == StockMovementType.Outbound.ToString());
+
+        Assert.Equal(3, movement.Quantity);
+        Assert.Equal(-3, movement.SignedQuantity);
+        Assert.Equal(2.5m, movement.UnitCostAmount);
+        Assert.Equal(7.5m, movement.TotalCostAmount);
+        Assert.Equal(-3, listedMovement.Quantity);
+        Assert.Equal(2.5m, listedMovement.UnitCostAmount);
+        Assert.Equal(7.5m, listedMovement.TotalCostAmount);
+        Assert.Equal(2, await repository.GetBalanceAsync(rawMaterial.Id));
+    }
+
+    [Fact]
     public async Task Manual_inbound_without_reason_is_registered_without_business_reference()
     {
         await using var dbContext = CreateDbContext();
@@ -96,6 +130,30 @@ public sealed class InventoryAppServiceTests
             }));
 
         Assert.Equal("Ajuste manual nao pode gerar saldo negativo.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Historical_outbound_with_zero_cost_is_not_rewritten_when_listed()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var repository = new StockMovementRepository(dbContext);
+        await repository.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            rawMaterial.Id,
+            StockMovementType.Outbound,
+            2,
+            "Saída histórica",
+            null,
+            unitCostAmount: 0));
+        await dbContext.SaveChangesAsync();
+
+        var listedMovement = Assert.Single(
+            await CreateService(dbContext).ListMovementsAsync(rawMaterial.Id),
+            item => item.Type == StockMovementType.Outbound.ToString());
+
+        Assert.Equal(0, listedMovement.UnitCostAmount);
+        Assert.Equal(0, listedMovement.TotalCostAmount);
     }
 
     [Fact]

@@ -125,7 +125,9 @@ public sealed class InventoryAppService
             }
         }
 
-        var unitCost = input.Type == StockMovementType.Inbound ? input.UnitCostAmount : 0;
+        var unitCost = input.Type is StockMovementType.Inbound or StockMovementType.Outbound
+            ? input.UnitCostAmount
+            : 0;
         var movement = new StockMovement(
             Guid.NewGuid(),
             input.RawMaterialId,
