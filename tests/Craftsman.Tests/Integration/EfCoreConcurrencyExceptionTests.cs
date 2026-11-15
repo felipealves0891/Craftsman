@@ -60,7 +60,9 @@ public sealed class EfCoreConcurrencyExceptionTests
         var service = new InventoryAppService(
             new RawMaterialRepository(dbContext),
             new StockMovementRepository(dbContext),
-            new UnitOfWork(dbContext));
+            new UnitOfWork(dbContext),
+            new OrderRepository(dbContext),
+            new FinancialSettlementRepository(dbContext));
         var materialId = await service.SaveRawMaterialAsync(new RawMaterialInputModel
         {
             Name = "Linha",

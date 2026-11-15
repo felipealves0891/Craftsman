@@ -956,7 +956,7 @@ public sealed class ManualOperationsTests
         await using var dbContext = CreateDbContext();
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
-        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext));
+        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext), new OrderRepository(dbContext), new FinancialSettlementRepository(dbContext));
         var materialId = await service.SaveRawMaterialAsync(new RawMaterialInputModel
         {
             Name = "Linha",
@@ -978,7 +978,7 @@ public sealed class ManualOperationsTests
         await using var dbContext = CreateDbContext();
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
-        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext));
+        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext), new OrderRepository(dbContext), new FinancialSettlementRepository(dbContext));
         var materialId = await service.SaveRawMaterialAsync(new RawMaterialInputModel
         {
             Name = "Couro",
@@ -1007,7 +1007,7 @@ public sealed class ManualOperationsTests
         await using var dbContext = CreateDbContext();
         var rawMaterialRepository = new RawMaterialRepository(dbContext);
         var stockMovementRepository = new StockMovementRepository(dbContext);
-        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext));
+        var service = new InventoryAppService(rawMaterialRepository, stockMovementRepository, new UnitOfWork(dbContext), new OrderRepository(dbContext), new FinancialSettlementRepository(dbContext));
 
         var materialId = await service.SaveRawMaterialAsync(new RawMaterialInputModel
         {

@@ -8,6 +8,10 @@ public sealed class StockMovementEntity : IPersistenceEntity<Guid>
 
     public RawMaterialEntity? RawMaterial { get; set; }
 
+    public Guid? OrderId { get; set; }
+
+    public OrderEntity? Order { get; set; }
+
     public string Type { get; set; } = string.Empty;
 
     public decimal Quantity { get; set; }

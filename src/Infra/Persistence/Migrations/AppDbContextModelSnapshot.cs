@@ -11,7 +11,6 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Craftsman.Infra.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     partial class AppDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -828,6 +827,10 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("occurred_at");
 
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)")
@@ -855,6 +858,8 @@ namespace Craftsman.Infra.Persistence.Migrations
                         .HasColumnName("unit_cost_amount");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
 
                     b.HasIndex("RawMaterialId");
 
@@ -1116,11 +1121,18 @@ namespace Craftsman.Infra.Persistence.Migrations
 
             modelBuilder.Entity("Craftsman.Infra.Persistence.Entities.StockMovementEntity", b =>
                 {
+                    b.HasOne("Craftsman.Infra.Persistence.Entities.OrderEntity", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Craftsman.Infra.Persistence.Entities.RawMaterialEntity", "RawMaterial")
                         .WithMany()
                         .HasForeignKey("RawMaterialId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Order");
 
                     b.Navigation("RawMaterial");
                 });

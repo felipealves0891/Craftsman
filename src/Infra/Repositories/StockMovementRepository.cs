@@ -112,7 +112,8 @@ public sealed class StockMovementRepository : IStockMovementRepository
             entity.Reason,
             entity.BusinessReference,
             entity.OccurredAt,
-            entity.UnitCostAmount);
+            entity.UnitCostAmount,
+            entity.OrderId);
     }
 
     private static StockMovementEntity ToEntity(StockMovement movement)
@@ -121,6 +122,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
         {
             Id = movement.Id,
             RawMaterialId = movement.RawMaterialId,
+            OrderId = movement.OrderId,
             Type = movement.Type.ToString(),
             Quantity = movement.Quantity,
             UnitCostAmount = movement.UnitCostAmount,

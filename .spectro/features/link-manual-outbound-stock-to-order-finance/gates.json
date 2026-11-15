@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "link-manual-outbound-stock-to-order-finance",
+  "execution_id": "gate-20261115T201424Z",
+  "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
+  "code_revision": "68dd905fe9dd1c233e28d4f8053f44b40bef0dbd",
+  "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
+  "artifact_hashes": {
+    "spec.md": "f7768630047bddca4b49ee05fec85f54321c07c103f65a25f0d474f09bec08af",
+    "clarifications.md": "5c29f0eba94f25bf4779367233cf55b6bab90fc3e48303e7f3e6cc9dc7368f54",
+    "plan.md": "d89a86a6e7030c41f43760bfe43865a4c305c0433d78fdbc3c4eab3f25aa34f3",
+    "tasks.md": "fa2b07148a973c5366c05113502f7d6bc54e32bdd7962669b100866b9ca6d298"
+  },
+  "started_at": "2026-11-15T20:14:24.385Z",
+  "duration_ms": 14981,
+  "gates": [
+    {
+      "id": "GATE-001",
+      "name": "build",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet build --no-restore --warnaserror -v minimal",
+      "exit_code": 0,
+      "duration_ms": 5922,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/evidence/01-build.log"
+      ],
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/build",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-002",
+      "name": "test",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet test --no-restore --no-build",
+      "exit_code": 0,
+      "duration_ms": 4203,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/evidence/02-test.log"
+      ],
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/test",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-003",
+      "name": "security",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet list package --vulnerable",
+      "exit_code": 0,
+      "duration_ms": 3935,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/evidence/03-security.log"
+      ],
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/security",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-004",
+      "name": "coverage",
+      "required": true,
+      "status": "failed",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
+      "exit_code": 1,
+      "duration_ms": 867,
+      "diagnostics": [
+        "ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+      ],
+      "evidence": [
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/evidence/04-coverage.log"
+      ],
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T201424Z/coverage",
+      "output_files": [],
+      "output_file_count": 0
+    }
+  ],
+  "result": "failed"
+}
