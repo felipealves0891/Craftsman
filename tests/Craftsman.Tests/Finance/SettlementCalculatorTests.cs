@@ -113,6 +113,46 @@ public sealed class SettlementCalculatorTests
         Assert.Equal(85, settlement.MarginAmount);
     }
 
+    [Fact]
+    public async Task Calculator_excludes_manual_outbound_without_production_reference()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "MAN-OUT-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-OUT-1", "Bolsa", 1, new Money(100, "BRL"))],
+            OrderStatus.Delivered);
+        var orderRepository = new OrderRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+
+        await orderRepository.AddAsync(order);
+        await rawMaterialRepository.AddAsync(rawMaterial);
+        await stockMovementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            rawMaterial.Id,
+            StockMovementType.Outbound,
+            2,
+            "Saída manual",
+            null,
+            unitCostAmount: 4));
+        await dbContext.SaveChangesAsync();
+
+        var calculator = new SettlementCalculator(
+            orderRepository,
+            new ProductionTaskRepository(dbContext),
+            stockMovementRepository,
+            new ShipmentRepository(dbContext),
+            new ProductRepository(dbContext));
+
+        var settlement = await calculator.CalculateAsync(order.Id);
+
+        Assert.Equal(0, settlement.ProductionCostAmount);
+        Assert.Equal(0, settlement.TotalCostAmount);
+        Assert.Equal(100, settlement.MarginAmount);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
