@@ -6,6 +6,8 @@ public sealed class StockMovement
 
     public Guid RawMaterialId { get; }
 
+    public Guid? OrderId { get; }
+
     public StockMovementType Type { get; }
 
     public decimal Quantity { get; }
@@ -36,7 +38,8 @@ public sealed class StockMovement
         string reason,
         string? businessReference,
         DateTimeOffset? occurredAt = null,
-        decimal unitCostAmount = 0)
+        decimal unitCostAmount = 0,
+        Guid? orderId = null)
     {
         if (id == Guid.Empty)
         {
@@ -46,6 +49,11 @@ public sealed class StockMovement
         if (rawMaterialId == Guid.Empty)
         {
             throw new ArgumentException("Raw material id is required.", nameof(rawMaterialId));
+        }
+
+        if (orderId == Guid.Empty)
+        {
+            throw new ArgumentException("Order id cannot be empty.", nameof(orderId));
         }
 
         if (type == StockMovementType.Adjustment)
@@ -72,6 +80,7 @@ public sealed class StockMovement
 
         Id = id;
         RawMaterialId = rawMaterialId;
+        OrderId = orderId;
         Type = type;
         Quantity = quantity;
         Reason = reason.Trim();

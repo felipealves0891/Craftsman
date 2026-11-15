@@ -36,6 +36,37 @@ public sealed class StockMovementTests
     }
 
     [Fact]
+    public void Movement_preserves_optional_order_link()
+    {
+        var orderId = Guid.NewGuid();
+
+        var movement = new StockMovement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            StockMovementType.Outbound,
+            2,
+            "consumo",
+            null,
+            unitCostAmount: 3,
+            orderId: orderId);
+
+        Assert.Equal(orderId, movement.OrderId);
+    }
+
+    [Fact]
+    public void Movement_rejects_empty_order_link()
+    {
+        Assert.Throws<ArgumentException>(() => new StockMovement(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            StockMovementType.Outbound,
+            1,
+            "consumo",
+            null,
+            orderId: Guid.Empty));
+    }
+
+    [Fact]
     public void Movement_rejects_invalid_identifiers_quantities_reason_and_cost()
     {
         var id = Guid.NewGuid();

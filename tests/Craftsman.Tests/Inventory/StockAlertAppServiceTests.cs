@@ -156,6 +156,8 @@ public sealed class StockAlertAppServiceTests
             rawMaterials,
             stockMovements,
             new UnitOfWork(dbContext),
+            new OrderRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
             cache);
         await inventoryService.SaveRawMaterialAsync(new Craftsman.App.Models.RawMaterialInputModel
         {
@@ -199,6 +201,8 @@ public sealed class StockAlertAppServiceTests
             rawMaterials,
             stockMovements,
             new UnitOfWork(dbContext),
+            new OrderRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
             cache);
 
         var staleLoad = alertService.ListAlertsAsync();
@@ -235,6 +239,8 @@ public sealed class StockAlertAppServiceTests
             rawMaterials,
             new StockMovementRepository(dbContext, cache),
             new FailingUnitOfWork(),
+            new OrderRepository(dbContext),
+            new FinancialSettlementRepository(dbContext),
             cache);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>

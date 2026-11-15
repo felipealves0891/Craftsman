@@ -16,6 +16,7 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
 
         builder.Property(movement => movement.Id).HasColumnName("id");
         builder.Property(movement => movement.RawMaterialId).HasColumnName("raw_material_id");
+        builder.Property(movement => movement.OrderId).HasColumnName("order_id");
         builder.Property(movement => movement.Type).HasColumnName("type").HasMaxLength(50).IsRequired();
         builder.Property(movement => movement.Quantity).HasColumnName("quantity").HasPrecision(18, 4).IsRequired();
         builder.Property(movement => movement.UnitCostAmount).HasColumnName("unit_cost_amount").HasPrecision(18, 2).IsRequired();
@@ -28,6 +29,12 @@ public sealed class StockMovementConfiguration : IEntityTypeConfiguration<StockM
             .HasForeignKey(movement => movement.RawMaterialId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(movement => movement.Order)
+            .WithMany()
+            .HasForeignKey(movement => movement.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(movement => movement.RawMaterialId);
+        builder.HasIndex(movement => movement.OrderId);
     }
 }

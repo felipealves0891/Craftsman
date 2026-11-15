@@ -42,7 +42,7 @@ public sealed class SettlementCalculator : ISettlementCalculator
             .Where(task => task.OrderId == orderId)
             .ToList();
         var stockMovements = await stockMovementRepository.ListAsync(cancellationToken);
-        var productionMaterialCost = SettlementCostCalculator.CalculateMaterialCost(productionTasks, stockMovements);
+        var productionMaterialCost = SettlementCostCalculator.CalculateMaterialCost(order.Id, productionTasks, stockMovements);
         var revenue = order.Items.Sum(item => item.Quantity * item.UnitPrice.Amount);
         var discount = order.Discount?.Amount.Amount ?? 0;
 

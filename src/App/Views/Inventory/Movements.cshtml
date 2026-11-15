@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Movimentos de estoque";
     var rawMaterials = ViewBag.RawMaterials as List<SelectListItem> ?? [];
+    var orders = ViewBag.Orders as List<SelectListItem> ?? [];
     var movements = ViewBag.Movements as IReadOnlyCollection<Craftsman.App.Models.StockMovementViewModel> ?? [];
     var criticalAlerts = ViewBag.CriticalStockAlerts as IReadOnlyCollection<Craftsman.App.Models.StockAlertViewModel> ?? [];
 }
@@ -57,6 +58,12 @@
             <input asp-for="Reason" class="form-control" data-stock-movement-reason />
             <span asp-validation-for="Reason" class="text-danger"></span>
         </div>
+        <div class="col-md-3 form-group d-none" data-stock-movement-order-group>
+            <label asp-for="OrderId" class="form-label"></label>
+            <select asp-for="OrderId" asp-items="orders" class="form-select" data-stock-movement-order>
+                <option value="">Sem pedido</option>
+            </select>
+        </div>
         <div class="col-md-2 d-flex align-items-end form-group">
             <button type="submit" class="btn btn-primary w-100">Registrar</button>
         </div>
@@ -75,6 +82,7 @@
                     <th>Total</th>
                     <th>Motivo</th>
                     <th>Referência</th>
+                    <th>Pedido</th>
                     <th>Data</th>
                 </tr>
             </thead>
@@ -82,7 +90,7 @@
                 @if (!movements.Any())
                 {
                     <tr>
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <strong>Nenhum movimento registrado</strong>
                                 <span>Registre o primeiro movimento usando o formulário acima.</span>
@@ -102,6 +110,7 @@
                             <td><strong>@movement.TotalCostAmount.ToString("C")</strong></td>
                             <td>@movement.Reason</td>
                             <td>@movement.BusinessReference</td>
+                            <td>@movement.OrderDisplayName</td>
                             <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
                         </tr>
                     }
@@ -118,8 +127,10 @@
             var typeField = document.querySelector('[data-stock-movement-type]');
             var reasonField = document.querySelector('[data-stock-movement-reason]');
             var reasonGroup = document.querySelector('[data-stock-movement-reason-group]');
+            var orderGroup = document.querySelector('[data-stock-movement-order-group]');
+            var orderField = document.querySelector('[data-stock-movement-order]');
 
-            if (!typeField || !reasonField || !reasonGroup) {
+            if (!typeField || !reasonField || !reasonGroup || !orderGroup || !orderField) {
                 return;
             }
 
@@ -128,6 +139,11 @@
                 reasonField.required = isOutbound;
                 reasonField.disabled = !isOutbound;
                 reasonGroup.classList.toggle('d-none', !isOutbound);
+                orderField.disabled = !isOutbound;
+                orderGroup.classList.toggle('d-none', !isOutbound);
+                if (!isOutbound) {
+                    orderField.value = '';
+                }
             }
 
             typeField.addEventListener('change', syncReasonRequirement);

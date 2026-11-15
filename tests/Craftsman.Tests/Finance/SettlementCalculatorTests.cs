@@ -151,6 +151,82 @@ public sealed class SettlementCalculatorTests
         Assert.Equal(100, settlement.MarginAmount);
     }
 
+    [Fact]
+    public async Task Calculator_includes_manual_outbound_linked_to_order_in_material_cost()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "MAN-OUT-LINKED-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-OUT-LINKED-1", "Bolsa", 1, new Money(100, "BRL"))],
+            OrderStatus.Delivered);
+        var orderRepository = new OrderRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+
+        await orderRepository.AddAsync(order);
+        await rawMaterialRepository.AddAsync(rawMaterial);
+        await stockMovementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            rawMaterial.Id,
+            StockMovementType.Outbound,
+            2,
+            "Saída manual",
+            null,
+            unitCostAmount: 4,
+            orderId: order.Id));
+        await dbContext.SaveChangesAsync();
+
+        var calculator = new SettlementCalculator(
+            orderRepository,
+            new ProductionTaskRepository(dbContext),
+            stockMovementRepository,
+            new ShipmentRepository(dbContext));
+
+        var settlement = await calculator.CalculateAsync(order.Id);
+
+        Assert.Equal(8, settlement.ProductionCostAmount);
+        Assert.Equal(8, settlement.TotalCostAmount);
+        Assert.Equal(92, settlement.MarginAmount);
+    }
+
+    [Fact]
+    public async Task Calculator_does_not_double_count_a_movement_that_matches_production_and_order_references()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
+        var orderItem = new OrderItem(Guid.NewGuid(), "ITEM-OUT-LINKED-2", "Bolsa", 1, new Money(100, "BRL"));
+        var order = new Order(Guid.NewGuid(), new OrderOrigin("Manual", "MAN-OUT-LINKED-2"), [orderItem], OrderStatus.Delivered);
+        var task = new ProductionTask(Guid.NewGuid(), order.Id, orderItem.Id, Guid.NewGuid(), 1);
+        var orderRepository = new OrderRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+
+        await orderRepository.AddAsync(order);
+        await new RawMaterialRepository(dbContext).AddAsync(rawMaterial);
+        await new ProductionTaskRepository(dbContext).AddAsync(task);
+        await stockMovementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(),
+            rawMaterial.Id,
+            StockMovementType.Outbound,
+            2,
+            "Consumo",
+            task.Id.ToString(),
+            unitCostAmount: 4,
+            orderId: order.Id));
+        await dbContext.SaveChangesAsync();
+
+        var calculator = new SettlementCalculator(
+            orderRepository,
+            new ProductionTaskRepository(dbContext),
+            stockMovementRepository,
+            new ShipmentRepository(dbContext));
+
+        var settlement = await calculator.CalculateAsync(order.Id);
+
+        Assert.Equal(8, settlement.ProductionCostAmount);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

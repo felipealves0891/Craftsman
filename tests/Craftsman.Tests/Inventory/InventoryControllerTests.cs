@@ -88,6 +88,28 @@ public sealed class InventoryControllerTests
         Assert.IsType<ViewResult>(error);
         Assert.Contains(controller.ModelState.Values.SelectMany(value => value.Errors), item => item.ErrorMessage.Contains("Quantidade", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(controller.ViewBag.RawMaterials);
+        Assert.NotNull(controller.ViewBag.Orders);
+    }
+
+    [Fact]
+    public async Task Movements_post_repopulates_order_options_when_linked_order_is_invalid()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedMaterialAsync(dbContext, 5);
+        var controller = CreateController(dbContext);
+
+        var result = await controller.Movements(new StockMovementInputModel
+        {
+            RawMaterialId = material.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 1,
+            Reason = "Consumo do pedido",
+            OrderId = Guid.NewGuid()
+        }, CancellationToken.None);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.Contains(controller.ModelState.Values.SelectMany(value => value.Errors), item => item.ErrorMessage.Contains("Pedido nao encontrado", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(controller.ViewBag.Orders);
     }
 
     private static InventoryController CreateController(AppDbContext dbContext)
@@ -96,7 +118,12 @@ public sealed class InventoryControllerTests
         var movements = new StockMovementRepository(dbContext);
         var orders = new OrderRepository(dbContext);
         var products = new ProductRepository(dbContext);
-        var service = new InventoryAppService(rawMaterials, movements, new UnitOfWork(dbContext));
+        var service = new InventoryAppService(
+            rawMaterials,
+            movements,
+            new UnitOfWork(dbContext),
+            orders,
+            new FinancialSettlementRepository(dbContext));
         var alerts = new StockAlertAppService(rawMaterials, movements, orders, products);
         return new InventoryController(service, alerts)
         {

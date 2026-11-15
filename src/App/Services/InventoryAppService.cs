@@ -2,6 +2,9 @@ using Craftsman.App.Models;
 using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.Repositories;
+using Craftsman.Domain.Finance.Repositories;
+using Craftsman.Domain.Sales.Entities;
+using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Services;
 
 namespace Craftsman.App.Services;
@@ -10,6 +13,8 @@ public sealed class InventoryAppService
 {
     private readonly IRawMaterialRepository rawMaterialRepository;
     private readonly IStockMovementRepository stockMovementRepository;
+    private readonly IOrderRepository orderRepository;
+    private readonly IFinancialSettlementRepository financialSettlementRepository;
     private readonly IUnitOfWork unitOfWork;
     private readonly IApplicationCache? cache;
 
@@ -17,10 +22,14 @@ public sealed class InventoryAppService
         IRawMaterialRepository rawMaterialRepository,
         IStockMovementRepository stockMovementRepository,
         IUnitOfWork unitOfWork,
+        IOrderRepository orderRepository,
+        IFinancialSettlementRepository financialSettlementRepository,
         IApplicationCache? cache = null)
     {
         this.rawMaterialRepository = rawMaterialRepository;
         this.stockMovementRepository = stockMovementRepository;
+        this.orderRepository = orderRepository;
+        this.financialSettlementRepository = financialSettlementRepository;
         this.unitOfWork = unitOfWork;
         this.cache = cache;
     }
@@ -110,6 +119,8 @@ public sealed class InventoryAppService
 
         if (input.Type == StockMovementType.Outbound)
         {
+            await ValidateOrderAsync(input.OrderId, cancellationToken);
+
             var currentBalance = await stockMovementRepository.GetBalanceAsync(input.RawMaterialId, cancellationToken);
             if (currentBalance - input.Quantity < 0)
             {
@@ -135,7 +146,8 @@ public sealed class InventoryAppService
             input.Quantity,
             ResolveManualReason(input),
             null,
-            unitCostAmount: unitCost);
+            unitCostAmount: unitCost,
+            orderId: input.Type == StockMovementType.Outbound ? input.OrderId : null);
 
         await stockMovementRepository.AddAsync(movement, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -172,6 +184,10 @@ public sealed class InventoryAppService
     {
         var materials = await rawMaterialRepository.ListAsync(cancellationToken);
         var materialNames = materials.ToDictionary(material => material.Id, material => material.Name);
+        var orders = await orderRepository.ListAsync(cancellationToken);
+        var orderNames = orders.ToDictionary(
+            order => order.Id,
+            order => $"{order.Origin.Source} - {order.Origin.ExternalOrderId}");
         var movements = rawMaterialId.HasValue
             ? await stockMovementRepository.GetByRawMaterialAsync(rawMaterialId.Value, cancellationToken)
             : await stockMovementRepository.ListAsync(cancellationToken);
@@ -188,7 +204,9 @@ public sealed class InventoryAppService
                 movement.TotalCostAmount,
                 movement.Reason,
                 movement.BusinessReference,
-                movement.OccurredAt))
+                movement.OccurredAt,
+                movement.OrderId,
+                movement.OrderId.HasValue ? orderNames.GetValueOrDefault(movement.OrderId.Value) : null))
             .ToList()
             .AsReadOnly();
     }
@@ -201,6 +219,56 @@ public sealed class InventoryAppService
             .Select(material => new RawMaterialOptionViewModel(material.Id, material.Name, material.UnitOfMeasure))
             .ToList()
             .AsReadOnly();
+    }
+
+    public async Task<IReadOnlyCollection<StockMovementOrderOptionViewModel>> ListOutboundOrderOptionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var orders = await orderRepository.ListAsync(cancellationToken);
+        var options = new List<StockMovementOrderOptionViewModel>();
+
+        foreach (var order in orders.Where(order => order.Status == OrderStatus.InProduction))
+        {
+            if (await financialSettlementRepository.GetByOrderIdAsync(order.Id, cancellationToken) is not null)
+            {
+                continue;
+            }
+
+            options.Add(new StockMovementOrderOptionViewModel(
+                order.Id,
+                order.Origin.Source,
+                order.Origin.ExternalOrderId));
+        }
+
+        return options
+            .OrderBy(option => option.DisplayName)
+            .ToList()
+            .AsReadOnly();
+    }
+
+    private async Task ValidateOrderAsync(Guid? orderId, CancellationToken cancellationToken)
+    {
+        if (!orderId.HasValue)
+        {
+            return;
+        }
+
+        var order = await orderRepository.GetByIdAsync(orderId.Value, cancellationToken);
+
+        if (order is null)
+        {
+            throw new InvalidOperationException("Pedido nao encontrado.");
+        }
+
+        if (order.Status != OrderStatus.InProduction)
+        {
+            throw new InvalidOperationException("Pedido deve estar em producao para ser vinculado.");
+        }
+
+        if (await financialSettlementRepository.GetByOrderIdAsync(order.Id, cancellationToken) is not null)
+        {
+            throw new InvalidOperationException("Pedido ja possui apuracao financeira.");
+        }
     }
 
     private static string ResolveManualReason(StockMovementInputModel input)
