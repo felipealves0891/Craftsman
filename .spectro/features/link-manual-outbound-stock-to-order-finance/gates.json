@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "link-manual-outbound-stock-to-order-finance",
-  "execution_id": "gate-20261115T204709Z",
+  "execution_id": "gate-20261115T204912Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "6708c54f2af7388cc8838c4a6da43c11008efa3b",
+  "code_revision": "a87bdbe9bc389b7c8431f9678b108af94e4f4dca",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "f7768630047bddca4b49ee05fec85f54321c07c103f65a25f0d474f09bec08af",
     "clarifications.md": "5c29f0eba94f25bf4779367233cf55b6bab90fc3e48303e7f3e6cc9dc7368f54",
     "plan.md": "d89a86a6e7030c41f43760bfe43865a4c305c0433d78fdbc3c4eab3f25aa34f3",
-    "tasks.md": "fbcdb387361dfc4cc81569d1c4a7976d16bd6e74e6103abc0f3e6546eb013521"
+    "tasks.md": "d200b282f9a3c8807dfea475659afe07059308fe113999a709b655a395ed663f"
   },
-  "started_at": "2026-11-15T20:47:09.467Z",
-  "duration_ms": 53504,
+  "started_at": "2026-11-15T20:49:12.400Z",
+  "duration_ms": 46607,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 10303,
+      "duration_ms": 8542,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/evidence/01-build.log"
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/build",
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 7548,
+      "duration_ms": 5079,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/evidence/02-test.log"
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/test",
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 5267,
+      "duration_ms": 4484,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/evidence/03-security.log"
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/security",
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,12 +69,12 @@
       "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 0,
-      "duration_ms": 30227,
+      "duration_ms": 28434,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/evidence/04-coverage.log"
+        ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204709Z/coverage",
+      "output_directory": ".spectro/features/link-manual-outbound-stock-to-order-finance/outputs/gate-20261115T204912Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
