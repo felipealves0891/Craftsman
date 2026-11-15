@@ -6,13 +6,28 @@
   "phases": {
     "gates": {
       "status": "completed",
-      "execution_id": "gate-20261114T204834Z",
+      "execution_id": "gate-20261114T231601Z",
       "report": ".spectro/features/repair-labor-cost-inclusion-migration/gates.json"
     }
   },
-  "attempts": {},
-  "invalidated_executions": [],
-  "last_failure": null,
-  "last_execution_id": "gate-20261114T204834Z",
-  "updated_at": "2026-11-14T20:49:37.591Z"
+  "attempts": {
+    "environment-failure:GATE-004": 1
+  },
+  "invalidated_executions": [
+    "gate-20261114T224836Z"
+  ],
+  "last_failure": {
+    "category": "environment-failure",
+    "stage": "gates",
+    "execution_id": "gate-20261114T224836Z",
+    "gate_ids": [
+      "GATE-004"
+    ],
+    "diagnostics": [
+      "coverage: ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+    ],
+    "detected_at": "2026-11-14T22:49:28.985Z"
+  },
+  "last_execution_id": "gate-20261114T231601Z",
+  "updated_at": "2026-11-14T23:17:13.062Z"
 }

@@ -1,14 +1,16 @@
 <!-- spectro-managed: true -->
-# Especificação: Recalcular custo de horas em acertos históricos
+@@
+# Especificação: Recalcular custo de horas em acertos históricos (revertida)
 
 ## Problema e objetivo
 
 - Problema: A funcionalidade `add-hourly-labor-cost` passou a calcular o custo das horas em novos acertos, mas os acertos financeiros já existentes foram persistidos sem esse valor. Como consequência, o histórico financeiro apresenta custo de produção, custo total e margem que não refletem o trabalho de produção.
-- Objetivo: Reconciliar automaticamente os acertos históricos elegíveis com o custo das horas de produção, preservando a rastreabilidade e atualizando os valores financeiros derivados que dependem desse custo.
+- Objetivo anterior: Reconciliar automaticamente os acertos históricos elegíveis com o custo das horas de produção.
+- Novo objetivo: registrar que essa reconciliação automática foi revertida; os acertos que receberam custo de mão de obra devem ser corrigidos pela feature `repair-labor-cost-inclusion-migration`, sem reintroduzir o custo de horas.
 
 ## Escopo
 
-### Incluído
+### Incluído anteriormente
 
 - Identificar todos os acertos financeiros criados antes da implantação de `add-hourly-labor-cost` que ainda não foram reconciliados.
 - Obter as horas das tarefas de produção relacionadas ao pedido e o `HourlyRate` atualmente cadastrado nos produtos correspondentes.
@@ -17,7 +19,7 @@
 - Executar a reconciliação automaticamente em background, em paralelo aos demais serviços durante a inicialização da aplicação, sem exigir uma ação manual na tela financeira e sem bloquear o atendimento de requisições.
 - Tornar a rotina segura para reexecução, evitando acrescentar o mesmo custo de horas mais de uma vez.
 
-### Excluído
+### Excluído da versão revertida
 
 - Alterar o planejamento, o apontamento ou a duração das tarefas de produção.
 - Alterar a fórmula vigente de receita, desconto, custo de envio ou margem além do efeito do custo de horas.
@@ -25,6 +27,13 @@
 - Criar um valor-hora global ou alterar o cadastro de `HourlyRate`.
 - Corrigir automaticamente registros cuja associação entre acerto, pedido, tarefa ou produto esteja inválida sem uma regra de tratamento aprovada.
 - Exigir uma tela ou comando manual para iniciar a reconciliação.
+- Manter ou iniciar o worker de reconciliação histórica.
+- Recalcular acertos adicionando custo de mão de obra.
+
+### Nova direção
+
+- A reconciliação descrita nesta feature não deve ser executada.
+- A correção dos dados persistidos sem mão de obra e a desativação do worker pertencem a `repair-labor-cost-inclusion-migration`.
 
 ## Requisitos
 
@@ -74,4 +83,11 @@
 - Risco: Acertos antigos podem ter sido criados com dados incompletos, tarefas removidas ou produtos alterados, impedindo uma reconciliação confiável.
 - Decisão: Falhas individuais não interrompem a inicialização; o registro problemático permanece disponível para nova tentativa.
 - Decisão: A reconciliação roda em background, em paralelo aos demais serviços, sem bloquear o atendimento.
+- Decisão posterior: A execução automática e a inclusão histórica de mão de obra foram revertidas; a especificação de reparo deve prevalecer para o estado vigente.
+- Dependência: A conclusão da feature `repair-labor-cost-inclusion-migration` para corrigir os dados que já foram alterados.
+
+## Estado
+
+- Esta especificação está supersedida quanto à execução e ao resultado financeiro pela feature `repair-labor-cost-inclusion-migration`.
+- Os requisitos e critérios acima são mantidos como histórico da decisão anterior; não estão prontos para implementação sem a correção de reparo e as perguntas abertas correspondentes.
 

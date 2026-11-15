@@ -10,8 +10,6 @@ public interface IFinancialSettlementRepository
 
     Task<IReadOnlyCollection<FinancialSettlement>> ListAsync(DateOnly? from = null, DateOnly? to = null, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<FinancialSettlement>> ListPendingLaborCostReconciliationAsync(CancellationToken cancellationToken = default);
-
     Task AddAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default);
 
     Task ReplaceForOrderAsync(FinancialSettlement settlement, CancellationToken cancellationToken = default);

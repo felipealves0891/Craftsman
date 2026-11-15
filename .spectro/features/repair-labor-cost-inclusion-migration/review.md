@@ -1,47 +1,64 @@
 <!-- spectro-managed: true -->
-# Revisão: Corrigir migrations manuais da feature add-hourly-labor-cost
+# Revisão: Corrigir a inclusão de custo de mão de obra
 
 ## Resumo
 
-- A migration manual `20261114150000_AddLaborCostInclusionMarker.cs` foi removida.
-- A migration `20261114203603_AddLaborCostInclusionMarker`, seu designer e o snapshot foram gerados pelo fluxo do Entity Framework Core usando `Craftsman.Infra`.
-- A migration aplicada contém somente a criação da coluna `labor_cost_included_in_production`, com `boolean`, `NOT NULL` e default `TRUE`; não contém o recálculo SQL manual removido do escopo.
-- A aplicação no banco `craftsman` e o registro em `__EFMigrationsHistory` foram confirmados pelo `dotnet ef`.
-- Os gates obrigatórios passaram na revisão `c7b468f453421b2be15a9148d785f1b01bd4c2b1`.
+- Revisão independente preparada em `review-20261114T230953Z`, com gates finais executados sobre o commit `3460dfe`.
+- A rastreabilidade foi validada como completa: 17 requisitos, 10 critérios de aceite e 6 tarefas sem lacunas automáticas.
+- O achado anterior sobre a reversibilidade semântica do `Down` foi resolvido.
+- Permanece um achado `Medium` relacionado à ausência de aplicação contra PostgreSQL real.
+- Decisão final: `changes_requested`.
 
-## Escopo e evidências
+## Artefatos examinados
 
-- Especificação: `.spectro/features/repair-labor-cost-inclusion-migration/spec.md`
-- Clarificações: `.spectro/features/repair-labor-cost-inclusion-migration/clarifications.md`
-- Plano: `.spectro/features/repair-labor-cost-inclusion-migration/plan.md`
-- Tarefas: `.spectro/features/repair-labor-cost-inclusion-migration/tasks.md`
-- Gates: `.spectro/features/repair-labor-cost-inclusion-migration/gates.json`, execução `gate-20261114T204834Z`
-- Pacote de revisão: `.spectro/features/repair-labor-cost-inclusion-migration/reviews/review-20261114T205222Z/`
-- Revisão do código: `c7b468f453421b2be15a9148d785f1b01bd4c2b1`
-- Diff revisado: `git diff HEAD~2..HEAD`
+- `.spectro/features/repair-labor-cost-inclusion-migration/spec.md`
+- `.spectro/features/repair-labor-cost-inclusion-migration/clarifications.md`
+- `.spectro/features/repair-labor-cost-inclusion-migration/plan.md`
+- `.spectro/features/repair-labor-cost-inclusion-migration/tasks.md`
+- `.spectro/features/repair-labor-cost-inclusion-migration/gates.json`
+- Evidências em `.spectro/features/repair-labor-cost-inclusion-migration/outputs/gate-20261114T230444Z/evidence/`
+- Packet `.spectro/features/repair-labor-cost-inclusion-migration/reviews/review-20261114T230953Z/`
+- Diff atual contra `develop`
+- `.spectro/constitution.md`
+- Código de aplicação, domínio, infraestrutura e testes relacionados à feature
 
-## Requisitos verificados
+## Verificações realizadas
 
-- `FR-001`, `FR-002`: migration, designer e snapshot coerentes; a lista do EF Core inclui `20261114203603_AddLaborCostInclusionMarker`.
-- `FR-003`, `FR-005`: `dotnet ef database update` aplicou as migrations pendentes e `dotnet ef migrations list` confirmou a sequência registrada.
-- `FR-004`: a operação SQL que cria a coluna foi aplicada pelo EF Core; a ausência de `psql` impediu uma consulta SQL independente, mas não houve erro na aplicação da migration.
-- `NFR-001`, `NFR-002`, `CON-001`, `CON-002`, `CON-005`: a geração usou o projeto de infraestrutura, preservou as migrations de outras features e manteve a separação arquitetural.
-- `NFR-003`, `CON-003`, `CON-004`: não houve segredo registrado, rollback de histórico inexistente ou recálculo histórico na migration corrigida.
-- `AC-001` a `AC-006`: rastreabilidade completa em `traceability.json`; build, testes, segurança e cobertura passaram.
+- O worker histórico não é registrado no DI e suas APIs foram removidas do fluxo de aplicação.
+- O cálculo normal usa custos materiais e preserva `LaborCostAmount` sem incluí-lo nos derivados.
+- `labor_cost_reconciled` foi removido do modelo e do snapshot; `labor_cost_amount` permanece.
+- O `Up` reconstrói produção, custo total e margem usando movimentações materiais.
+- O `Down` reconstrói os valores incluindo `labor_cost_amount`.
+- O `Down` agora restaura `labor_cost_reconciled` com `labor_cost_amount > 0` em `20261114223224_RepairLaborCostInclusionMigration.cs:49-52`.
+- A validação de rastreabilidade terminou com `result: complete` e sem requisitos ou critérios descobertos.
+- Na execução final `gate-20261114T231601Z`, build, testes, segurança e cobertura passaram.
+- Não foram identificados segredos ou dependências indevidas no projeto App.
 
-## Findings
+## Achados
 
-| ID | Severidade | Categoria | Localização | Evidência | Impacto | Correção recomendada | Etapa de retorno | Status |
-|---|---|---|---|---|---|---|---|---|
-| `FINDING-001` | Medium | Consistency | `plan.md:27,46` | O plano documenta `--startup-project src/App/Craftsman.csproj`, mas esse comando falhou porque o startup não referencia `Microsoft.EntityFrameworkCore.Design`; a execução válida usou `Craftsman.Infra` como projeto do EF Core. | A documentação pode induzir uma futura execução inválida da migration. | Atualizar o plano para documentar o comando sem `--startup-project` ou adicionar explicitamente a dependência Design ao startup, caso isso seja desejado em outra mudança. | `plan` | accepted residual |
-| `FINDING-002` | Low | Test | `tasks.md:9,24` | A aplicação da migration e o histórico foram verificados pelo EF Core, mas uma consulta SQL independente ao schema e uma consulta live de acertos não foram executadas porque `psql`/Docker não estavam disponíveis. | A validação direta do comportamento de leitura no banco fica menos independente, embora o `ALTER TABLE` e os gates tenham passado. | Repetir uma consulta de schema e uma leitura de acerto em ambiente com cliente PostgreSQL ou teste de integração disponível. | `gates` | accepted residual |
+### FINDING-002
+
+- Severidade: `Medium`
+- Categoria: Test / Persistence
+- Localização: `.spectro/features/repair-labor-cost-inclusion-migration/tasks.md`, `TASK-004`; migration `20261114223224_RepairLaborCostInclusionMigration.cs`.
+- Evidência: `dotnet ef migrations list --project src/Infra/Craftsman.Infra.csproj --context Craftsman.Infra.Persistence.AppDbContext` encontrou a factory e listou as migrations, mas `dotnet ef database update` com as credenciais do compose falhou durante autenticação Npgsql com `Exception while reading from stream`/timeout, inclusive usando `127.0.0.1` e SSL desabilitado. Também não há teste de integração que execute `Up` e `Down` e verifique os valores financeiros no banco.
+- Impacto: a semântica SQL específica do PostgreSQL, o cálculo material por joins e o rollback permanecem sem validação de execução real.
+- Recomendação: executar `Up`/`Down` em banco PostgreSQL descartável com dados representativos e adicionar teste de integração ou evidência reproduzível para cenários com e sem mão de obra.
+- Return stage: `gates`
+- Rastreamento: `TASK-004` permanece pendente até haver connection string válida e evidência de banco.
+
+## Achados resolvidos
+
+### FINDING-001 — resolvido
+
+- O `Down` recria `labor_cost_reconciled` e executa `UPDATE financial_settlements SET labor_cost_reconciled = labor_cost_amount > 0`, restaurando a semântica histórica do marcador.
+- A correção foi registrada em `TASK-REV-001` e validada por build e suíte completa de 349 testes.
 
 ## Riscos residuais
 
-- A migration corrigida não normaliza registros históricos; isso foi explicitamente excluído do escopo e deve ser tratado separadamente se necessário.
-- O nome/timestamp da migration mudou para `20261114203603_AddLaborCostInclusionMarker`; ambientes devem aplicar a nova sequência pelo mecanismo normal do EF Core, sem tentar reaplicar o artefato manual removido.
+- O `Down` depende do valor histórico de `labor_cost_amount` e dos dados materiais atuais; alterações posteriores nas movimentações podem produzir uma recomposição diferente da fotografia original.
+- A execução atual dos gates não fornece nova medição de cobertura enquanto o worktree permanecer sujo.
 
 ## Decisão
 
-- `approved`
-- Justificativa: Não há findings Critical ou High, os requisitos têm rastreabilidade, a migration gerada é coerente com o modelo e todos os gates obrigatórios passaram na mesma revisão do código. Os dois findings residuais são documentais/operacionais e não bloqueiam a correção.
+`changes_requested` — não há achados `Critical` ou `High`, mas `FINDING-002` permanece pendente até a migration ser aplicada e verificada em PostgreSQL real.

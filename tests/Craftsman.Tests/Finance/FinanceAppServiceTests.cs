@@ -118,14 +118,13 @@ public sealed class FinanceAppServiceTests
     }
 
     [Fact]
-    public async Task List_returns_null_labor_amount_when_reconciliation_is_pending_but_preserves_zero()
+    public async Task List_preserves_zero_labor_amount_when_reconciliation_event_is_not_raised()
     {
         await using var dbContext = CreateDbContext();
         var repository = new FinancialSettlementRepository(dbContext);
         await repository.AddAsync(new FinancialSettlement(
             Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
-            raiseCalculatedEvent: false,
-            laborCostReconciled: false));
+            raiseCalculatedEvent: false));
         await repository.AddAsync(new FinancialSettlement(
             Guid.NewGuid(), Guid.NewGuid(), 100, 10, 0,
             laborCostAmount: 0));
@@ -134,8 +133,8 @@ public sealed class FinanceAppServiceTests
 
         var items = (await service.ListAsync()).OrderBy(item => item.OrderId).ToArray();
 
-        Assert.Contains(items, item => item.LaborCostAmount is null);
-        Assert.Contains(items, item => item.LaborCostAmount == 0);
+        Assert.Equal(2, items.Length);
+        Assert.All(items, item => Assert.Equal(0, item.LaborCostAmount));
     }
 
     [Fact]
@@ -201,7 +200,7 @@ public sealed class FinanceAppServiceTests
 
         return new FinanceAppService(
             settlementRepository,
-            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository),
+            new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository),
             shipmentRepository,
             orderRepository,
             new UnitOfWork(dbContext),
