@@ -6,7 +6,7 @@
 | `TASK-001` | Ajustar `InventoryAppService.RegisterMovementAsync` para preservar `UnitCostAmount` informado em saídas manuais, sem alterar a regra vigente de entradas e ajustes | `FR-001`, `FR-002`, `CON-003`, `CON-004` | `AC-001`, `AC-002` | nenhuma | completed |
 | `TASK-002` | Criar/atualizar testes de aplicação e domínio para saída manual com custo, quantidade assinada negativa, custo total não negativo, saldo e validações existentes | `FR-001`, `FR-002`, `FR-003`, `FR-005`, `NFR-001`, `NFR-002`, `NFR-003`, `CON-001`, `CON-004` | `AC-001`, `AC-002`, `AC-003`, `AC-004` | `TASK-001` | completed |
 | `TASK-003` | Adicionar regressão financeira e de histórico para confirmar que saídas manuais não alteram o acerto atual e que registros históricos zerados não são reescritos | `FR-003`, `FR-004`, `NFR-002`, `CON-002`, `CON-005` | `AC-005`, `AC-006`, `AC-007` | `TASK-001` | completed |
-| `TASK-004` | Executar revisão final, testes aplicáveis e gates Spectro; verificar diff, cobertura, vulnerabilidades e ausência de migration/escopo indevido | `NFR-003`, `CON-003` | Todos | `TASK-002`, `TASK-003` | pending |
+| `TASK-004` | Executar revisão final, testes aplicáveis e gates Spectro; verificar diff, cobertura, vulnerabilidades e ausência de migration/escopo indevido | `NFR-003`, `CON-003` | Todos | `TASK-002`, `TASK-003` | completed |
 
 ## Regras de execução
 
@@ -18,6 +18,6 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`
-- `TASK-004`: parcialmente verificada; build, suíte completa, diff e cobertura passaram. O comando de vulnerabilidades terminou com código 1 sem produzir relatório, deixando a validação de segurança de dependências pendente.
-- Bloqueadas: nenhuma; a pendência é de evidência do ambiente/gate, não de implementação funcional.
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`
+- Gates: build, testes, segurança de dependências e cobertura passaram em `gate-20261115T180823Z`.
+- Bloqueadas: nenhuma
