@@ -19,7 +19,6 @@ public sealed class FinancialSettlementTests
         Assert.Equal(settlementId, settlement.Id);
         Assert.Equal(orderId, settlement.OrderId);
         Assert.Equal(7, settlement.LaborCostAmount);
-        Assert.False(settlement.LaborCostIncludedInProduction);
         Assert.Equal(52, settlement.TotalCostAmount);
         Assert.Equal(48, settlement.MarginAmount);
         Assert.Equal(FinancialSettlementStatus.Calculated, settlement.Status);
@@ -54,76 +53,6 @@ public sealed class FinancialSettlementTests
 
         Assert.Equal(FinancialSettlementStatus.Failed, settlement.Status);
         Assert.Empty(settlement.DomainEvents);
-    }
-
-    [Fact]
-    public void Settlement_reconciles_labor_cost_without_changing_identity_or_other_amounts()
-    {
-        var settlementId = Guid.NewGuid();
-        var orderId = Guid.NewGuid();
-        var calculatedAt = DateTimeOffset.Parse("2026-10-15T12:00:00+00:00");
-        var settlement = new FinancialSettlement(
-            settlementId,
-            orderId,
-            revenueAmount: 1000,
-            productionCostAmount: 300,
-            shippingCostAmount: 10,
-            discountAmount: 5,
-            calculatedAt: calculatedAt,
-            raiseCalculatedEvent: false,
-            laborCostAmount: 0,
-            laborCostReconciled: false);
-
-        settlement.ReconcileLaborCost(250, 300);
-
-        Assert.Equal(settlementId, settlement.Id);
-        Assert.Equal(orderId, settlement.OrderId);
-        Assert.Equal(1000, settlement.RevenueAmount);
-        Assert.Equal(300, settlement.ProductionCostAmount);
-        Assert.Equal(250, settlement.LaborCostAmount);
-        Assert.Equal(10, settlement.ShippingCostAmount);
-        Assert.Equal(5, settlement.DiscountAmount);
-        Assert.Equal(calculatedAt, settlement.CalculatedAt);
-        Assert.True(settlement.LaborCostReconciled);
-        Assert.Equal(315, settlement.TotalCostAmount);
-        Assert.Equal(685, settlement.MarginAmount);
-    }
-
-    [Fact]
-    public void Settlement_rejects_reconciliation_when_already_reconciled_or_amounts_are_negative()
-    {
-        var reconciled = new FinancialSettlement(Guid.NewGuid(), Guid.NewGuid(), 0, 0, 0);
-        var pending = new FinancialSettlement(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            0,
-            0,
-            0,
-            raiseCalculatedEvent: false,
-            laborCostReconciled: false);
-
-        Assert.Throws<InvalidOperationException>(() => reconciled.ReconcileLaborCost(1, 1));
-        Assert.Throws<ArgumentOutOfRangeException>(() => pending.ReconcileLaborCost(-1, 0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => pending.ReconcileLaborCost(0, -1));
-    }
-
-    [Fact]
-    public void Settlement_reconciliation_marks_labor_as_informational()
-    {
-        var settlement = new FinancialSettlement(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            revenueAmount: 100,
-            productionCostAmount: 300,
-            shippingCostAmount: 0,
-            raiseCalculatedEvent: false,
-            laborCostReconciled: false,
-            laborCostIncludedInProduction: true);
-
-        settlement.ReconcileLaborCost(250, 300);
-
-        Assert.False(settlement.LaborCostIncludedInProduction);
-        Assert.Equal(300, settlement.ProductionCostAmount);
     }
 
     [Fact]

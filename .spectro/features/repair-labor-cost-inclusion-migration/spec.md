@@ -1,68 +1,75 @@
 <!-- spectro-managed: true -->
-# Especificação: Corrigir a migration do marcador de inclusão do custo de mão de obra
+# Especificação: Corrigir a inclusão de custo de mão de obra
 
 ## Problema e objetivo
 
-- Problema: A aplicação consulta a coluna `financial_settlements.labor_cost_included_in_production`, mas o banco que atende a requisição não possui essa coluna, causando `Npgsql.PostgresException` 42703 durante a execução. A migration foi criada manualmente e o snapshot do Entity Framework Core foi alterado durante a implantação; como o snapshot é a referência usada para identificar diferenças do modelo, o EF Core entendeu que não havia alteração pendente e não gerou/aplicou a migration necessária.
-- Objetivo: Restabelecer a compatibilidade entre o modelo persistido e o schema PostgreSQL, corrigindo exclusivamente as migrations da feature `add-hourly-labor-cost` para que sejam representadas e aplicadas por migrations geradas pelo `dotnet ef` a partir do contexto de design-time do projeto `Craftsman.Infra`.
-- Referência dos artefatos: a migration `20261114120000_RevertLaborCostFromFinancialTotals` foi introduzida no commit `d82095eb4e9e9427c4c5086019f62c0e7b93e936`; o commit `e23430cd0b6ad9a3b5e1a3a6bdaf32e21a7173a2` a removeu e introduziu `20261114150000_AddLaborCostInclusionMarker`.
+- Problema: alterações da feature `add-hourly-labor-cost` foram revertidas parcialmente, mas dados já persistidos com custo de mão de obra permanecem nos acertos financeiros e a rotina de reconciliação histórica continua registrada como serviço em background. Isso pode manter ou reaplicar custos que não fazem mais parte da regra financeira vigente.
+- Objetivo: desabilitar a reconciliação automática de mão de obra e corrigir, por migration rastreável do Entity Framework, os acertos financeiros afetados para que custo de produção, custo total e margem sejam recalculados sem custo de mão de obra.
 
 ## Escopo
 
 ### Incluído
 
-- Desfazer somente as migrations criadas manualmente para a feature `add-hourly-labor-cost` e restaurar um snapshot coerente com o modelo, preservando a ordem das alterações necessárias dessa feature.
-- Gerar a migration do Entity Framework Core usando o `AppDbContext` e a factory de design-time disponíveis em `Craftsman.Infra`.
-- Garantir que a migration gerada crie a coluna `labor_cost_included_in_production` na tabela `financial_settlements` com o mapeamento esperado pelo modelo.
-- Preservar a compatibilidade do fluxo de inicialização que aplica migrations pendentes por `Database.MigrateAsync()`.
-- Validar o schema resultante e o cenário que atualmente falha por coluna inexistente.
+- Impedir o registro e a execução automática do serviço de reconciliação histórica de custo de mão de obra durante a inicialização da aplicação.
+- Recalcular todos os acertos financeiros persistidos, incluindo os que não tenham custo de mão de obra, para que os valores derivados não dependam de cálculos anteriores.
+- Remover o valor de mão de obra dos campos financeiros derivados dos acertos afetados, preservando o valor persistido como fonte para reversão da migration.
+- Recalcular o custo de produção com os custos materiais rastreados, sem incluir horas × valor-hora no `Up`.
+- Recalcular custo total e margem a partir dos valores financeiros corrigidos, preservando receita, desconto e custo de envio.
+- Criar e aplicar a correção como migration do Entity Framework gerada e rastreável pelo fluxo `dotnet ef` adotado pelo projeto.
+- Manter a correção repetível com segurança e registrar evidência da migration e dos dados corrigidos.
 
 ### Excluído
 
-- Alterar a regra de negócio de inclusão ou exclusão do custo de mão de obra além do que já está definido no modelo e na migration corrigida.
-- Reescrever ou apagar dados financeiros históricos sem uma decisão explícita sobre o tratamento dos registros existentes.
-- Alterar o provedor PostgreSQL, a conexão da aplicação ou o mecanismo de execução automática de migrations.
-- Corrigir outros erros de schema que não estejam relacionados à coluna `labor_cost_included_in_production`.
-- Executar rollback destrutivo em banco compartilhado ou de produção sem confirmação do estado e do ambiente-alvo.
+- Alterar horas registradas, tarefas de produção, produtos ou `HourlyRate`.
+- Reativar ou substituir o cálculo de custo de mão de obra em novos acertos.
+- Excluir acertos financeiros, pedidos, tarefas, movimentações de estoque ou seu histórico de auditoria.
+- Reconstituir valores de mão de obra durante o fluxo normal da aplicação.
+- Alterar receita, desconto, custo de envio ou a fórmula vigente de margem além do efeito da remoção do custo de mão de obra.
 
 ## Requisitos
 
 ### Requisitos funcionais
 
-- `FR-001`: O conjunto de migrations da feature `add-hourly-labor-cost` no `Craftsman.Infra` deve representar uma sequência válida e rastreável para o modelo atual do `AppDbContext`, com snapshot e migrations produzidos pelo fluxo do Entity Framework Core e sem depender de migrations criadas manualmente.
-- `FR-002`: Deve existir uma migration gerada pelo `dotnet ef` no projeto `Craftsman.Infra` que altere `financial_settlements` para disponibilizar a coluna `labor_cost_included_in_production` conforme o mapeamento persistente vigente.
-- `FR-003`: A aplicação de todas as migrations pendentes em um banco compatível deve concluir sem erro e deixar o schema compatível com as consultas do repositório de acertos financeiros.
-- `FR-004`: A consulta de acertos financeiros que atualmente falha por ausência da coluna deve executar sem `PostgresException` 42703 após a aplicação correta das migrations.
-- `FR-005`: A aplicação das migrations recriadas deve ocorrer pelo fluxo do Entity Framework Core e registrar normalmente as migrations aplicadas em `__EFMigrationsHistory`.
+- `FR-001`: A aplicação não deve registrar nem iniciar o serviço de background responsável pela reconciliação histórica de custo de mão de obra.
+- `FR-002`: A migration deve recalcular todos os acertos financeiros persistidos usando os dados-base disponíveis, sem depender da execução do serviço em background.
+- `FR-003`: No `Up`, cada acerto deve ter o custo de produção recalculado exclusivamente a partir dos custos materiais rastreados, sem incluir o valor de mão de obra; o valor persistido de mão de obra deve ser mantido na coluna própria.
+- `FR-004`: A correção deve recalcular custo total e margem a partir da receita, desconto, custo de envio e custo de produção recalculado, preservando pedido de origem, identidade e data do acerto.
+- `FR-005`: A migration deve ser criada, identificada e aplicada pelo fluxo `dotnet ef` do projeto, incluindo o artefato de migration necessário para rastreabilidade e execução nos ambientes suportados.
+- `FR-006`: Após a correção, uma nova inicialização não deve reaplicar custo de mão de obra nem modificar novamente os acertos corrigidos por causa do serviço desabilitado.
+- `FR-007`: Todos os acertos devem ter suas colunas derivadas de custo e margem recalculadas a partir dos demais dados persistidos, inclusive os que não tenham custo de mão de obra.
+- `FR-008`: O `Up` da migration deve recalcular os custos sem mão de obra e o `Down` deve recalculá-los com a mão de obra persistida, usando sempre os dados-base e não os valores derivados anteriores.
 
 ### Requisitos não funcionais
 
-- `NFR-001`: A geração da migration deve ser reproduzível usando o contexto de design-time existente em `src/Infra/Persistence/AppDbContextDesignTimeFactory.cs` e o projeto `src/Infra/Craftsman.Infra.csproj`.
-- `NFR-002`: A correção deve manter a separação arquitetural existente, com o contexto, configurações e migrations na infraestrutura e sem dependência do domínio em Entity Framework Core.
-- `NFR-003`: A alteração deve preservar rastreabilidade, permitir diagnóstico do estado de aplicação das migrations e não expor credenciais ou dados sensíveis em logs.
+- `NFR-001`: A correção deve ser transacional por unidade de alteração definida pelo fluxo de persistência, evitando acertos parcialmente recalculados.
+- `NFR-002`: A migration deve ser compatível com PostgreSQL e Entity Framework Core e deixar evidência reproduzível do comando `dotnet ef` usado para gerá-la e validá-la.
+- `NFR-003`: A operação deve preservar precisão monetária, arredondamento e escala já adotados pelo domínio financeiro.
+- `NFR-004`: A correção deve preservar rastreabilidade e não apagar movimentações de estoque nem registrar segredos ou dados sensíveis em logs.
+- `NFR-005`: A implementação deve manter a separação entre domínio, aplicação e infraestrutura e atender aos gates de build, testes, segurança e cobertura do projeto.
 
 ### Restrições
 
-- `CON-001`: O projeto usado como origem da migration deve ser `Craftsman.Infra`, que contém o `AppDbContext` e o suporte de design-time.
-- `CON-002`: A solução deve usar o fluxo oficial do Entity Framework Core (`dotnet ef`) para gerar as migrations da feature `add-hourly-labor-cost`; não deve manter migrations manuais dessa feature como substitutas dos artefatos gerados.
-- `CON-005`: Migrations de outras features, mesmo que estejam no mesmo diretório de infraestrutura, estão fora do escopo e não devem ser removidas, regeneradas ou reordenadas.
-- `CON-003`: Como as migrations manuais não estão registradas em `__EFMigrationsHistory`, a correção deve tratar o banco como não tendo essas migrations aplicadas e não deve criar uma estratégia de reparo de histórico inexistente.
-- `CON-004`: Nenhum dado financeiro deve ser descartado ou recalculado durante a correção sem requisito ou decisão explícita sobre os registros históricos.
+- `CON-001`: A fonte do custo material deve permanecer nas movimentações de estoque existentes; não deve ser inferida a partir das horas de produção.
+- `CON-002`: O valor persistido de mão de obra deve ser preservado durante o `Up` para que o `Down` possa somá-lo novamente; esse valor não deve ser recalculado a partir de horas, produtos ou configurações.
+- `CON-003`: A correção de dados não deve depender de requisição de usuário, execução do worker ou alteração manual na tela financeira.
+- `CON-004`: O campo `labor_cost_amount` deve permanecer no esquema como valor histórico; o campo `labor_cost_reconciled` deve ser removido por migration, com atualização correspondente do modelo persistido.
 
 ## Critérios de aceite
 
-- `AC-001`: Dado o projeto `Craftsman.Infra` e o `AppDbContext` atual, quando as migrations da feature `add-hourly-labor-cost` forem geradas pelo fluxo `dotnet ef`, então os artefatos produzidos incluirão arquivos, designers e snapshot necessários para serem reconhecidos pelo Entity Framework Core e refletirão as alterações da feature no modelo.
-- `AC-002`: Dado um banco cujo histórico esteja no último estado anterior ao marcador de inclusão, quando as migrations pendentes forem aplicadas, então `financial_settlements.labor_cost_included_in_production` existirá com tipo, nulabilidade e valor padrão compatíveis com o mapeamento vigente.
-- `AC-003`: Dado um banco sem registro das migrations manuais em `__EFMigrationsHistory`, quando as migrations recriadas forem aplicadas pelo `dotnet ef`, então cada migration executada será registrada normalmente no histórico do EF Core.
-- `AC-004`: Dado o banco após a aplicação bem-sucedida das migrations, quando a aplicação consultar ou carregar um acerto financeiro, então a requisição não produzirá `Npgsql.PostgresException` 42703 para `labor_cost_included_in_production`.
-- `AC-005`: Dado o cenário confirmado de ausência das migrations manuais em `__EFMigrationsHistory`, quando a correção for validada, então não será executado rollback de histórico inexistente nem será criada uma migration manual de reparo para mascarar a ausência de rastreamento.
-- `AC-006`: Dado um banco com registros financeiros existentes, quando a migration corrigida for aplicada, então os registros permanecerão disponíveis e nenhum valor histórico será alterado fora do comportamento explicitamente definido para a migration.
+- `AC-001`: Dado o serviço de reconciliação histórica registrado na composição da aplicação, quando a correção for implementada, então a aplicação não o registrará nem o iniciará durante o startup.
+- `AC-002`: Dado um acerto com custo material de 300 e custo de mão de obra persistido de 250, quando o `Up` da migration for aplicado, então o custo de produção será recalculado para 300, sem depender do custo de produção anterior, e o valor persistido de mão de obra permanecerá disponível para reversão.
+- `AC-003`: Dado um acerto com receita de 1.000, custo de produção anterior de 550, custo de mão de obra de 250, custo de envio de 0 e desconto de 0, quando o `Up` for aplicado, então o custo total será 300 e a margem será 700; quando o `Down` for aplicado, então custo de produção, custo total e margem retornarão respectivamente a 550, 550 e 450.
+- `AC-004`: Dado qualquer acerto financeiro, quando a migration for aplicada, então sua identidade, pedido, receita, desconto, custo de envio, data e movimentações de estoque permanecerão inalterados.
+- `AC-005`: Dado um acerto sem custo de mão de obra, quando a migration for aplicada, então suas colunas de custo e margem também serão recalculadas a partir da receita, desconto, envio e custos materiais persistidos.
+- `AC-006`: Dado um banco com acertos com e sem mão de obra, quando a migration for aplicada por `dotnet ef`, então todos os acertos serão recalculados e a migration ficará registrada no histórico de migrations.
+- `AC-007`: Dado o banco já corrigido e a aplicação reiniciada, quando o startup ocorrer, então nenhum worker de mão de obra executará e os valores sem mão de obra permanecerão estáveis.
+- `AC-008`: Dado o comando de geração/validação definido para a solução, quando ele for executado, então a migration e o snapshot/metadata correspondentes serão produzidos sem divergência de modelo nem erro de build.
+- `AC-009`: Dado um acerto elegível, quando o `Down` for aplicado após o `Up`, então o valor persistido de mão de obra será somado novamente ao custo de produção e ao custo total e subtraído da margem, sem alterar receita, desconto ou custo de envio.
+- `AC-010`: Dado um conjunto com acertos com e sem mão de obra, quando o `Up` ou o `Down` for aplicado, então todos os acertos serão recalculados e nenhum resultado dependerá do valor anterior de custo total, custo de produção ou margem.
 
 ## Riscos, dependências e perguntas abertas
 
-- Dependência: `src/Infra/Persistence/AppDbContextDesignTimeFactory.cs`, `src/Infra/Craftsman.Infra.csproj`, `AppDbContextModelSnapshot.cs` e o histórico `__EFMigrationsHistory` do ambiente afetado.
-- Dependência: Acesso ao banco PostgreSQL do ambiente que apresentou o erro para verificar migrations aplicadas e a existência real da coluna.
-- Risco: O snapshot e os artefatos manuais podem não refletir exatamente a sequência de alterações esperada; a sequência recriada deve ser conferida antes da aplicação.
-- Risco: A migration manual atual contém atualização de valores financeiros legados, mas não há requisito para executar essa lógica manualmente no escopo confirmado; ela não deve ser preservada como operação separada sem que o `dotnet ef` a gere ou haja requisito explícito.
-- Limite de escopo: A correção se aplica somente às migrations da feature `add-hourly-labor-cost`; migrations de outras features permanecem intactas.
-- Limite de escopo: As alterações funcionais dos commits de referência permanecem preservadas; a correção incide nos artefatos de migration/snapshot e na validação do fluxo de persistência.
+- Dependência: Estado persistido das colunas de custo de mão de obra e marcador de reconciliação, além das movimentações materiais usadas no cálculo vigente.
+- Dependência: Registro do serviço em `AddCraftsmanApplication` e o fluxo de migrations do contexto PostgreSQL.
+- Risco: Se os dados materiais não puderem ser associados de forma determinística aos acertos, uma correção parcial pode gerar números incorretos; esses casos devem ser identificados e não corrigidos silenciosamente.
+

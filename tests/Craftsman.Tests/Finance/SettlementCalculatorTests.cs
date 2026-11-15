@@ -16,7 +16,7 @@ namespace Craftsman.Tests.Finance;
 public sealed class SettlementCalculatorTests
 {
     [Fact]
-    public async Task Calculator_rejects_production_task_with_missing_product()
+    public async Task Calculator_does_not_require_product_for_labor_cost()
     {
         await using var dbContext = CreateDbContext();
         var productId = Guid.NewGuid();
@@ -39,12 +39,12 @@ public sealed class SettlementCalculatorTests
             orderRepository,
             productionTaskRepository,
             new StockMovementRepository(dbContext),
-            new ShipmentRepository(dbContext),
-            new ProductRepository(dbContext));
+            new ShipmentRepository(dbContext));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => calculator.CalculateAsync(order.Id));
+        var settlement = await calculator.CalculateAsync(order.Id);
 
-        Assert.Contains(productId.ToString(), exception.Message);
+        Assert.Equal(0, settlement.ProductionCostAmount);
+        Assert.Equal(0, settlement.LaborCostAmount);
     }
 
     [Fact]
@@ -74,13 +74,13 @@ public sealed class SettlementCalculatorTests
         await shipmentRepository.AddAsync(new Shipment(Guid.NewGuid(), order.Id, "TRACK-1", ShipmentStatus.Delivered, deliveredAt: DateTimeOffset.UtcNow));
         await dbContext.SaveChangesAsync();
 
-        var calculator = new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository, productRepository);
+        var calculator = new SettlementCalculator(orderRepository, productionTaskRepository, stockMovementRepository, shipmentRepository);
 
         var settlement = await calculator.CalculateAsync(order.Id);
 
         Assert.Equal(100, settlement.RevenueAmount);
         Assert.Equal(12, settlement.ProductionCostAmount);
-        Assert.Equal(50, settlement.LaborCostAmount);
+        Assert.Equal(0, settlement.LaborCostAmount);
         Assert.Equal(88, settlement.MarginAmount);
     }
 
@@ -99,8 +99,7 @@ public sealed class SettlementCalculatorTests
             orderRepository,
             new ProductionTaskRepository(dbContext),
             new StockMovementRepository(dbContext),
-            new ShipmentRepository(dbContext),
-            new ProductRepository(dbContext));
+            new ShipmentRepository(dbContext));
 
         await orderRepository.AddAsync(order);
         await dbContext.SaveChangesAsync();
