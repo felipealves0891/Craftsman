@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Craftsman.Infra.Persistence.Entities;
 
+[ExcludeFromCodeCoverage]
 public sealed class StockMovementEntity : IPersistenceEntity<Guid>
 {
     public Guid Id { get; set; }
@@ -7,6 +10,10 @@ public sealed class StockMovementEntity : IPersistenceEntity<Guid>
     public Guid RawMaterialId { get; set; }
 
     public RawMaterialEntity? RawMaterial { get; set; }
+
+    public Guid? OrderId { get; set; }
+
+    public OrderEntity? Order { get; set; }
 
     public string Type { get; set; } = string.Empty;
 

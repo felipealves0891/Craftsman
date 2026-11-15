@@ -1,6 +1,9 @@
 using Craftsman.App.Models;
 using Craftsman.App.Services;
 using Craftsman.Domain.Inventory.Entities;
+using Craftsman.Domain.Finance.Entities;
+using Craftsman.Domain.Sales.Entities;
+using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +63,147 @@ public sealed class InventoryAppServiceTests
         Assert.Equal(2.5m, listedMovement.UnitCostAmount);
         Assert.Equal(7.5m, listedMovement.TotalCostAmount);
         Assert.Equal(2, await repository.GetBalanceAsync(rawMaterial.Id));
+    }
+
+    [Fact]
+    public async Task Manual_outbound_can_be_linked_to_an_in_production_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-ESTOQUE-1"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Produto", 1, new Money(10, "BRL"))],
+            OrderStatus.InProduction);
+        await new OrderRepository(dbContext).AddAsync(order);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var options = await service.ListOutboundOrderOptionsAsync();
+        Assert.Contains(options, option => option.Id == order.Id && option.DisplayName == "Manual - PED-ESTOQUE-1");
+
+        await service.RegisterMovementAsync(new StockMovementInputModel
+        {
+            RawMaterialId = rawMaterial.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 2,
+            Reason = "Consumo do pedido",
+            UnitCostAmount = 4,
+            OrderId = order.Id
+        });
+
+        var movement = Assert.Single(await new StockMovementRepository(dbContext).GetByRawMaterialAsync(rawMaterial.Id), item => item.Type == StockMovementType.Outbound);
+        Assert.Equal(order.Id, movement.OrderId);
+        Assert.Null(movement.BusinessReference);
+
+        var listedMovement = Assert.Single(await service.ListMovementsAsync(rawMaterial.Id), item => item.Type == StockMovementType.Outbound.ToString());
+        Assert.Equal(order.Id, listedMovement.OrderId);
+        Assert.Equal("Manual - PED-ESTOQUE-1", listedMovement.OrderDisplayName);
+    }
+
+    [Fact]
+    public async Task Manual_outbound_rejects_order_that_is_not_in_production()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-ESTOQUE-2"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-2", "Produto", 1, new Money(10, "BRL"))]);
+        await new OrderRepository(dbContext).AddAsync(order);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterMovementAsync(new StockMovementInputModel
+        {
+            RawMaterialId = rawMaterial.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 1,
+            Reason = "Consumo do pedido",
+            OrderId = order.Id
+        }));
+
+        Assert.Equal("Pedido deve estar em producao para ser vinculado.", exception.Message);
+        Assert.DoesNotContain(
+            await new StockMovementRepository(dbContext).ListAsync(),
+            movement => movement.Type == StockMovementType.Outbound && movement.OrderId == order.Id);
+    }
+
+    [Fact]
+    public async Task Outbound_order_options_exclude_orders_with_existing_financial_settlement()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-ESTOQUE-3"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-3", "Produto", 1, new Money(10, "BRL"))],
+            OrderStatus.InProduction);
+        await new OrderRepository(dbContext).AddAsync(order);
+        await new FinancialSettlementRepository(dbContext).AddAsync(new FinancialSettlement(
+            Guid.NewGuid(),
+            order.Id,
+            revenueAmount: 10,
+            productionCostAmount: 2,
+            shippingCostAmount: 0,
+            raiseCalculatedEvent: false));
+        await dbContext.SaveChangesAsync();
+
+        var options = await CreateService(dbContext).ListOutboundOrderOptionsAsync();
+
+        Assert.DoesNotContain(options, option => option.Id == order.Id);
+    }
+
+    [Fact]
+    public async Task Manual_outbound_rejects_missing_order_without_persisting_movement()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var service = CreateService(dbContext);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterMovementAsync(new StockMovementInputModel
+        {
+            RawMaterialId = rawMaterial.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 1,
+            Reason = "Consumo do pedido",
+            OrderId = Guid.NewGuid()
+        }));
+
+        Assert.Equal("Pedido nao encontrado.", exception.Message);
+        Assert.DoesNotContain(await new StockMovementRepository(dbContext).ListAsync(), movement => movement.Type == StockMovementType.Outbound);
+    }
+
+    [Fact]
+    public async Task Manual_outbound_rejects_order_with_existing_financial_settlement()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = await SeedRawMaterialAsync(dbContext, stockQuantity: 5);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PED-ESTOQUE-4"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-4", "Produto", 1, new Money(10, "BRL"))],
+            OrderStatus.InProduction);
+        await new OrderRepository(dbContext).AddAsync(order);
+        await new FinancialSettlementRepository(dbContext).AddAsync(new FinancialSettlement(
+            Guid.NewGuid(),
+            order.Id,
+            revenueAmount: 10,
+            productionCostAmount: 2,
+            shippingCostAmount: 0,
+            raiseCalculatedEvent: false));
+        await dbContext.SaveChangesAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateService(dbContext).RegisterMovementAsync(new StockMovementInputModel
+        {
+            RawMaterialId = rawMaterial.Id,
+            Type = StockMovementType.Outbound,
+            Quantity = 1,
+            Reason = "Consumo do pedido",
+            OrderId = order.Id
+        }));
+
+        Assert.Equal("Pedido ja possui apuracao financeira.", exception.Message);
+        Assert.DoesNotContain(await new StockMovementRepository(dbContext).ListAsync(), movement => movement.Type == StockMovementType.Outbound);
     }
 
     [Fact]
@@ -177,7 +321,7 @@ public sealed class InventoryAppServiceTests
             "Compra inicial",
             null));
         await dbContext.SaveChangesAsync();
-        var service = new InventoryAppService(rawMaterials, stockMovements, new UnitOfWork(dbContext));
+        var service = new InventoryAppService(rawMaterials, stockMovements, new UnitOfWork(dbContext), new OrderRepository(dbContext), new FinancialSettlementRepository(dbContext));
 
         await service.SaveRawMaterialAsync(new RawMaterialInputModel
         {
@@ -217,7 +361,9 @@ public sealed class InventoryAppServiceTests
         return new InventoryAppService(
             new RawMaterialRepository(dbContext),
             new StockMovementRepository(dbContext),
-            new UnitOfWork(dbContext));
+            new UnitOfWork(dbContext),
+            new OrderRepository(dbContext),
+            new FinancialSettlementRepository(dbContext));
     }
 
     private static async Task<RawMaterial> SeedRawMaterialAsync(AppDbContext dbContext, decimal stockQuantity = 0)

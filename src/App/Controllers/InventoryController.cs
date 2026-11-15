@@ -60,7 +60,7 @@ public sealed class InventoryController : Controller
 
     public async Task<IActionResult> Movements(CancellationToken cancellationToken)
     {
-        await PopulateRawMaterialsAsync(cancellationToken);
+        await PopulateMovementOptionsAsync(cancellationToken);
         ViewBag.CriticalStockAlerts = await stockAlertAppService.ListCriticalAlertsAsync(cancellationToken);
         ViewBag.Movements = await inventoryAppService.ListMovementsAsync(cancellationToken: cancellationToken);
         return View(new StockMovementInputModel());
@@ -85,7 +85,7 @@ public sealed class InventoryController : Controller
             }
         }
 
-        await PopulateRawMaterialsAsync(cancellationToken);
+        await PopulateMovementOptionsAsync(cancellationToken);
         ViewBag.CriticalStockAlerts = await stockAlertAppService.ListCriticalAlertsAsync(cancellationToken);
         ViewBag.Movements = await inventoryAppService.ListMovementsAsync(cancellationToken: cancellationToken);
         return View(input);
@@ -108,6 +108,14 @@ public sealed class InventoryController : Controller
         var materials = await inventoryAppService.ListRawMaterialOptionsAsync(cancellationToken);
         ViewBag.RawMaterials = materials
             .Select(material => new SelectListItem($"{material.Name} ({material.UnitOfMeasure})", material.Id.ToString()))
+            .ToList();
+    }
+
+    private async Task PopulateMovementOptionsAsync(CancellationToken cancellationToken)
+    {
+        await PopulateRawMaterialsAsync(cancellationToken);
+        ViewBag.Orders = (await inventoryAppService.ListOutboundOrderOptionsAsync(cancellationToken))
+            .Select(order => new SelectListItem(order.DisplayName, order.Id.ToString()))
             .ToList();
     }
 }

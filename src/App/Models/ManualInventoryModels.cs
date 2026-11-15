@@ -18,6 +18,15 @@ public sealed record RawMaterialListItemViewModel(
 public sealed record RawMaterialOptionViewModel(Guid Id, string Name, string UnitOfMeasure);
 
 [ExcludeFromCodeCoverage]
+public sealed record StockMovementOrderOptionViewModel(
+    Guid Id,
+    string Source,
+    string ExternalOrderId)
+{
+    public string DisplayName => $"{Source} - {ExternalOrderId}";
+}
+
+[ExcludeFromCodeCoverage]
 public sealed record InventoryBalanceViewModel(
     Guid RawMaterialId,
     string RawMaterialName,
@@ -54,7 +63,9 @@ public sealed record StockMovementViewModel(
     decimal TotalCostAmount,
     string Reason,
     string? BusinessReference,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt,
+    Guid? OrderId = null,
+    string? OrderDisplayName = null);
 
 [ExcludeFromCodeCoverage]
 public sealed class RawMaterialInputModel : IValidatableObject
@@ -112,6 +123,9 @@ public sealed class StockMovementInputModel : IValidatableObject
 
     [Display(Name = "Referencia")]
     public string? BusinessReference { get; set; }
+
+    [Display(Name = "Pedido")]
+    public Guid? OrderId { get; set; }
 
     [Range(0, double.MaxValue)]
     [Display(Name = "Custo unitario")]

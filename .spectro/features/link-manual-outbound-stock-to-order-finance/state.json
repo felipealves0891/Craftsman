@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "link-manual-outbound-stock-to-order-finance",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261115T205223Z",
+      "report": ".spectro/features/link-manual-outbound-stock-to-order-finance/gates.json"
+    }
+  },
+  "attempts": {},
+  "invalidated_executions": [],
+  "last_failure": null,
+  "last_execution_id": "gate-20261115T205223Z",
+  "updated_at": "2026-11-15T20:53:08.336Z"
+}
