@@ -232,5 +232,13 @@ public sealed class OrdersControllerRevertProductionTests
             Executed = true;
             return await operation();
         }
+
+        public async Task<T> ExecuteInSerializableTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            return await operation();
+        }
     }
 }

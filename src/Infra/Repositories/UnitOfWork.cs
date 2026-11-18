@@ -1,5 +1,7 @@
 using Craftsman.Domain.Repositories;
 using Craftsman.Infra.Persistence;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Craftsman.Infra.Repositories;
@@ -22,8 +24,24 @@ public sealed class UnitOfWork : ITransactionalUnitOfWork
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<Task<T>> operation,
         CancellationToken cancellationToken = default)
+        => await ExecuteInTransactionAsync(operation, IsolationLevel.ReadCommitted, cancellationToken);
+
+    public async Task<T> ExecuteInSerializableTransactionAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken = default)
+        => await ExecuteInTransactionAsync(operation, IsolationLevel.Serializable, cancellationToken);
+
+    private async Task<T> ExecuteInTransactionAsync<T>(
+        Func<Task<T>> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken)
     {
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        if (dbContext.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            return await operation();
+        }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(isolationLevel, cancellationToken);
         try
         {
             var result = await operation();

@@ -77,14 +77,22 @@ public sealed class OrdersController : Controller
     public async Task<IActionResult> SendToProduction(Guid id, CancellationToken cancellationToken)
     {
         var stockAlerts = await stockAlertAppService.ListAlertsForOrderAsync(id, cancellationToken);
-        var planned = await productionPlanningService.TryPlanAsync(id, cancellationToken);
 
-        await auditService.RecordAsync(
-            AuditAction.SendToProduction,
-            "Order",
-            id.ToString(),
-            after: new { Planned = planned },
-            cancellationToken: cancellationToken);
+        async Task<bool> PlanAndAuditAsync()
+        {
+            var result = await productionPlanningService.TryPlanAsync(id, cancellationToken);
+            await auditService.RecordAsync(
+                AuditAction.SendToProduction,
+                "Order",
+                id.ToString(),
+                after: new { Planned = result },
+                cancellationToken: cancellationToken);
+            return result;
+        }
+
+        var planned = transactionalUnitOfWork is null
+            ? await PlanAndAuditAsync()
+            : await transactionalUnitOfWork.ExecuteInSerializableTransactionAsync(PlanAndAuditAsync, cancellationToken);
 
         TempData[planned ? "Success" : "Error"] = planned
             ? "Pedido enviado para producao."
