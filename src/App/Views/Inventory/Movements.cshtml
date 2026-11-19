@@ -23,6 +23,11 @@
     <div class="alert alert-success">@success</div>
 }
 
+@if (TempData["Error"] is string error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
 @if (criticalAlerts.Any())
 {
     <div class="alert alert-danger">
@@ -84,13 +89,14 @@
                     <th>Referência</th>
                     <th>Pedido</th>
                     <th>Data</th>
+                    <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
                 @if (!movements.Any())
                 {
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <strong>Nenhum movimento registrado</strong>
                                 <span>Registre o primeiro movimento usando o formulário acima.</span>
@@ -112,6 +118,12 @@
                             <td>@movement.BusinessReference</td>
                             <td>@movement.OrderDisplayName</td>
                             <td>@movement.OccurredAt.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <form asp-action="ReverseMovement" method="post" onsubmit="return confirm('Deseja reverter este movimento de estoque?');">
+                                    <input type="hidden" name="id" value="@movement.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Reverter</button>
+                                </form>
+                            </td>
                         </tr>
                     }
                 }
