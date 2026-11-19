@@ -112,6 +112,32 @@ public sealed class InventoryControllerTests
         Assert.NotNull(controller.ViewBag.Orders);
     }
 
+    [Fact]
+    public async Task Reverse_movement_post_redirects_with_success_or_error_message()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedMaterialAsync(dbContext, 5);
+        var movementRepository = new StockMovementRepository(dbContext);
+        var movementId = Guid.NewGuid();
+        await movementRepository.AddAsync(new StockMovement(
+            movementId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Manual consumption",
+            "controller-reference"));
+        await dbContext.SaveChangesAsync();
+        var controller = CreateController(dbContext);
+
+        var success = Assert.IsType<RedirectToActionResult>(await controller.ReverseMovement(movementId, CancellationToken.None));
+        Assert.Equal(nameof(InventoryController.Movements), success.ActionName);
+        Assert.Equal("Movimento de estoque revertido.", controller.TempData["Success"]);
+
+        var missing = Assert.IsType<RedirectToActionResult>(await controller.ReverseMovement(Guid.NewGuid(), CancellationToken.None));
+        Assert.Equal(nameof(InventoryController.Movements), missing.ActionName);
+        Assert.Equal("Movimento de estoque nao encontrado.", controller.TempData["Error"]);
+    }
+
     private static InventoryController CreateController(AppDbContext dbContext)
     {
         var rawMaterials = new RawMaterialRepository(dbContext);

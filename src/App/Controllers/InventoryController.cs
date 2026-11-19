@@ -91,6 +91,28 @@ public sealed class InventoryController : Controller
         return View(input);
     }
 
+    [HttpPost]
+    [Authorize(Policy = ApplicationPolicies.Write)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReverseMovement(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await inventoryAppService.ReverseMovementAsync(id, cancellationToken);
+            TempData["Success"] = result.WasDeleted
+                ? "Movimento de estoque excluido."
+                : result.ReversalMovementId.HasValue
+                    ? "Movimento de estoque revertido."
+                    : "Movimento de estoque ja havia sido revertido.";
+        }
+        catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or InvalidOperationException)
+        {
+            TempData["Error"] = exception.Message;
+        }
+
+        return RedirectToAction(nameof(Movements));
+    }
+
     public async Task<IActionResult> Balances(CancellationToken cancellationToken)
     {
         var balances = await inventoryAppService.ListBalancesAsync(cancellationToken);
