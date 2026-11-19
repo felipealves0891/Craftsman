@@ -21,7 +21,31 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`, `TASK-REV-001`, `TASK-REV-002`
 - Bloqueadas: nenhuma
-- Evidência: build, testes e segurança passaram no runner Spectro; cobertura passou com `-AllowDirtyTree`, mas o resultado oficial do runner ficou `failed` porque o script exige working tree sem alterações tracked não commitadas.
+- Evidência: build, testes e segurança passaram no runner Spectro; 368 testes passaram. Cobertura com `-AllowDirtyTree`: 86,74% linhas, 71,05% branches, 97,56% linhas novas e 91,18% branches novos. O resultado oficial do runner ficou `failed` somente porque o script exige working tree sem alterações tracked não commitadas.
+
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** Tratar conflitos de serialização/concorrência no envio para produção com resposta segura, sem erro técnico não tratado, preservando rollback e permitindo nova tentativa.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** completed
+- **Finding:** FINDING-002
+- **Severity:** Medium
+- **Return stage:** implement
+- **Description:** Publicar eventos de planejamento somente após confirmação de SaveChanges e commit, ou adotar mecanismo equivalente, evitando efeitos externos quando a persistência falhar.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
 

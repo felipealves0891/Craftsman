@@ -25,6 +25,37 @@ namespace Craftsman.Tests.Application;
 public sealed class OrdersControllerRevertProductionTests
 {
     [Fact]
+    public async Task Send_to_production_handles_concurrency_conflict_with_safe_message()
+    {
+        await using var dbContext = CreateDbContext();
+        var audit = new RecordingAuditService();
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var movementRepository = new StockMovementRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var transaction = new ThrowingConcurrencyTransactionalUnitOfWork();
+        var controller = new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, new ProductionTaskRepository(dbContext), new ShipmentRepository(dbContext)),
+            null!,
+            null!,
+            null!,
+            new StockAlertAppService(rawMaterialRepository, movementRepository, orderRepository, productRepository),
+            audit,
+            transaction)
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+
+        var result = await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        Assert.Contains("alterado durante o envio", controller.TempData["Error"]?.ToString());
+        Assert.DoesNotContain("DbUpdateConcurrencyException", controller.TempData["Error"]?.ToString());
+        Assert.Equal(AuditAction.SendToProduction, audit.Action);
+        Assert.True(transaction.Executed);
+    }
+
+    [Fact]
     public async Task Revert_production_redirects_with_success_and_audits_the_operation()
     {
         await using var dbContext = CreateDbContext();
@@ -239,6 +270,27 @@ public sealed class OrdersControllerRevertProductionTests
         {
             Executed = true;
             return await operation();
+        }
+    }
+
+    private sealed class ThrowingConcurrencyTransactionalUnitOfWork : ITransactionalUnitOfWork
+    {
+        public bool Executed { get; private set; }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
+        public Task<T> ExecuteInTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<T> ExecuteInSerializableTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            throw new DbUpdateConcurrencyException("Concurrency details must not reach the user.");
         }
     }
 }

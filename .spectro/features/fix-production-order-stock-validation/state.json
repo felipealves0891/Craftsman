@@ -6,13 +6,13 @@
   "phases": {
     "gates": {
       "status": "failed",
-      "execution_id": "gate-20261118T233740Z",
+      "execution_id": "gate-20261118T235330Z",
       "report": ".spectro/features/fix-production-order-stock-validation/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261118T233740Z",
-  "updated_at": "2026-11-18T23:38:08.862Z"
+  "last_execution_id": "gate-20261118T235330Z",
+  "updated_at": "2026-11-18T23:53:54.152Z"
 }

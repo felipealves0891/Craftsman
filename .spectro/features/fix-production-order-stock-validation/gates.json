@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "fix-production-order-stock-validation",
-  "execution_id": "gate-20261118T233740Z",
+  "execution_id": "gate-20261118T235330Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "b745c03ec4e3487814c46619efb8662a1c4742a1",
+  "code_revision": "0ac53fd866990ccad6668eeba56f51f8936bf528",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "78c0d0e1fedb56d2e2c87ca88f831ecf2dd92122f69d7194dc40ca54e79eb4a0",
     "clarifications.md": "c80568515840fa73f4194fab5cdd8619416a279495c408731715b900fea861e3",
     "plan.md": "322ba475ec6d7da808513aa68a29c10f01b9fe6ecf259b6038514a15af6bd26d",
-    "tasks.md": "5e48dbb4f458d90013085449514f09f5466fb384b97ec2fc2c18bfbd01c808ab"
+    "tasks.md": "926fe381a0e75528a31a981b475b9c6d7ff23420eb6ef2d44b844b2af478458a"
   },
-  "started_at": "2026-11-18T23:37:40.320Z",
-  "duration_ms": 28528,
+  "started_at": "2026-11-18T23:53:30.231Z",
+  "duration_ms": 23916,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 10258,
+      "duration_ms": 8681,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/evidence/01-build.log"
+        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/build",
+      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 9995,
+      "duration_ms": 7669,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/evidence/02-test.log"
+        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/test",
+      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 7281,
+      "duration_ms": 6504,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/evidence/03-security.log"
+        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/security",
+      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,14 +69,14 @@
       "status": "failed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 1,
-      "duration_ms": 929,
+      "duration_ms": 974,
       "diagnostics": [
         "ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
       ],
       "evidence": [
-        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/evidence/04-coverage.log"
+        ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T233740Z/coverage",
+      "output_directory": ".spectro/features/fix-production-order-stock-validation/outputs/gate-20261118T235330Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
