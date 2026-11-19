@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "fix-production-order-stock-validation",
-  "current_phase": "gates",
-  "status": "failed",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "failed",
-      "execution_id": "gate-20261119T002545Z",
+      "status": "completed",
+      "execution_id": "gate-20261119T003439Z",
       "report": ".spectro/features/fix-production-order-stock-validation/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261119T002545Z",
-  "updated_at": "2026-11-19T00:26:02.762Z"
+  "last_execution_id": "gate-20261119T003439Z",
+  "updated_at": "2026-11-19T00:35:41.749Z"
 }

@@ -3,11 +3,11 @@
 
 ## Resumo
 
-- Decisão: `changes_requested`
-- A implementação atende à correção principal de validação agregada e impede o consumo parcial por insuficiência conhecida.
-- Os gates obrigatórios foram executados na revisão da implementação atual e passaram no código `0ac53fd866990ccad6668eeba56f51f8936bf528`.
-- A rastreabilidade foi validada sem requisitos ou critérios descobertos.
-- Foram encontrados dois achados médios que precisam de remediação antes da aprovação final.
+- Decisão: `approved`
+- A implementação atende à validação agregada de matéria-prima, impede consumo parcial conhecido e protege o envio contra conflitos de concorrência.
+- Os gates obrigatórios passaram no commit `02052329a143374a1218913b657a5ab08e10bc23`.
+- A rastreabilidade foi validada com resultado `complete`, sem requisitos ou critérios descobertos.
+- Os achados médios anteriores foram remediados e não há achados críticos ou altos pendentes.
 
 ## Artefatos examinados
 
@@ -16,22 +16,17 @@
 - `.spectro/features/fix-production-order-stock-validation/plan.md`
 - `.spectro/features/fix-production-order-stock-validation/tasks.md`
 - `.spectro/features/fix-production-order-stock-validation/gates.json`
-- `.spectro/features/fix-production-order-stock-validation/reviews/review-20261118T234800Z/manifest.json`
-- `.spectro/features/fix-production-order-stock-validation/reviews/review-20261118T234800Z/traceability.json`
-- Diff entre `518fd41^` e a revisão atual
-- `src/App/Controllers/OrdersController.cs`
-- `src/Domains/Production/Services/ProductionPlanner.cs`
-- `src/Domains/Production/Services/OrderProductionPlanningService.cs`
-- `src/Domains/SharedKernel/Repositories/ITransactionalUnitOfWork.cs`
-- `src/Infra/Repositories/UnitOfWork.cs`
-- Testes de produção e aplicação relacionados
+- `reviews/review-20261119T004000Z/manifest.json`
+- `reviews/review-20261119T004000Z/traceability.json`
+- Diff entre `518fd41^` e o commit atual
+- Controllers, serviços de produção, UoW transacional e testes relacionados
 
 ## Verificações realizadas
 
 - `dotnet build --no-restore --warnaserror -v minimal`: passou.
-- `dotnet test --no-restore --no-build`: passou, 366 testes.
+- `dotnet test --no-restore --no-build`: passou, 370 testes.
 - `dotnet list package --vulnerable`: passou sem diagnóstico no gate.
-- Cobertura: passou no gate com árvore limpa; os limiares medidos foram registrados na evidência do gate atual.
+- Cobertura: passou com 86,94% de linhas, 71,74% de branches, 98,10% de linhas novas e 94,00% de branches novos.
 - `validate_traceability.ps1`: resultado `complete`, sem requisitos ou critérios descobertos.
 - `git diff --check`: passou.
 - Revisão manual de escopo, transações, eventos, logs, autorização existente e movimentações históricas.
@@ -40,39 +35,45 @@
 
 - `FR-001`/`FR-002`: necessidades são agregadas por matéria-prima antes da comparação com o saldo.
 - `FR-003`/`FR-004`: insuficiência agregada falha antes de adicionar consumo/tarefa; regressão cobre ausência de saída parcial.
-- `FR-005`: testes existentes preservam o fluxo de sucesso e o alerta de estoque baixo sem bloqueio.
-- `FR-006`: transação serializável foi introduzida no envio; ausência de teste concorrente PostgreSQL permanece risco residual.
-- `FR-007`, `NFR-003`, `NFR-004`: logs de falha mantêm pedido, etapa, causa, quantidades e correlação pelos escopos existentes; mensagens do usuário não expõem exceção técnica.
-- `NFR-001`: planejamento, auditoria e efeitos persistidos são executados dentro da fronteira transacional quando o UoW transacional está disponível.
+- `FR-005`: fluxo de sucesso e alerta de estoque baixo permanecem preservados.
+- `FR-006`: o envio usa transação serializável e trata conflitos de concorrência com rollback, auditoria e mensagem segura.
+- `FR-007`, `NFR-003`, `NFR-004`: logs de falha mantêm contexto operacional sem expor exceção técnica ao usuário.
+- `NFR-001`: planejamento, auditoria e efeitos persistidos respeitam a fronteira transacional quando o UoW transacional está disponível.
 - `CON-002`: nenhuma movimentação histórica é apagada ou editada.
+
+## Remediações verificadas
+
+### `FINDING-001` — resolvido
+
+O fluxo de envio agora captura falhas de concorrência/serialização, registra aviso estruturado, audita a falha como `ConcurrencyConflict` e retorna mensagem segura sem sucesso falso. Há cobertura para exceção direta, exceção aninhada, falha de serialização PostgreSQL e caminho sem transação.
+
+### `FINDING-002` — resolvido
+
+O serviço persiste as alterações antes de publicar os eventos de produção. O publisher persistente permanece dentro da transação existente, e o teste de consistência confirma a ordem `SaveChanges` antes da publicação.
 
 ## Achados
 
-### `FINDING-001`
+### `FINDING-003`
 
-- Severidade: `Medium`
-- Categoria: `Functional` / `Concurrency`
-- Localização: `src/App/Controllers/OrdersController.cs:93-99`; `src/Domains/Production/Services/OrderProductionPlanningService.cs:64-73`
-- Evidência: o envio usa uma transação serializável, mas o fluxo não captura falhas de serialização/conflitos de persistência. `TryPlanAsync` captura somente `InvalidOperationException`; uma falha concorrente do PostgreSQL pode escapar até o endpoint e resultar em erro técnico não tratado, sem mensagem segura nem resultado de nova tentativa.
-- Impacto: sob concorrência real, o requisito de rejeição/revalidação segura (`NFR-002`, `AC-008`, `NFR-003`) não está comprovado e pode produzir resposta 500.
-- Recomendação: tratar a exceção de concorrência/serialização no fluxo de envio, garantindo rollback, mensagem segura, log estruturado com correlação e ausência de sucesso falso; adicionar teste de integração PostgreSQL ou evidência equivalente.
-- Return stage: `implement`
-- Remediação: `TASK-REV-001`
+- Severidade: `Low`
+- Categoria: `Test`
+- Localização: `src/Infra/Repositories/UnitOfWork.cs:34-56`
+- Evidência: o caminho específico de transação serializável do provedor PostgreSQL está excluído da cobertura unitária; os testes atuais usam InMemory/fakes e não há teste concorrente dedicado contra PostgreSQL.
+- Impacto: comportamento específico de serialização, rollback e deadlock do provedor real não é validado diretamente.
+- Recomendação: adicionar teste de integração concorrente PostgreSQL quando houver infraestrutura apropriada.
+- Return stage: `human_review`
+- Status: risco residual não bloqueante, aceito para esta entrega.
 
-### `FINDING-002`
+## Revisão de segurança
 
-- Severidade: `Medium`
-- Categoria: `Architecture` / `Consistency`
-- Localização: `src/Domains/Production/Services/OrderProductionPlanningService.cs:76-85`
-- Evidência: eventos de domínio das tarefas são publicados antes de `unitOfWork.SaveChangesAsync` e antes do commit da transação externa. Uma falha de persistência posterior pode deixar consumidores externos informados sobre um planejamento que não foi confirmado.
-- Impacto: viola a regra constitucional de publicar eventos somente após a transição confirmada e pode gerar efeitos subsequentes inconsistentes com estoque, tarefas e pedido.
-- Recomendação: publicar após confirmação de persistência/commit ou usar mecanismo transacional equivalente, preservando idempotência e testes de falha pós-publicação.
-- Return stage: `implement`
-- Remediação: `TASK-REV-002`
+Revisão de segurança: concluída
+Escopo revisado: validação e consumo de estoque, transação de produção, tratamento de concorrência, persistência/publicação de eventos, logs e dependências do diff.
+Verificações executadas: gate de vulnerabilidades de pacotes, testes automatizados, build com warnings como erros e revisão manual dos caminhos de entrada, erro e persistência.
+Achados: nenhum crítico ou alto identificado; `FINDING-003` é baixo e restrito à cobertura do provedor real.
+Riscos residuais / limitações: não há teste concorrente PostgreSQL dedicado; isso limita a evidência específica do provedor, sem invalidar a aprovação dos gates e dos testes disponíveis.
 
-## Riscos residuais
+## Decisão final
 
-- As duas saídas históricas indevidas permanecem no ledger, conforme decisão de escopo; não houve compensação automática.
-- A cobertura foi medida e aprovada no gate atual, mas o cenário concorrente foi validado apenas pela configuração serializável e não por teste PostgreSQL concorrente dedicado.
-- O resultado final permanece `changes_requested` até as tarefas `TASK-REV-001` e `TASK-REV-002` serem implementadas e os gates/revisão serem renovados.
+`approved`
 
+Os requisitos e critérios estão rastreados, os gates obrigatórios passaram e as remediações necessárias foram verificadas. O risco baixo remanescente deve ser acompanhado como melhoria de cobertura de integração.
