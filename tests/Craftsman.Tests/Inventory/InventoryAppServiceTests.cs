@@ -4,10 +4,14 @@ using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Finance.Entities;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Repositories;
+using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.ObjectValues;
 using Craftsman.Infra.Persistence;
 using Craftsman.Infra.Repositories;
+using Craftsman.Infra.Services;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craftsman.Tests.Inventory;
@@ -570,14 +574,114 @@ public sealed class InventoryAppServiceTests
             movement.BusinessReference == $"stock-movement-reversal:{movementId}");
     }
 
+    [Fact]
+    public async Task Reversing_movement_with_missing_order_is_rejected()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedRawMaterialAsync(dbContext, stockQuantity: 2);
+        var repository = new StockMovementRepository(dbContext);
+        var movementId = Guid.NewGuid();
+        await repository.AddAsync(new StockMovement(
+            movementId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Manual consumption",
+            "missing-order",
+            orderId: Guid.NewGuid()));
+        await dbContext.SaveChangesAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateService(dbContext).ReverseMovementAsync(movementId));
+
+        Assert.Equal("Pedido associado nao encontrado.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Reversing_order_movement_requires_production_task_repository()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedRawMaterialAsync(dbContext, stockQuantity: 2);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "NO-TASK-REPOSITORY"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-NO-TASK", "Produto", 1, new Money(10, "BRL"))],
+            OrderStatus.InProduction);
+        await new OrderRepository(dbContext).AddAsync(order);
+        var repository = new StockMovementRepository(dbContext);
+        var movementId = Guid.NewGuid();
+        await repository.AddAsync(new StockMovement(
+            movementId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Manual consumption",
+            "no-task-repository",
+            orderId: order.Id));
+        await dbContext.SaveChangesAsync();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateService(dbContext).ReverseMovementAsync(movementId));
+
+        Assert.Equal("Repositorio de tarefas de producao nao configurado.", exception.Message);
+    }
+
+    [Fact]
+    public async Task Reversing_movement_works_with_non_transactional_unit_of_work()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedRawMaterialAsync(dbContext, stockQuantity: 2);
+        var repository = new StockMovementRepository(dbContext);
+        var movementId = Guid.NewGuid();
+        await repository.AddAsync(new StockMovement(
+            movementId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Manual consumption",
+            "non-transactional"));
+        await dbContext.SaveChangesAsync();
+
+        var result = await CreateService(dbContext, unitOfWork: new NonTransactionalUnitOfWork(dbContext))
+            .ReverseMovementAsync(movementId);
+
+        Assert.NotNull(result.ReversalMovementId);
+    }
+
+    [Fact]
+    public async Task Stock_movement_repository_invalidates_cache_when_deleting()
+    {
+        await using var dbContext = CreateDbContext();
+        var material = await SeedRawMaterialAsync(dbContext, stockQuantity: 1);
+        var cache = new MemoryApplicationCache(
+            new MemoryCache(new MemoryCacheOptions()),
+            new ConfigurationBuilder().Build());
+        var repository = new StockMovementRepository(dbContext, cache);
+        var movementId = Guid.NewGuid();
+        await repository.AddAsync(new StockMovement(
+            movementId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Production consumption",
+            null));
+        await dbContext.SaveChangesAsync();
+
+        await repository.DeleteAsync(movementId);
+        await dbContext.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.DeleteAsync(movementId));
+    }
+
     private static InventoryAppService CreateService(
         AppDbContext dbContext,
-        IProductionTaskRepository? productionTaskRepository = null)
+        IProductionTaskRepository? productionTaskRepository = null,
+        IUnitOfWork? unitOfWork = null)
     {
         return new InventoryAppService(
             new RawMaterialRepository(dbContext),
             new StockMovementRepository(dbContext),
-            new UnitOfWork(dbContext),
+            unitOfWork ?? new UnitOfWork(dbContext),
             new OrderRepository(dbContext),
             new FinancialSettlementRepository(dbContext),
             productionTaskRepository: productionTaskRepository);
@@ -648,5 +752,11 @@ public sealed class InventoryAppServiceTests
 
         public Task DeleteByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+    }
+
+    private sealed class NonTransactionalUnitOfWork(AppDbContext dbContext) : IUnitOfWork
+    {
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => dbContext.SaveChangesAsync(cancellationToken);
     }
 }

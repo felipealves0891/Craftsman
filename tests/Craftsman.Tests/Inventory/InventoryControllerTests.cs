@@ -133,6 +133,22 @@ public sealed class InventoryControllerTests
         Assert.Equal(nameof(InventoryController.Movements), success.ActionName);
         Assert.Equal("Movimento de estoque revertido.", controller.TempData["Success"]);
 
+        var repeated = Assert.IsType<RedirectToActionResult>(await controller.ReverseMovement(movementId, CancellationToken.None));
+        Assert.Equal("Movimento de estoque ja havia sido revertido.", controller.TempData["Success"]);
+
+        var deletableId = Guid.NewGuid();
+        await movementRepository.AddAsync(new StockMovement(
+            deletableId,
+            material.Id,
+            StockMovementType.Outbound,
+            1,
+            "Production consumption",
+            null));
+        await dbContext.SaveChangesAsync();
+        var deleted = Assert.IsType<RedirectToActionResult>(await controller.ReverseMovement(deletableId, CancellationToken.None));
+        Assert.Equal(nameof(InventoryController.Movements), deleted.ActionName);
+        Assert.Equal("Movimento de estoque excluido.", controller.TempData["Success"]);
+
         var missing = Assert.IsType<RedirectToActionResult>(await controller.ReverseMovement(Guid.NewGuid(), CancellationToken.None));
         Assert.Equal(nameof(InventoryController.Movements), missing.ActionName);
         Assert.Equal("Movimento de estoque nao encontrado.", controller.TempData["Error"]);
