@@ -16,7 +16,7 @@
   - demais tipos elegíveis: criar compensação com referência determinística `stock-movement-reversal:{movementId}`, motivo `Stock movement reversal`, mesmo material, quantidade/custo compatíveis e efeito oposto.
 - Para entrada, criar saída; para saída, criar entrada; para ajuste, criar ajuste com quantidade oposta.
 - Verificar `ProductionTaskStatus.Completed` nas tarefas do pedido e `OrderStatus.Delivered` no pedido. Movimentações sem `OrderId` não sofrem bloqueio de estado de pedido.
-- Antes de criar uma compensação, detectar a referência determinística para tornar a operação idempotente. O mesmo critério deve ser usado em solicitações concorrentes, com transação/controle de unicidade compatível com a persistência existente.
+- Antes de criar uma compensação, detectar a referência determinística para tornar a operação idempotente. A operação continuará usando a unidade serializável disponível, mas não haverá teste concorrente real contra PostgreSQL nesta entrega; a validação ficará limitada aos testes sequenciais e ao comportamento observável da unidade de trabalho.
 - Expor a ação na tabela de movimentos, com confirmação visual e mensagens seguras de sucesso/rejeição; a decisão final deve ocorrer no servidor.
 
 ## Arquitetura e contratos
@@ -55,18 +55,27 @@
 - Integração/persistência: consulta por ID, exclusão da exceção, criação da compensação, referência persistida, saldo recalculado e invalidação de cache.
 - Controller/UI: POST protegido por Write e antiforgery, ação apresentada na listagem, confirmação, redirect/sucesso e mensagem segura em falha esperada.
 - Regressão: suíte existente de inventário, produção, entrega e segurança; depois executar os gates configurados de build, testes, vulnerabilidades e cobertura.
+- Concorrência: validar idempotência sequencial, referência determinística e delegação à unidade serializável com doubles/provider atual. Não criar ou exigir um teste concorrente real contra PostgreSQL nesta entrega.
+
+## Decisões de escopo pós-revisão
+
+- `FINDING-001`: teste concorrente real contra PostgreSQL fica fora do escopo aprovado desta entrega. O risco residual deve ser aceito por responsável humano; não será criada tarefa de implementação para esse teste.
+- `FINDING-002`: corrigido neste plano/tarefas por meio de IDs explícitos, permitindo validação automática sem falso gap.
+- Após alterações de código, configuração ou artefatos de requisitos, executar novamente os gates aplicáveis; a ausência do teste PostgreSQL deve permanecer visível como limitação, não como evidência de concorrência validada.
 
 ## Rastreabilidade
 
 | Requisito | Critério de aceite | Tarefa |
 |---|---|---|
-| `FR-001`, `FR-009` | `AC-001`, `AC-010` | `TASK-003` |
-| `FR-002`, `FR-003` | `AC-002`, `AC-003` | `TASK-002` |
-| `FR-004` | `AC-004` | `TASK-002`, `TASK-004` |
-| `FR-005`, `FR-006` | `AC-005`, `AC-006`, `AC-007` | `TASK-001`, `TASK-002`, `TASK-004` |
-| `FR-007` | `AC-006`, `AC-009` | `TASK-002`, `TASK-004` |
-| `FR-008` | `AC-008` | `TASK-002`, `TASK-004` |
-| `NFR-001`, `NFR-002` | `AC-008`, `AC-009` | `TASK-004`, `TASK-005` |
+| `FR-001`, `FR-009` | `AC-001`, `AC-010` | `TASK-003`, `TASK-005` |
+| `FR-002` | `AC-002`, `AC-003` | `TASK-002`, `TASK-005` |
+| `FR-003` | `AC-002`, `AC-003` | `TASK-002`, `TASK-005` |
+| `FR-004` | `AC-004` | `TASK-002`, `TASK-004`, `TASK-005` |
+| `FR-005`, `FR-006` | `AC-005`, `AC-006`, `AC-007` | `TASK-001`, `TASK-002`, `TASK-004`, `TASK-005` |
+| `FR-007` | `AC-006`, `AC-009` | `TASK-002`, `TASK-004`, `TASK-005` |
+| `FR-008` | `AC-008` | `TASK-002`, `TASK-004`, `TASK-005` |
+| `NFR-001` | `AC-008`, `AC-009` | `TASK-002`, `TASK-004`, `TASK-005` |
+| `NFR-002` | `AC-008` | `TASK-002`, `TASK-005` |
 | `NFR-003`, `NFR-004` | `AC-007`, `AC-010` | `TASK-002`, `TASK-003`, `TASK-005` |
-| `CON-001` a `CON-005` | `AC-004` a `AC-010` | `TASK-001` a `TASK-005` |
+| `CON-001`, `CON-002`, `CON-003`, `CON-004`, `CON-005` | `AC-004`, `AC-005`, `AC-006`, `AC-007`, `AC-009` | `TASK-001`, `TASK-002`, `TASK-004`, `TASK-005` |
 
