@@ -6,6 +6,8 @@ using Craftsman.Domain.Repositories;
 using Craftsman.Infra.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Craftsman.App.Controllers;
 
@@ -19,6 +21,7 @@ public sealed class OrdersController : Controller
     private readonly StockAlertAppService stockAlertAppService;
     private readonly IAuditService auditService;
     private readonly ITransactionalUnitOfWork? transactionalUnitOfWork;
+    private readonly ILogger<OrdersController>? logger;
 
     public OrdersController(
         OrderQueryService orderQueryService,
@@ -27,7 +30,8 @@ public sealed class OrdersController : Controller
         OrderProductionPlanningService productionPlanningService,
         StockAlertAppService stockAlertAppService,
         IAuditService auditService,
-        ITransactionalUnitOfWork? transactionalUnitOfWork = null)
+        ITransactionalUnitOfWork? transactionalUnitOfWork = null,
+        ILogger<OrdersController>? logger = null)
     {
         this.orderQueryService = orderQueryService;
         this.manualOrderService = manualOrderService;
@@ -36,6 +40,7 @@ public sealed class OrdersController : Controller
         this.stockAlertAppService = stockAlertAppService;
         this.auditService = auditService;
         this.transactionalUnitOfWork = transactionalUnitOfWork;
+        this.logger = logger;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -77,14 +82,38 @@ public sealed class OrdersController : Controller
     public async Task<IActionResult> SendToProduction(Guid id, CancellationToken cancellationToken)
     {
         var stockAlerts = await stockAlertAppService.ListAlertsForOrderAsync(id, cancellationToken);
-        var planned = await productionPlanningService.TryPlanAsync(id, cancellationToken);
 
-        await auditService.RecordAsync(
-            AuditAction.SendToProduction,
-            "Order",
-            id.ToString(),
-            after: new { Planned = planned },
-            cancellationToken: cancellationToken);
+        async Task<bool> PlanAndAuditAsync()
+        {
+            var result = await productionPlanningService.TryPlanAsync(id, cancellationToken);
+            await auditService.RecordAsync(
+                AuditAction.SendToProduction,
+                "Order",
+                id.ToString(),
+                after: new { Planned = result },
+                cancellationToken: cancellationToken);
+            return result;
+        }
+
+        bool planned;
+        try
+        {
+            planned = transactionalUnitOfWork is null
+                ? await PlanAndAuditAsync()
+                : await transactionalUnitOfWork.ExecuteInSerializableTransactionAsync(PlanAndAuditAsync, cancellationToken);
+        }
+        catch (Exception exception) when (IsProductionPlanningConcurrencyFailure(exception))
+        {
+            logger?.LogWarning(exception, "Production planning concurrency conflict for order {OrderId}.", id);
+            await auditService.RecordAsync(
+                AuditAction.SendToProduction,
+                "Order",
+                id.ToString(),
+                after: new { Planned = false, Failure = "ConcurrencyConflict" },
+                cancellationToken: cancellationToken);
+            TempData["Error"] = "O pedido foi alterado durante o envio para producao. Atualize os dados e tente novamente.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
 
         TempData[planned ? "Success" : "Error"] = planned
             ? "Pedido enviado para producao."
@@ -98,6 +127,25 @@ public sealed class OrdersController : Controller
         }
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private static bool IsProductionPlanningConcurrencyFailure(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is DbUpdateConcurrencyException)
+            {
+                return true;
+            }
+
+            if (current is PostgresException postgresException &&
+                postgresException.SqlState is PostgresErrorCodes.SerializationFailure or PostgresErrorCodes.DeadlockDetected)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     [HttpPost]

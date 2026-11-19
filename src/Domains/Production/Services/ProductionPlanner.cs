@@ -35,6 +35,9 @@ public sealed class ProductionPlanner : IProductionPlanner
                 .Where(task => task.Status != ProductionTaskStatus.Cancelled)
                 .ToList();
 
+        var plannedItems = new List<PlannedItem>();
+        var requirements = new List<MaterialRequirement>();
+
         foreach (var item in order.Items)
         {
             if (item.ProductId is null)
@@ -49,31 +52,49 @@ public sealed class ProductionPlanner : IProductionPlanner
                 throw new InvalidOperationException("Production cannot be planned without an active product and valid bill of materials.");
             }
 
-            var requirements = BuildRequirements(product, item.Quantity);
-            var availability = await inventoryService.CheckAvailabilityAsync(requirements, cancellationToken);
+            var itemRequirements = BuildRequirements(product, item.Quantity);
+            plannedItems.Add(new PlannedItem(item, product, itemRequirements));
+            requirements.AddRange(itemRequirements);
+        }
 
-            if (!availability.IsAvailable)
-            {
-                throw new InvalidOperationException($"Production cannot be planned with insufficient material: {string.Join(", ", availability.MissingMaterials)}.");
-            }
+        var aggregatedRequirements = requirements
+            .GroupBy(requirement => requirement.RawMaterialId)
+            .Select(group => new MaterialRequirement(
+                group.Key,
+                group.Sum(requirement => requirement.RequiredQuantity)))
+            .ToList()
+            .AsReadOnly();
+        var availability = await inventoryService.CheckAvailabilityAsync(aggregatedRequirements, cancellationToken);
 
-            var productionDurationHours = product.ProductionDurationHours * item.Quantity;
+        if (!availability.IsAvailable)
+        {
+            throw new InvalidOperationException($"Production cannot be planned with insufficient material: {string.Join(", ", availability.MissingMaterials)}.");
+        }
+
+        foreach (var plannedItem in plannedItems)
+        {
+            var productionDurationHours = plannedItem.Product.ProductionDurationHours * plannedItem.OrderItem.Quantity;
             var plannedWindow = PlanWindow(order, productionDurationHours, existingTasks.Concat(productionTasks));
             var productionTask = new ProductionTask(
                 Guid.NewGuid(),
                 order.Id,
-                item.Id,
-                product.Id,
-                item.Quantity,
+                plannedItem.OrderItem.Id,
+                plannedItem.Product.Id,
+                plannedItem.OrderItem.Quantity,
                 productionDurationHours,
                 plannedStartAt: plannedWindow.StartAt,
                 plannedAt: plannedWindow.EndAt);
-            await inventoryService.ConsumeForProductionAsync(requirements, productionTask.Id, cancellationToken);
+            await inventoryService.ConsumeForProductionAsync(plannedItem.Requirements, productionTask.Id, cancellationToken);
             productionTasks.Add(productionTask);
         }
 
         return productionTasks.AsReadOnly();
     }
+
+    private sealed record PlannedItem(
+        OrderItem OrderItem,
+        Product Product,
+        IReadOnlyCollection<MaterialRequirement> Requirements);
 
     private static IReadOnlyCollection<MaterialRequirement> BuildRequirements(Product product, int quantity)
     {

@@ -19,11 +19,77 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 
 namespace Craftsman.Tests.Application;
 
 public sealed class OrdersControllerRevertProductionTests
 {
+    [Fact]
+    public async Task Send_to_production_handles_concurrency_conflict_with_safe_message()
+    {
+        await using var dbContext = CreateDbContext();
+        var audit = new RecordingAuditService();
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var movementRepository = new StockMovementRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var transaction = new ThrowingConcurrencyTransactionalUnitOfWork(
+            new DbUpdateConcurrencyException("Concurrency details must not reach the user."));
+        var controller = new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, new ProductionTaskRepository(dbContext), new ShipmentRepository(dbContext)),
+            null!,
+            null!,
+            null!,
+            new StockAlertAppService(rawMaterialRepository, movementRepository, orderRepository, productRepository),
+            audit,
+            transaction,
+            NullLogger<OrdersController>.Instance)
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+
+        var result = await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        Assert.Contains("alterado durante o envio", controller.TempData["Error"]?.ToString());
+        Assert.DoesNotContain("DbUpdateConcurrencyException", controller.TempData["Error"]?.ToString());
+        Assert.Equal(AuditAction.SendToProduction, audit.Action);
+        Assert.True(transaction.Executed);
+    }
+
+    [Fact]
+    public async Task Send_to_production_handles_nested_concurrency_conflict()
+    {
+        await using var dbContext = CreateDbContext();
+        var audit = new RecordingAuditService();
+        var controller = CreateConcurrencyController(
+            dbContext,
+            audit,
+            new InvalidOperationException("outer", new DbUpdateConcurrencyException("inner")));
+
+        await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.Contains("alterado durante o envio", controller.TempData["Error"]?.ToString());
+        Assert.Equal(AuditAction.SendToProduction, audit.Action);
+    }
+
+    [Fact]
+    public async Task Send_to_production_handles_postgres_serialization_failure()
+    {
+        await using var dbContext = CreateDbContext();
+        var audit = new RecordingAuditService();
+        var controller = CreateConcurrencyController(
+            dbContext,
+            audit,
+            new PostgresException("serialization", "ERROR", "ERROR", PostgresErrorCodes.SerializationFailure));
+
+        await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.Contains("alterado durante o envio", controller.TempData["Error"]?.ToString());
+        Assert.Equal(AuditAction.SendToProduction, audit.Action);
+    }
+
     [Fact]
     public async Task Revert_production_redirects_with_success_and_audits_the_operation()
     {
@@ -132,6 +198,30 @@ public sealed class OrdersControllerRevertProductionTests
         };
     }
 
+    private static OrdersController CreateConcurrencyController(
+        AppDbContext dbContext,
+        IAuditService auditService,
+        Exception exception)
+    {
+        var orderRepository = new OrderRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        var movementRepository = new StockMovementRepository(dbContext);
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+
+        return new OrdersController(
+            new OrderQueryService(orderRepository, productRepository, taskRepository, new ShipmentRepository(dbContext)),
+            null!,
+            null!,
+            null!,
+            new StockAlertAppService(rawMaterialRepository, movementRepository, orderRepository, productRepository),
+            auditService,
+            new ThrowingConcurrencyTransactionalUnitOfWork(exception))
+        {
+            TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
+        };
+    }
+
     private static async Task<Order> SeedOrderAsync(
         AppDbContext dbContext,
         OrderStatus orderStatus,
@@ -231,6 +321,35 @@ public sealed class OrdersControllerRevertProductionTests
         {
             Executed = true;
             return await operation();
+        }
+
+        public async Task<T> ExecuteInSerializableTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            return await operation();
+        }
+    }
+
+    private sealed class ThrowingConcurrencyTransactionalUnitOfWork(Exception exception) : ITransactionalUnitOfWork
+    {
+        public bool Executed { get; private set; }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(0);
+
+        public Task<T> ExecuteInTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<T> ExecuteInSerializableTransactionAsync<T>(
+            Func<Task<T>> operation,
+            CancellationToken cancellationToken = default)
+        {
+            Executed = true;
+            throw exception;
         }
     }
 }
