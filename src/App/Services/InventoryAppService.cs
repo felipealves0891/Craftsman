@@ -3,6 +3,8 @@ using Craftsman.Domain.Inventory.Entities;
 using Craftsman.Domain.Inventory.Repositories;
 using Craftsman.Domain.Repositories;
 using Craftsman.Domain.Finance.Repositories;
+using Craftsman.Domain.Production.Entities;
+using Craftsman.Domain.Production.Repositories;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Services;
@@ -15,6 +17,7 @@ public sealed class InventoryAppService
     private readonly IStockMovementRepository stockMovementRepository;
     private readonly IOrderRepository orderRepository;
     private readonly IFinancialSettlementRepository financialSettlementRepository;
+    private readonly IProductionTaskRepository? productionTaskRepository;
     private readonly IUnitOfWork unitOfWork;
     private readonly IApplicationCache? cache;
 
@@ -24,7 +27,8 @@ public sealed class InventoryAppService
         IUnitOfWork unitOfWork,
         IOrderRepository orderRepository,
         IFinancialSettlementRepository financialSettlementRepository,
-        IApplicationCache? cache = null)
+        IApplicationCache? cache = null,
+        IProductionTaskRepository? productionTaskRepository = null)
     {
         this.rawMaterialRepository = rawMaterialRepository;
         this.stockMovementRepository = stockMovementRepository;
@@ -32,6 +36,7 @@ public sealed class InventoryAppService
         this.financialSettlementRepository = financialSettlementRepository;
         this.unitOfWork = unitOfWork;
         this.cache = cache;
+        this.productionTaskRepository = productionTaskRepository;
     }
 
     public async Task<IReadOnlyCollection<RawMaterialListItemViewModel>> ListRawMaterialsAsync(CancellationToken cancellationToken = default)
@@ -151,6 +156,51 @@ public sealed class InventoryAppService
 
         await stockMovementRepository.AddAsync(movement, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<StockMovementReversalResult> ReverseMovementAsync(
+        Guid movementId,
+        CancellationToken cancellationToken = default)
+    {
+        if (unitOfWork is ITransactionalUnitOfWork transactionalUnitOfWork)
+        {
+            return await transactionalUnitOfWork.ExecuteInSerializableTransactionAsync(
+                () => ReverseMovementCoreAsync(movementId, cancellationToken),
+                cancellationToken);
+        }
+
+        return await ReverseMovementCoreAsync(movementId, cancellationToken);
+    }
+
+    private async Task<StockMovementReversalResult> ReverseMovementCoreAsync(
+        Guid movementId,
+        CancellationToken cancellationToken)
+    {
+        var movement = await stockMovementRepository.GetByIdAsync(movementId, cancellationToken)
+            ?? throw new InvalidOperationException("Movimento de estoque nao encontrado.");
+
+        await EnsureMovementCanBeReversedAsync(movement, cancellationToken);
+
+        if (IsUnreferencedProductionConsumption(movement))
+        {
+            await stockMovementRepository.DeleteAsync(movement.Id, cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            return new StockMovementReversalResult(movement.Id, WasDeleted: true, ReversalMovementId: null);
+        }
+
+        var reversalReference = BuildReversalReference(movement.Id);
+        if (await stockMovementRepository.ExistsByBusinessReferenceAsync(reversalReference, cancellationToken))
+        {
+            return new StockMovementReversalResult(movement.Id, WasDeleted: false, ReversalMovementId: null);
+        }
+
+        var currentBalance = await stockMovementRepository.GetBalanceAsync(movement.RawMaterialId, cancellationToken);
+        var reversal = CreateReversalMovement(movement, reversalReference);
+        ValidateReversalBalance(reversal, currentBalance);
+        await stockMovementRepository.AddAsync(reversal, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new StockMovementReversalResult(movement.Id, WasDeleted: false, ReversalMovementId: reversal.Id);
     }
 
     public async Task<IReadOnlyCollection<InventoryBalanceViewModel>> ListBalancesAsync(CancellationToken cancellationToken = default)
@@ -284,5 +334,72 @@ public sealed class InventoryAppService
             StockMovementType.Adjustment => "Ajuste manual",
             _ => throw new InvalidOperationException("Informe o motivo da saida manual.")
         };
+    }
+
+    private async Task EnsureMovementCanBeReversedAsync(
+        StockMovement movement,
+        CancellationToken cancellationToken)
+    {
+        if (!movement.OrderId.HasValue)
+        {
+            return;
+        }
+
+        var order = await orderRepository.GetByIdAsync(movement.OrderId.Value, cancellationToken)
+            ?? throw new InvalidOperationException("Pedido associado nao encontrado.");
+
+        if (order.Status == OrderStatus.Delivered)
+        {
+            throw new InvalidOperationException("Movimento nao pode ser revertido porque o pedido foi entregue.");
+        }
+
+        if (productionTaskRepository is null)
+        {
+            throw new InvalidOperationException("Repositorio de tarefas de producao nao configurado.");
+        }
+
+        var productionTasks = await productionTaskRepository.ListByOrderAsync(order.Id, cancellationToken);
+        if (productionTasks.Any(task => task.Status == ProductionTaskStatus.Completed))
+        {
+            throw new InvalidOperationException("Movimento nao pode ser revertido porque o pedido foi concluido.");
+        }
+    }
+
+    private static bool IsUnreferencedProductionConsumption(StockMovement movement)
+    {
+        return movement.Type == StockMovementType.Outbound
+            && string.IsNullOrWhiteSpace(movement.BusinessReference)
+            && movement.Reason == "Production consumption";
+    }
+
+    private static string BuildReversalReference(Guid movementId) => $"stock-movement-reversal:{movementId}";
+
+    private static StockMovement CreateReversalMovement(StockMovement movement, string reversalReference)
+    {
+        var (type, quantity) = movement.Type switch
+        {
+            StockMovementType.Inbound => (StockMovementType.Outbound, movement.Quantity),
+            StockMovementType.Outbound => (StockMovementType.Inbound, movement.Quantity),
+            StockMovementType.Adjustment => (StockMovementType.Adjustment, -movement.Quantity),
+            _ => throw new InvalidOperationException($"Unsupported stock movement type {movement.Type}.")
+        };
+
+        return new StockMovement(
+            Guid.NewGuid(),
+            movement.RawMaterialId,
+            type,
+            quantity,
+            "Stock movement reversal",
+            reversalReference,
+            unitCostAmount: movement.UnitCostAmount,
+            orderId: movement.OrderId);
+    }
+
+    private static void ValidateReversalBalance(StockMovement reversal, decimal currentBalance)
+    {
+        if (currentBalance + reversal.SignedQuantity < 0)
+        {
+            throw new InvalidOperationException("Reversao nao pode gerar saldo negativo.");
+        }
     }
 }

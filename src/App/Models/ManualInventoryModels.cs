@@ -68,6 +68,12 @@ public sealed record StockMovementViewModel(
     string? OrderDisplayName = null);
 
 [ExcludeFromCodeCoverage]
+public sealed record StockMovementReversalResult(
+    Guid MovementId,
+    bool WasDeleted,
+    Guid? ReversalMovementId);
+
+[ExcludeFromCodeCoverage]
 public sealed class RawMaterialInputModel : IValidatableObject
 {
     public Guid? Id { get; set; }

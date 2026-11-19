@@ -18,10 +18,31 @@ public sealed class StockMovementRepository : IStockMovementRepository
         this.cache = cache;
     }
 
+    public async Task<StockMovement?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.StockMovements
+            .AsNoTracking()
+            .SingleOrDefaultAsync(movement => movement.Id == id, cancellationToken);
+
+        return entity is null ? null : ToModel(entity);
+    }
+
     public async Task AddAsync(StockMovement movement, CancellationToken cancellationToken = default)
     {
         await dbContext.StockMovements.AddAsync(ToEntity(movement), cancellationToken);
         cache?.Remove($"inventory:balance:{movement.RawMaterialId}");
+        cache?.RemoveByPrefix("inventory:movements:");
+        cache?.RemoveByPrefix("inventory:alerts:");
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.StockMovements
+            .SingleOrDefaultAsync(movement => movement.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("Stock movement was not found.");
+
+        dbContext.StockMovements.Remove(entity);
+        cache?.Remove($"inventory:balance:{entity.RawMaterialId}");
         cache?.RemoveByPrefix("inventory:movements:");
         cache?.RemoveByPrefix("inventory:alerts:");
     }

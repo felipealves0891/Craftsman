@@ -4,7 +4,11 @@ namespace Craftsman.Domain.Inventory.Repositories;
 
 public interface IStockMovementRepository
 {
+    Task<StockMovement?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task AddAsync(StockMovement movement, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<StockMovement>> GetByRawMaterialAsync(Guid rawMaterialId, CancellationToken cancellationToken = default);
 
