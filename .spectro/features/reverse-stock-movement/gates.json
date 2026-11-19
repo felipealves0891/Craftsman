@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "reverse-stock-movement",
-  "execution_id": "gate-20261119T020240Z",
+  "execution_id": "gate-20261119T021309Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "3c089bde7eb0390ea2de3b59c41f4e12af65c415",
+  "code_revision": "6022ec7cb0aeb53765abce6cc58ecc0fbfffec81",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
     "spec.md": "1c8af3959207829f5a97fa626696440c03986da2a83a669c62e8f953cf21d979",
     "clarifications.md": "271db875c6739c28dd7f5d153926f17a185bde4b8a3b3c2b560612629a480199",
-    "plan.md": "18ea5150f7b0a310afa4dfbd4e64370a7000c357b30b0ec59efed21282d41672",
-    "tasks.md": "8853de0e967defa5e2ac83145d0ae221e0d710697fe69f149b3a2fdd7ef40372"
+    "plan.md": "17fd988bc157441d4d6febb4b93c990dfc16513048dcf48b04c855d1edece3ee",
+    "tasks.md": "5e1c8c0122bc057486e4f84acd821f3ef745fa6470d8db5423bfd74457c69fe7"
   },
-  "started_at": "2026-11-19T02:02:40.111Z",
-  "duration_ms": 49178,
+  "started_at": "2026-11-19T02:13:09.708Z",
+  "duration_ms": 61848,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 8662,
+      "duration_ms": 17173,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/evidence/01-build.log"
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/build",
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 6324,
+      "duration_ms": 7576,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/evidence/02-test.log"
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/test",
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 5925,
+      "duration_ms": 8281,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/evidence/03-security.log"
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/security",
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,12 +69,12 @@
       "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 0,
-      "duration_ms": 28217,
+      "duration_ms": 28764,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/evidence/04-coverage.log"
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T020240Z/coverage",
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T021309Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }
