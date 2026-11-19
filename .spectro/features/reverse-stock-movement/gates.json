@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "reverse-stock-movement",
+  "execution_id": "gate-20261119T015922Z",
+  "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
+  "code_revision": "15ab6c1acfbfb15d0db30d7da6f0885b5903c3b3",
+  "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
+  "artifact_hashes": {
+    "spec.md": "1c8af3959207829f5a97fa626696440c03986da2a83a669c62e8f953cf21d979",
+    "clarifications.md": "271db875c6739c28dd7f5d153926f17a185bde4b8a3b3c2b560612629a480199",
+    "plan.md": "18ea5150f7b0a310afa4dfbd4e64370a7000c357b30b0ec59efed21282d41672",
+    "tasks.md": "8853de0e967defa5e2ac83145d0ae221e0d710697fe69f149b3a2fdd7ef40372"
+  },
+  "started_at": "2026-11-19T01:59:22.986Z",
+  "duration_ms": 52465,
+  "gates": [
+    {
+      "id": "GATE-001",
+      "name": "build",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet build --no-restore --warnaserror -v minimal",
+      "exit_code": 0,
+      "duration_ms": 10100,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/evidence/01-build.log"
+      ],
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/build",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-002",
+      "name": "test",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet test --no-restore --no-build",
+      "exit_code": 0,
+      "duration_ms": 7410,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/evidence/02-test.log"
+      ],
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/test",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-003",
+      "name": "security",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet list package --vulnerable",
+      "exit_code": 0,
+      "duration_ms": 5200,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/evidence/03-security.log"
+      ],
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/security",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-004",
+      "name": "coverage",
+      "required": true,
+      "status": "passed",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
+      "exit_code": 0,
+      "duration_ms": 29704,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/evidence/04-coverage.log"
+      ],
+      "output_directory": ".spectro/features/reverse-stock-movement/outputs/gate-20261119T015922Z/coverage",
+      "output_files": [],
+      "output_file_count": 0
+    }
+  ],
+  "result": "passed"
+}

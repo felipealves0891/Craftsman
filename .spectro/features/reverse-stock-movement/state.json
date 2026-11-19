@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "reverse-stock-movement",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261119T015922Z",
+      "report": ".spectro/features/reverse-stock-movement/gates.json"
+    }
+  },
+  "attempts": {},
+  "invalidated_executions": [],
+  "last_failure": null,
+  "last_execution_id": "gate-20261119T015922Z",
+  "updated_at": "2026-11-19T02:00:15.455Z"
+}
