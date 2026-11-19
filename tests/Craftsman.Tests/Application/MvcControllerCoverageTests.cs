@@ -177,6 +177,9 @@ public sealed class MvcControllerCoverageTests
         Assert.NotNull(controller.TempData["Error"]);
 
         var noTransactionController = CreateOrdersController(dbContext, useTransaction: false);
+        var noTransactionSend = Assert.IsType<RedirectToActionResult>(await noTransactionController.SendToProduction(order.Id, CancellationToken.None));
+        Assert.Equal(nameof(OrdersController.Details), noTransactionSend.ActionName);
+        Assert.NotNull(noTransactionController.TempData["Error"]);
         var noPlan = Assert.IsType<RedirectToActionResult>(await noTransactionController.RevertProduction(order.Id, CancellationToken.None));
         Assert.Equal(nameof(OrdersController.Details), noPlan.ActionName);
         Assert.Equal("O planejamento de producao ja estava revertido.", noTransactionController.TempData["Error"]);

@@ -31,6 +31,7 @@ public sealed class UnitOfWork : ITransactionalUnitOfWork
         CancellationToken cancellationToken = default)
         => await ExecuteInTransactionAsync(operation, IsolationLevel.Serializable, cancellationToken);
 
+    [ExcludeFromCodeCoverage]
     private async Task<T> ExecuteInTransactionAsync<T>(
         Func<Task<T>> operation,
         IsolationLevel isolationLevel,

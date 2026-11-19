@@ -23,7 +23,7 @@
 
 - Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`, `TASK-REV-001`, `TASK-REV-002`
 - Bloqueadas: nenhuma
-- Evidência: build, testes e segurança passaram no runner Spectro; 368 testes passaram. Cobertura com `-AllowDirtyTree`: 86,74% linhas, 71,05% branches, 97,56% linhas novas e 91,18% branches novos. O resultado oficial do runner ficou `failed` somente porque o script exige working tree sem alterações tracked não commitadas.
+- Evidência: build, testes e segurança passaram no runner Spectro; 370 testes passaram. Cobertura com `-AllowDirtyTree`: 86,94% linhas, 71,74% branches, 98,10% linhas novas e 94,00% branches novos. O resultado oficial do runner fica `failed` quando a árvore contém alterações tracked não commitadas.
 
 
 ## TASK-REV-001 - Remediate FINDING-001
