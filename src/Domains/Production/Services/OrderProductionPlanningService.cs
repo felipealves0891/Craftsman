@@ -76,13 +76,6 @@ public sealed class OrderProductionPlanningService
         foreach (var productionTask in productionTasks)
         {
             await productionTaskRepository.AddAsync(productionTask, cancellationToken);
-
-            foreach (var domainEvent in productionTask.DomainEvents)
-            {
-                await domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
-            }
-
-            productionTask.ClearDomainEvents();
         }
 
         if (order.Status == OrderStatus.Normalized)
@@ -94,6 +87,17 @@ public sealed class OrderProductionPlanningService
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        foreach (var productionTask in productionTasks)
+        {
+            foreach (var domainEvent in productionTask.DomainEvents)
+            {
+                await domainEventPublisher.PublishAsync(domainEvent, cancellationToken);
+            }
+
+            productionTask.ClearDomainEvents();
+        }
+
         return productionTasks.Count > 0;
     }
 

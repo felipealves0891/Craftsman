@@ -47,6 +47,46 @@ public sealed class ProductionPlannerTests
     }
 
     [Fact]
+    public async Task Planner_validates_aggregated_material_requirements_before_consuming_any_stock()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "metro");
+        var firstProduct = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 6)]);
+        var secondProduct = new Product(Guid.NewGuid(), "Carteira", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 6)]);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "AGGREGATED-STOCK-001"),
+            [
+                new OrderItem(Guid.NewGuid(), "BOLSA", "Bolsa", 1, new Money(50, "BRL"), firstProduct.Id),
+                new OrderItem(Guid.NewGuid(), "CARTEIRA", "Carteira", 1, new Money(30, "BRL"), secondProduct.Id)
+            ]);
+
+        var rawMaterialRepository = new RawMaterialRepository(dbContext);
+        var stockMovementRepository = new StockMovementRepository(dbContext);
+        var productRepository = new ProductRepository(dbContext);
+        var productionTaskRepository = new ProductionTaskRepository(dbContext);
+        var planner = new ProductionPlanner(
+            productRepository,
+            new InventoryService(rawMaterialRepository, stockMovementRepository),
+            productionTaskRepository);
+
+        await rawMaterialRepository.AddAsync(rawMaterial);
+        await stockMovementRepository.AddAsync(new StockMovement(Guid.NewGuid(), rawMaterial.Id, StockMovementType.Inbound, 10, "Initial stock", null));
+        await productRepository.AddAsync(firstProduct);
+        await productRepository.AddAsync(secondProduct);
+        await dbContext.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => planner.PlanAsync(order));
+        await dbContext.SaveChangesAsync();
+
+        Assert.Equal(10, await stockMovementRepository.GetBalanceAsync(rawMaterial.Id));
+        Assert.DoesNotContain(
+            await stockMovementRepository.ListAsync(),
+            movement => movement.Type == StockMovementType.Outbound);
+        Assert.Empty(await productionTaskRepository.ListAsync());
+    }
+
+    [Fact]
     public async Task Planner_uses_shipping_date_and_quantity_to_schedule_by_hours()
     {
         await using var dbContext = CreateDbContext();
