@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "add-orders-productions-integration-tests",
-  "current_phase": "implement",
-  "status": "running",
+  "current_phase": "review",
+  "status": "completed",
   "phases": {
     "gates": {
-      "status": "invalidated",
-      "execution_id": "gate-20261121T210132Z",
+      "status": "completed",
+      "execution_id": "gate-20261121T211300Z",
       "report": ".spectro/features/add-orders-productions-integration-tests/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261121T210132Z",
-  "updated_at": "2026-11-21T21:02:48.144Z"
+  "last_execution_id": "gate-20261121T211300Z",
+  "updated_at": "2026-11-21T21:14:06.745Z"
 }
