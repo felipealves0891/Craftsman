@@ -43,7 +43,7 @@ public sealed class OrderProductionPlanningService
         this.logger = logger;
     }
 
-    public async Task<bool> TryPlanAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task<ProductionPlanningResult> TryPlanAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Start planning production for order<{0}>.", orderId);
         var order = await orderRepository.GetByIdAsync(orderId, cancellationToken);
@@ -51,14 +51,16 @@ public sealed class OrderProductionPlanningService
         if (order is null || order.Items.Any(item => item.ProductId is null))
         {
             logger.LogWarning("Order<{0}> not found or has items without product ID.", orderId);
-            return false;
+            return ProductionPlanningResult.Failed(order is null
+                ? ProductionPlanningFailureReason.OrderNotFound
+                : ProductionPlanningFailureReason.MissingProductMapping);
         }
 
         var existingTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
         if (existingTasks.Any(task => task.OrderId == orderId))
         {
             logger.LogWarning("Order<{0}> already has production tasks.", orderId);
-            return false;
+            return ProductionPlanningResult.Failed(ProductionPlanningFailureReason.AlreadyPlanned);
         }
 
         IReadOnlyCollection<Entities.ProductionTask> productionTasks;
@@ -69,7 +71,7 @@ public sealed class OrderProductionPlanningService
         catch (InvalidOperationException ex)
         {
             logger.LogWarning("Failed to plan production for order<{0}> by reason: {1}", orderId, ex.Message);
-            return false;
+            return ProductionPlanningResult.Failed(MapFailureReason(ex));
         }
 
         logger.LogInformation("Found {0} production tasks for order<{1}>.", productionTasks.Count, orderId);
@@ -98,7 +100,20 @@ public sealed class OrderProductionPlanningService
             productionTask.ClearDomainEvents();
         }
 
-        return productionTasks.Count > 0;
+        return productionTasks.Count > 0
+            ? ProductionPlanningResult.Success()
+            : ProductionPlanningResult.Failed(ProductionPlanningFailureReason.Unexpected);
+    }
+
+    private static ProductionPlanningFailureReason MapFailureReason(InvalidOperationException exception)
+    {
+        return exception.Message.Contains("insufficient material", StringComparison.OrdinalIgnoreCase)
+            ? ProductionPlanningFailureReason.InsufficientStock
+            : exception.Message.Contains("without an internal product mapping", StringComparison.OrdinalIgnoreCase)
+                ? ProductionPlanningFailureReason.MissingProductMapping
+                : exception.Message.Contains("raw material configuration", StringComparison.OrdinalIgnoreCase)
+                    ? ProductionPlanningFailureReason.InvalidProductConfiguration
+                : ProductionPlanningFailureReason.InvalidProductConfiguration;
     }
 
     public async Task<bool> RevertAsync(Guid orderId, CancellationToken cancellationToken = default)

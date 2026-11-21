@@ -1,5 +1,4 @@
 using Craftsman.Domain.Inventory.Services;
-using Craftsman.Domain.ProductCatalog.Entities;
 using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Entities;
 using Craftsman.Domain.Production.Repositories;
@@ -10,7 +9,7 @@ namespace Craftsman.Domain.Production.Services;
 public sealed class ProductionPlanner : IProductionPlanner
 {
     private readonly InventoryService inventoryService;
-    private readonly IProductRepository productRepository;
+    private readonly ProductionPlanPreparationService preparationService;
     private readonly IProductionTaskRepository? productionTaskRepository;
     private readonly ProductionScheduleOptions scheduleOptions;
 
@@ -18,9 +17,10 @@ public sealed class ProductionPlanner : IProductionPlanner
         IProductRepository productRepository,
         InventoryService inventoryService,
         IProductionTaskRepository? productionTaskRepository = null,
-        ProductionScheduleOptions? scheduleOptions = null)
+        ProductionScheduleOptions? scheduleOptions = null,
+        ProductionPlanPreparationService? preparationService = null)
     {
-        this.productRepository = productRepository;
+        this.preparationService = preparationService ?? new ProductionPlanPreparationService(productRepository);
         this.inventoryService = inventoryService;
         this.productionTaskRepository = productionTaskRepository;
         this.scheduleOptions = scheduleOptions ?? new ProductionScheduleOptions();
@@ -35,43 +35,31 @@ public sealed class ProductionPlanner : IProductionPlanner
                 .Where(task => task.Status != ProductionTaskStatus.Cancelled)
                 .ToList();
 
-        var plannedItems = new List<PlannedItem>();
-        var requirements = new List<MaterialRequirement>();
-
-        foreach (var item in order.Items)
+        var preparation = await preparationService.PrepareAsync(order, cancellationToken);
+        if (!preparation.IsValid)
         {
-            if (item.ProductId is null)
+            throw new InvalidOperationException(preparation.FailureReason switch
             {
-                throw new InvalidOperationException("Production cannot be planned without an internal product mapping.");
-            }
-
-            var product = await productRepository.GetByIdAsync(item.ProductId.Value, cancellationToken);
-
-            if (product is null || !product.CanBePlannedForProduction)
-            {
-                throw new InvalidOperationException("Production cannot be planned without an active product and valid bill of materials.");
-            }
-
-            var itemRequirements = BuildRequirements(product, item.Quantity);
-            plannedItems.Add(new PlannedItem(item, product, itemRequirements));
-            requirements.AddRange(itemRequirements);
+                ProductionPlanningFailureReason.MissingProductMapping => "Production cannot be planned without an internal product mapping.",
+                _ => "Production cannot be planned without an active product and valid bill of materials."
+            });
         }
 
-        var aggregatedRequirements = requirements
-            .GroupBy(requirement => requirement.RawMaterialId)
-            .Select(group => new MaterialRequirement(
-                group.Key,
-                group.Sum(requirement => requirement.RequiredQuantity)))
-            .ToList()
-            .AsReadOnly();
-        var availability = await inventoryService.CheckAvailabilityAsync(aggregatedRequirements, cancellationToken);
+        var detailedAvailability = await inventoryService.GetAvailabilityAsync(preparation.Requirements, cancellationToken);
+
+        if (detailedAvailability.Any(material => !material.IsConfigured))
+        {
+            throw new InvalidOperationException("Production cannot be planned with missing or inactive raw material configuration.");
+        }
+
+        var availability = await inventoryService.CheckAvailabilityAsync(preparation.Requirements, cancellationToken);
 
         if (!availability.IsAvailable)
         {
             throw new InvalidOperationException($"Production cannot be planned with insufficient material: {string.Join(", ", availability.MissingMaterials)}.");
         }
 
-        foreach (var plannedItem in plannedItems)
+        foreach (var plannedItem in preparation.PlannedItems)
         {
             var productionDurationHours = plannedItem.Product.ProductionDurationHours * plannedItem.OrderItem.Quantity;
             var plannedWindow = PlanWindow(order, productionDurationHours, existingTasks.Concat(productionTasks));
@@ -89,19 +77,6 @@ public sealed class ProductionPlanner : IProductionPlanner
         }
 
         return productionTasks.AsReadOnly();
-    }
-
-    private sealed record PlannedItem(
-        OrderItem OrderItem,
-        Product Product,
-        IReadOnlyCollection<MaterialRequirement> Requirements);
-
-    private static IReadOnlyCollection<MaterialRequirement> BuildRequirements(Product product, int quantity)
-    {
-        return product.BillOfMaterials
-            .Select(item => new MaterialRequirement(item.RawMaterialId, item.QuantityPerUnit * quantity))
-            .ToList()
-            .AsReadOnly();
     }
 
     private ProductionWindow PlanWindow(Order order, int productionDurationHours, IEnumerable<ProductionTask> reservedTasks)

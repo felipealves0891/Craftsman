@@ -22,6 +22,7 @@ public sealed class OrdersController : Controller
     private readonly IAuditService auditService;
     private readonly ITransactionalUnitOfWork? transactionalUnitOfWork;
     private readonly ILogger<OrdersController>? logger;
+    private readonly ICurrentUserContext? currentUserContext;
 
     public OrdersController(
         OrderQueryService orderQueryService,
@@ -31,7 +32,8 @@ public sealed class OrdersController : Controller
         StockAlertAppService stockAlertAppService,
         IAuditService auditService,
         ITransactionalUnitOfWork? transactionalUnitOfWork = null,
-        ILogger<OrdersController>? logger = null)
+        ILogger<OrdersController>? logger = null,
+        ICurrentUserContext? currentUserContext = null)
     {
         this.orderQueryService = orderQueryService;
         this.manualOrderService = manualOrderService;
@@ -41,6 +43,7 @@ public sealed class OrdersController : Controller
         this.auditService = auditService;
         this.transactionalUnitOfWork = transactionalUnitOfWork;
         this.logger = logger;
+        this.currentUserContext = currentUserContext;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -83,22 +86,22 @@ public sealed class OrdersController : Controller
     {
         var stockAlerts = await stockAlertAppService.ListAlertsForOrderAsync(id, cancellationToken);
 
-        async Task<bool> PlanAndAuditAsync()
+        async Task<ProductionPlanningResult> PlanAndAuditAsync()
         {
             var result = await productionPlanningService.TryPlanAsync(id, cancellationToken);
             await auditService.RecordAsync(
                 AuditAction.SendToProduction,
                 "Order",
                 id.ToString(),
-                after: new { Planned = result },
+                after: new { Planned = result.Succeeded, Failure = result.FailureReason.ToString() },
                 cancellationToken: cancellationToken);
             return result;
         }
 
-        bool planned;
+        ProductionPlanningResult planningResult;
         try
         {
-            planned = transactionalUnitOfWork is null
+            planningResult = transactionalUnitOfWork is null
                 ? await PlanAndAuditAsync()
                 : await transactionalUnitOfWork.ExecuteInSerializableTransactionAsync(PlanAndAuditAsync, cancellationToken);
         }
@@ -115,9 +118,9 @@ public sealed class OrdersController : Controller
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        TempData[planned ? "Success" : "Error"] = planned
+        TempData[planningResult.Succeeded ? "Success" : "Error"] = planningResult.Succeeded
             ? "Pedido enviado para producao."
-            : "Pedido nao pode ser enviado para producao. Verifique vinculos, estoque e tarefas ja existentes.";
+            : GetPlanningFailureMessage(planningResult);
             
         if (stockAlerts.Count > 0)
         {
@@ -127,6 +130,20 @@ public sealed class OrdersController : Controller
         }
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private string GetPlanningFailureMessage(ProductionPlanningResult result)
+    {
+        return result.FailureReason switch
+        {
+            ProductionPlanningFailureReason.InsufficientStock => "Nao foi possivel enviar para producao: estoque insuficiente. Revise os materiais necessarios e reponha o saldo.",
+            ProductionPlanningFailureReason.MissingProductMapping => "Nao foi possivel enviar para producao: existe item sem vinculo com produto interno.",
+            ProductionPlanningFailureReason.InvalidProductConfiguration => "Nao foi possivel enviar para producao: existe produto, ficha tecnica ou materia-prima com configuracao invalida.",
+            ProductionPlanningFailureReason.AlreadyPlanned => "Nao foi possivel enviar para producao: este pedido ja possui planejamento.",
+            ProductionPlanningFailureReason.OrderNotFound => "Nao foi possivel enviar para producao: pedido nao encontrado.",
+            ProductionPlanningFailureReason.ConcurrencyConflict => "O pedido foi alterado durante o envio para producao. Atualize os dados e tente novamente.",
+            _ => $"O envio para producao nao foi concluido. Tente novamente e informe a referencia {currentUserContext?.Current.CorrelationId ?? "indisponivel"} ao suporte."
+        };
     }
 
     private static bool IsProductionPlanningConcurrencyFailure(Exception exception)

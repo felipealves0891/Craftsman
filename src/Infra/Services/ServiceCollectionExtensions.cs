@@ -69,6 +69,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFinancialSettlementRepository, FinancialSettlementRepository>();
         services.AddScoped<InventoryService>();
         services.AddScoped<IProductionPlanner, ProductionPlanner>();
+        services.AddScoped<ProductionPlanPreparationService>();
+        services.AddScoped<ProductionPreflightService>();
         services.AddScoped<OrderProductionPlanningService>();
         services.AddScoped<ISettlementCalculator, SettlementCalculator>();
         services.AddScoped<IOrderNormalizer, OrderNormalizer>();

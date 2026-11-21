@@ -1,0 +1,108 @@
+using Craftsman.Domain.Inventory.Entities;
+using Craftsman.Domain.Inventory.Services;
+using Craftsman.Domain.ProductCatalog.Entities;
+using Craftsman.Domain.Production.Repositories;
+using Craftsman.Domain.Production.Services;
+using Craftsman.Domain.Sales.Entities;
+using Craftsman.Domain.Sales.ObjectValues;
+using Craftsman.Infra.Persistence;
+using Craftsman.Infra.Repositories;
+using Microsoft.EntityFrameworkCore;
+
+namespace Craftsman.Tests.Production;
+
+public sealed class ProductionPreflightTests
+{
+    [Fact]
+    public async Task Preflight_lists_required_available_and_missing_quantities()
+    {
+        await using var db = CreateDbContext();
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 4)]);
+        var order = CreateOrder(product.Id);
+        var service = await CreateServiceAsync(db, material, product, order, 3);
+
+        var result = await service.GetAsync(order.Id);
+
+        var row = Assert.Single(result.Materials);
+        Assert.False(result.CanConfirm);
+        Assert.Equal("Tecido", row.Name);
+        Assert.Equal("m", row.UnitOfMeasure);
+        Assert.Equal(4m, row.RequiredQuantity);
+        Assert.Equal(3m, row.AvailableQuantity);
+        Assert.Equal(1m, row.MissingQuantity);
+        Assert.False(row.IsAvailable);
+    }
+
+    [Fact]
+    public async Task Preflight_allows_confirmation_when_stock_is_exactly_sufficient()
+    {
+        await using var db = CreateDbContext();
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 4)]);
+        var order = CreateOrder(product.Id);
+        var service = await CreateServiceAsync(db, material, product, order, 4);
+
+        var result = await service.GetAsync(order.Id);
+
+        Assert.True(result.CanConfirm);
+        Assert.True(Assert.Single(result.Materials).IsAvailable);
+        Assert.Equal(0m, Assert.Single(result.Materials).MissingQuantity);
+    }
+
+    [Fact]
+    public async Task Preflight_blocks_inactive_material_as_configuration_error()
+    {
+        await using var db = CreateDbContext();
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m", RawMaterialStatus.Inactive);
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 4)]);
+        var order = CreateOrder(product.Id);
+        var service = await CreateServiceAsync(db, material, product, order, 4);
+
+        var result = await service.GetAsync(order.Id);
+
+        var row = Assert.Single(result.Materials);
+        Assert.False(result.CanConfirm);
+        Assert.False(row.IsConfigured);
+    }
+
+    private static async Task<ProductionPreflightService> CreateServiceAsync(
+        AppDbContext db,
+        RawMaterial material,
+        Product product,
+        Order order,
+        decimal stock)
+    {
+        var materialRepository = new RawMaterialRepository(db);
+        var movementRepository = new StockMovementRepository(db);
+        var productRepository = new ProductRepository(db);
+        var orderRepository = new OrderRepository(db);
+        var taskRepository = new ProductionTaskRepository(db);
+
+        await materialRepository.AddAsync(material);
+        await productRepository.AddAsync(product);
+        await orderRepository.AddAsync(order);
+        await movementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(), material.Id, StockMovementType.Inbound, stock, "Initial stock", null));
+        await db.SaveChangesAsync();
+
+        return new ProductionPreflightService(
+            orderRepository,
+            taskRepository,
+            new ProductionPlanPreparationService(productRepository),
+            new InventoryService(materialRepository, movementRepository));
+    }
+
+    private static Order CreateOrder(Guid productId) => new(
+        Guid.NewGuid(),
+        new OrderOrigin("Manual", "PREFLIGHT-001"),
+        [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(10, "BRL"), productId)]);
+
+    private static AppDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(options);
+    }
+}

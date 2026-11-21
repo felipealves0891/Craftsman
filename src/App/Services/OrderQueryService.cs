@@ -1,6 +1,7 @@
 using Craftsman.App.Models;
 using Craftsman.Domain.ProductCatalog.Repositories;
 using Craftsman.Domain.Production.Repositories;
+using Craftsman.Domain.Production.Services;
 using Craftsman.Domain.Sales.Entities;
 using Craftsman.Domain.Sales.Repositories;
 using Craftsman.Domain.Shipping.Repositories;
@@ -13,17 +14,20 @@ public sealed class OrderQueryService
     private readonly IProductRepository productRepository;
     private readonly IProductionTaskRepository productionTaskRepository;
     private readonly IShipmentRepository shipmentRepository;
+    private readonly ProductionPreflightService? productionPreflightService;
 
     public OrderQueryService(
         IOrderRepository orderRepository,
         IProductRepository productRepository,
         IProductionTaskRepository productionTaskRepository,
-        IShipmentRepository shipmentRepository)
+        IShipmentRepository shipmentRepository,
+        ProductionPreflightService? productionPreflightService = null)
     {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.productionTaskRepository = productionTaskRepository;
         this.shipmentRepository = shipmentRepository;
+        this.productionPreflightService = productionPreflightService;
     }
 
     public async Task<IReadOnlyCollection<OrderListItemViewModel>> ListAsync(CancellationToken cancellationToken = default)
@@ -89,6 +93,10 @@ public sealed class OrderQueryService
         var productionTasks = await productionTaskRepository.ListAsync(cancellationToken: cancellationToken);
         var shipments = await shipmentRepository.ListAsync(cancellationToken: cancellationToken);
 
+        var productionPreflight = productionPreflightService is null
+            ? null
+            : await BuildProductionPreflightAsync(orderId, cancellationToken);
+
         return new OrderDetailViewModel(
             order.Id,
             order.Origin.Source,
@@ -107,7 +115,38 @@ public sealed class OrderQueryService
                 .Select(task => ProductionScheduleService.ToViewModel(task))
                 .ToList()
                 .AsReadOnly(),
-            shipments.Where(shipment => shipment.OrderId == order.Id).Select(ShippingAppService.ToViewModel).ToList().AsReadOnly());
+            shipments.Where(shipment => shipment.OrderId == order.Id).Select(ShippingAppService.ToViewModel).ToList().AsReadOnly(),
+            productionPreflight);
+    }
+
+    private async Task<ProductionPreflightViewModel> BuildProductionPreflightAsync(
+        Guid orderId,
+        CancellationToken cancellationToken)
+    {
+        var result = await productionPreflightService!.GetAsync(orderId, cancellationToken);
+        var materials = result.Materials
+            .Select(material => new ProductionPreflightMaterialViewModel(
+                material.RawMaterialId,
+                material.Name,
+                material.UnitOfMeasure,
+                material.RequiredQuantity,
+                material.AvailableQuantity,
+                material.MissingQuantity,
+                material.IsConfigured,
+                material.IsAvailable))
+            .ToList()
+            .AsReadOnly();
+
+        var failureMessage = result.FailureReason switch
+        {
+            ProductionPlanningFailureReason.OrderNotFound => "O pedido nao foi encontrado.",
+            ProductionPlanningFailureReason.AlreadyPlanned => "Este pedido ja possui planejamento de producao.",
+            ProductionPlanningFailureReason.MissingProductMapping => "Existe item do pedido sem vinculo com produto interno.",
+            ProductionPlanningFailureReason.InvalidProductConfiguration => "Existe produto sem cadastro ativo ou ficha tecnica valida.",
+            _ => null
+        };
+
+        return new ProductionPreflightViewModel(result.CanConfirm, failureMessage, materials);
     }
 
     private static bool IsAvailableForShipment(Order order)
