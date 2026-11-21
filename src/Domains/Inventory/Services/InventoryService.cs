@@ -18,24 +18,43 @@ public sealed class InventoryService
         IEnumerable<MaterialRequirement> requirements,
         CancellationToken cancellationToken = default)
     {
-        var missingMaterials = new List<MissingMaterial>();
-
-        foreach (var requirement in requirements)
-        {
-            var rawMaterial = await rawMaterialRepository.GetByIdAsync(requirement.RawMaterialId, cancellationToken);
-            var availableQuantity = rawMaterial?.CanBeConsumed == true
-                ? await stockMovementRepository.GetBalanceAsync(requirement.RawMaterialId, cancellationToken)
-                : 0;
-
-            if (availableQuantity < requirement.RequiredQuantity)
-            {
-                missingMaterials.Add(new MissingMaterial(requirement.RawMaterialId, requirement.RequiredQuantity, availableQuantity));
-            }
-        }
+        var availability = await GetAvailabilityAsync(requirements, cancellationToken);
+        var missingMaterials = availability
+            .Where(material => !material.IsAvailable)
+            .Select(material => new MissingMaterial(
+                material.RawMaterialId,
+                material.RequiredQuantity,
+                material.AvailableQuantity))
+            .ToList();
 
         return missingMaterials.Count == 0
             ? MaterialAvailabilityResult.Available()
             : new MaterialAvailabilityResult(missingMaterials);
+    }
+
+    public async Task<IReadOnlyCollection<MaterialAvailability>> GetAvailabilityAsync(
+        IEnumerable<MaterialRequirement> requirements,
+        CancellationToken cancellationToken = default)
+    {
+        var result = new List<MaterialAvailability>();
+        foreach (var requirement in requirements)
+        {
+            var rawMaterial = await rawMaterialRepository.GetByIdAsync(requirement.RawMaterialId, cancellationToken);
+            var isConfigured = rawMaterial?.CanBeConsumed == true;
+            var availableQuantity = isConfigured
+                ? await stockMovementRepository.GetBalanceAsync(requirement.RawMaterialId, cancellationToken)
+                : 0;
+
+            result.Add(new MaterialAvailability(
+                requirement.RawMaterialId,
+                rawMaterial?.Name ?? "Matéria-prima não cadastrada",
+                rawMaterial?.UnitOfMeasure ?? "-",
+                requirement.RequiredQuantity,
+                availableQuantity,
+                isConfigured));
+        }
+
+        return result.AsReadOnly();
     }
 
     public async Task ConsumeForProductionAsync(

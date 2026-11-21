@@ -51,7 +51,7 @@ public sealed class OrderProductionPlanningConsistencyTests
 
         var planned = await service.TryPlanAsync(order.Id, CancellationToken.None);
 
-        Assert.True(planned);
+        Assert.True(planned.Succeeded);
         Assert.Single(publisher.PublishedEvents);
         Assert.All(publisher.PublishedEvents, publishedAfterSave => Assert.True(publishedAfterSave));
     }

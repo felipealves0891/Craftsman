@@ -16,12 +16,11 @@
             <input name="processId" type="hidden" value="@DeleteProcessId" />
             <button type="submit" class="btn btn-outline-danger">Excluir</button>
         </form>
-        @if (!ProductionTasks.Any())
+        @if (!ProductionTasks.Any() && ProductionPreflight is not null)
         {
-            <form action="/Orders/SendToProduction/@OrderId" method="post">
-                <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
-                <button type="submit" class="btn btn-primary">Enviar para producao</button>
-            </form>
+            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#production-preflight-modal">
+                Conferir estoque e enviar para producao
+            </button>
         }
         @if (CanRevertProduction)
         {
@@ -46,6 +45,80 @@
 @if (!string.IsNullOrWhiteSpace(StockAlertsMessage))
 {
     <div class="alert alert-warning">@StockAlertsMessage</div>
+}
+
+@if (!ProductionTasks.Any() && ProductionPreflight is not null)
+{
+    <div class="modal fade" id="production-preflight-modal" tabindex="-1" role="dialog" aria-labelledby="production-preflight-title" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="production-preflight-title">Conferir estoque para producao</h2>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(ProductionPreflight.FailureMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">@ProductionPreflight.FailureMessage</div>
+                    }
+                    @if (ProductionPreflight.Materials.Count == 0)
+                    {
+                        <p class="mb-0">Nao foi possivel determinar os materiais necessarios. Corrija os pre-requisitos e atualize o pedido.</p>
+                    }
+                    else
+                    {
+                        <p>Confira os materiais necessarios antes de confirmar o envio.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm" aria-describedby="production-preflight-title">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Materia-prima</th>
+                                        <th scope="col">Necessario</th>
+                                        <th scope="col">Disponivel</th>
+                                        <th scope="col">Unidade</th>
+                                        <th scope="col">Situacao</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var material in ProductionPreflight.Materials)
+                                    {
+                                        var blocked = !material.IsAvailable;
+                                        <tr class="@(blocked ? "table-danger" : null)">
+                                            <th scope="row">@material.Name</th>
+                                            <td>@material.RequiredQuantity</td>
+                                            <td>@material.AvailableQuantity</td>
+                                            <td>@material.UnitOfMeasure</td>
+                                            <td>
+                                                @if (!material.IsConfigured)
+                                                {
+                                                    <span class="text-danger">Erro de configuracao</span>
+                                                }
+                                                else if (blocked)
+                                                {
+                                                    <span class="text-danger">Estoque insuficiente (faltam @material.MissingQuantity @material.UnitOfMeasure)</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-success">Disponivel</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                    <form action="/Orders/SendToProduction/@OrderId" method="post">
+                        <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                        <button type="submit" class="btn btn-primary" disabled="@(!ProductionPreflight.CanConfirm)">Confirmar envio para producao</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 <div class="metric-row mb-4">
@@ -216,6 +289,7 @@
     [Parameter] public IReadOnlyCollection<OrderItemRow> Items { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ProductionTaskRow> ProductionTasks { get; set; } = [];
     [Parameter] public IReadOnlyCollection<ShipmentRow> Shipments { get; set; } = [];
+    [Parameter] public ProductionPreflightRow? ProductionPreflight { get; set; }
 
     private bool CanRevertProduction =>
         Status is "Pronto para producao" or "Em producao"
@@ -229,4 +303,19 @@
     public sealed record ProductionTaskRow(Guid Id, Guid ProductId, int Quantity, string Status);
     [ExcludeFromCodeCoverage]
     public sealed record ShipmentRow(string? TrackingCode, string Status, string CreatedAt);
+    [ExcludeFromCodeCoverage]
+    public sealed record ProductionPreflightRow(
+        bool CanConfirm,
+        string? FailureMessage,
+        IReadOnlyCollection<ProductionPreflightMaterialRow> Materials);
+    [ExcludeFromCodeCoverage]
+    public sealed record ProductionPreflightMaterialRow(
+        Guid RawMaterialId,
+        string Name,
+        string UnitOfMeasure,
+        decimal RequiredQuantity,
+        decimal AvailableQuantity,
+        decimal MissingQuantity,
+        bool IsConfigured,
+        bool IsAvailable);
 }
