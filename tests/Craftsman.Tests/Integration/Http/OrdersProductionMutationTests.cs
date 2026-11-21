@@ -62,6 +62,35 @@ public sealed class OrdersProductionMutationTests
     }
 
     [Fact]
+    public async Task Send_to_production_aggregates_material_needs_before_consuming_stock()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(
+                db,
+                stockQuantity: 5m,
+                includeSecondItem: true);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(client, "/Orders/Index");
+        using var response = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        await using var verification = factory.CreateDbContext();
+        Assert.Equal(OrderStatus.Normalized.ToString(), (await verification.Orders.SingleAsync()).Status);
+        Assert.Empty(await verification.ProductionTasks.ToListAsync());
+        Assert.Empty(await verification.StockMovements
+            .Where(movement => movement.Type == StockMovementType.Outbound.ToString())
+            .ToListAsync());
+        var audit = await verification.AuditLogs.SingleAsync(log => log.Action == AuditAction.SendToProduction);
+        Assert.Contains("false", audit.AfterJson, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Send_to_production_with_inactive_product_has_no_partial_business_effects()
     {
         await AssertPlanningRejectionHasNoBusinessEffectsAsync(
@@ -231,6 +260,101 @@ public sealed class OrdersProductionMutationTests
         await using var verification = factory.CreateDbContext();
         Assert.Empty(await verification.ProductionTasks.ToListAsync());
         Assert.Equal(OrderStatus.Normalized.ToString(), (await verification.Orders.SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task Send_to_production_for_missing_order_creates_no_tasks_or_consumption()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(client, "/Orders/Index");
+        var missingOrderId = Guid.NewGuid();
+
+        using var response = await client.PostAsync(
+            $"/Orders/SendToProduction?id={missingOrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.EndsWith($"/Orders/Details/{missingOrderId}", response.Headers.Location?.OriginalString);
+        await using var verification = factory.CreateDbContext();
+        Assert.Empty(await verification.Orders.ToListAsync());
+        Assert.Empty(await verification.ProductionTasks.ToListAsync());
+        Assert.Empty(await verification.StockMovements
+            .Where(movement => movement.Type == StockMovementType.Outbound.ToString())
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task Repeated_send_to_production_does_not_duplicate_task_or_consumption()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(client, "/Orders/Index");
+        using var firstResponse = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        using var secondResponse = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+
+        Assert.Equal(HttpStatusCode.Redirect, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, secondResponse.StatusCode);
+        await using var verification = factory.CreateDbContext();
+        Assert.Single(await verification.ProductionTasks.ToListAsync());
+        Assert.Single(await verification.StockMovements
+            .Where(movement => movement.Type == StockMovementType.Outbound.ToString())
+            .ToListAsync());
+        Assert.Equal(2, await verification.AuditLogs.CountAsync(log => log.Action == AuditAction.SendToProduction));
+    }
+
+    [Fact]
+    public async Task Consulta_cannot_send_order_to_production()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        using var response = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await using var verification = factory.CreateDbContext();
+        Assert.Empty(await verification.ProductionTasks.ToListAsync());
+        Assert.Empty(await verification.StockMovements
+            .Where(movement => movement.Type == StockMovementType.Outbound.ToString())
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task Send_to_production_without_antiforgery_is_rejected_without_effects()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        using var response = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            new FormUrlEncodedContent([]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await using var verification = factory.CreateDbContext();
+        Assert.Equal(OrderStatus.Normalized.ToString(), (await verification.Orders.SingleAsync()).Status);
+        Assert.Empty(await verification.ProductionTasks.ToListAsync());
+        Assert.Empty(await verification.StockMovements
+            .Where(movement => movement.Type == StockMovementType.Outbound.ToString())
+            .ToListAsync());
     }
 
     [Fact]

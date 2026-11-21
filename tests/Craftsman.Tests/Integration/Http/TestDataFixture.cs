@@ -12,7 +12,9 @@ internal static class TestDataFixture
 {
     public static readonly Guid OrderId = new("11111111-1111-1111-1111-111111111111");
     public static readonly Guid OrderItemId = new("22222222-2222-2222-2222-222222222222");
+    public static readonly Guid SecondOrderItemId = new("77777777-7777-7777-7777-777777777777");
     public static readonly Guid ProductId = new("33333333-3333-3333-3333-333333333333");
+    public static readonly Guid SecondProductId = new("88888888-8888-8888-8888-888888888888");
     public static readonly Guid RawMaterialId = new("66666666-6666-6666-6666-666666666666");
     public static readonly Guid TaskId = new("44444444-4444-4444-4444-444444444444");
     public static readonly Guid CompletedTaskId = new("55555555-5555-5555-5555-555555555555");
@@ -77,7 +79,8 @@ internal static class TestDataFixture
         ProductStatus productStatus = ProductStatus.Active,
         bool includeBillOfMaterials = true,
         RawMaterialStatus rawMaterialStatus = RawMaterialStatus.Active,
-        decimal stockQuantity = 10m)
+        decimal stockQuantity = 10m,
+        bool includeSecondItem = false)
     {
         await SeedOrderAsync(db, OrderStatus.Normalized);
 
@@ -101,6 +104,30 @@ internal static class TestDataFixture
         db.Products.Add(product);
         db.RawMaterials.Add(rawMaterial);
 
+        if (includeSecondItem)
+        {
+            db.OrderItems.Add(new OrderItemEntity
+            {
+                Id = SecondOrderItemId,
+                OrderId = OrderId,
+                ExternalItemId = "TEST-ITEM-002",
+                Description = "Segundo produto de teste",
+                Quantity = 1,
+                UnitPriceAmount = 8m,
+                UnitPriceCurrency = "BRL",
+                ProductId = SecondProductId
+            });
+
+            db.Products.Add(new ProductEntity
+            {
+                Id = SecondProductId,
+                Name = "Segundo produto planejavel",
+                Status = productStatus.ToString(),
+                ProductionDurationHours = 1,
+                HourlyRate = 10m
+            });
+        }
+
         if (includeBillOfMaterials)
         {
             db.BillOfMaterialsItems.Add(new BillOfMaterialsItemEntity
@@ -110,6 +137,17 @@ internal static class TestDataFixture
                 RawMaterialId = RawMaterialId,
                 QuantityPerUnit = 2m
             });
+
+            if (includeSecondItem)
+            {
+                db.BillOfMaterialsItems.Add(new BillOfMaterialsItemEntity
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = SecondProductId,
+                    RawMaterialId = RawMaterialId,
+                    QuantityPerUnit = 2m
+                });
+            }
         }
 
         if (stockQuantity > 0)

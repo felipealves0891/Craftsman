@@ -36,3 +36,11 @@
 - **Racional:** cobre os riscos relevantes dos fluxos dos controllers sem ampliar a fronteira da feature para infraestrutura externa.
 - **Requisitos afetados:** escopo excluído, `FR-004`, `FR-006`, `AC-006`, `AC-007` e `AC-010`.
 - **Data:** 2026-11-21
+
+### CL-005 — Ausência de dependências externas nos testes
+
+- **Pergunta:** os testes de integração podem depender de serviços externos, banco PostgreSQL, containers, rede ou outra infraestrutura fora do processo de teste?
+- **Decisão:** não. A suíte deve permanecer autocontida, usando somente as fronteiras internas da aplicação e o mecanismo de persistência de teste aprovado. Se for necessário criar ou ajustar o harness, a implementação deve usar o agente `integration-tests` e respeitar as convenções existentes, sem introduzir uma dependência externa.
+- **Racional:** a confiabilidade desejada exige execução reproduzível sem indisponibilidade de serviços externos; a decisão também mantém a estratégia aprovada de EF Core InMemory e não amplia a infraestrutura da feature.
+- **Requisitos afetados:** escopo incluído/excluído, `NFR-001`, `NFR-002`, `CON-002`, `CON-004`, `AC-011`, `AC-013` e `AC-014`.
+- **Data:** 2026-11-21

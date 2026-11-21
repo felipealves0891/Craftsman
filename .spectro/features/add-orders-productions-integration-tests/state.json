@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "feature_id": "add-orders-productions-integration-tests",
-  "current_phase": "review",
-  "status": "completed",
+  "current_phase": "implement",
+  "status": "running",
   "phases": {
     "gates": {
       "status": "completed",
@@ -14,5 +14,5 @@
   "invalidated_executions": [],
   "last_failure": null,
   "last_execution_id": "gate-20261121T201608Z",
-  "updated_at": "2026-11-21T20:17:12.649Z"
+  "updated_at": "2026-11-21T21:30:00.000Z"
 }

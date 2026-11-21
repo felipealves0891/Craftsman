@@ -6,6 +6,10 @@
 - Problema: os testes existentes cobrem principalmente regras de domínio, serviços e alguns controllers de forma isolada; os fluxos HTTP de pedidos e produção ainda não têm uma cobertura de integração consolidada que valide o comportamento atravessando a aplicação e a persistência.
 - Objetivo: criar uma suíte de testes de integração para os controllers de `Orders` e `Production`, usando as documentações em `docs` como referência comportamental, para detectar regressões nos contratos HTTP, transições de estado, planejamento, estoque, eventos e respostas de erro.
 
+### Foco de regressão: `SendToProduction`
+
+O fluxo `OrdersController.SendToProduction` recebe um pedido por POST, exige a política de escrita e antiforgery, tenta planejar a produção, registra auditoria e redireciona para os detalhes do pedido. A documentação de produção e o registro do bug em `.spectro/docs/bug-ao-enviar-pedido-para-producao.md` relatam um risco concreto: uma tentativa rejeitada por estoque insuficiente pode ter deixado movimentos de saída persistidos. Portanto, a suíte deve tratar como invariante verificável que uma rejeição de planejamento não cria tarefas, não altera o status do pedido e não grava consumo de estoque parcial.
+
 ## Escopo
 
 ### Incluído
@@ -14,7 +18,7 @@
 - Fluxos expostos pelo controller de produção, incluindo consulta de tarefas/calendário e avanço operacional de tarefas, conforme os endpoints existentes.
 - Execução através do pipeline HTTP da aplicação, com autenticação/autorização e antiforgery quando aplicáveis.
 - Persistência e efeitos observáveis relacionados: pedido, tarefas de produção, status, movimentos de estoque e eventos persistidos.
-- Cenários de sucesso, validação, autorização, estado inválido, estoque insuficiente, recurso inexistente, idempotência e falha de dependência quando o comportamento estiver documentado.
+- Cenários de sucesso, validação, autorização, estado inválido, estoque insuficiente, recurso inexistente, idempotência e falhas controladas nas fronteiras internas quando o comportamento estiver documentado.
 - Uso do agente `integration-tests` na etapa de implementação e das documentações `docs/orders.md`, `docs/production.md` e `docs/manual_orders.md` como fontes de contexto.
 
 ### Excluído
@@ -36,11 +40,13 @@
 - `FR-005`: A suíte deve validar os controles de acesso e proteção contra requisições mutáveis sem os requisitos de segurança configurados, incluindo autenticação, política de leitura/escrita e antiforgery quando aplicável.
 - `FR-006`: A suíte deve validar que operações repetidas ou reprocessadas não criam duplicação indevida de pedido, tarefa, consumo ou compensação, nos fluxos em que a documentação confirma idempotência ou deduplicação.
 - `FR-007`: A suíte deve registrar os cenários e resultados de forma reproduzível, permitindo distinguir falha do comportamento testado de indisponibilidade ou configuração do ambiente de integração.
+- `FR-008`: A suíte deve reforçar especificamente `SendToProduction` com cenários de planejamento elegível, estoque insuficiente após agregação das necessidades, produto inativo, ficha técnica ausente/inválida, item sem vínculo de produto, pedido inexistente, repetição da mesma operação e requisições concorrentes quando houver suporte observável no fluxo.
+- `FR-009`: Para cada rejeição de `SendToProduction` causada por pré-condição do pedido, produto, ficha técnica ou estoque, a suíte deve verificar a consistência conjunta do pedido, tarefas, movimentos de estoque e auditoria, distinguindo a auditoria de tentativa (`Planned = false`) dos efeitos de um planejamento confirmado.
 
 ### Requisitos não funcionais
 
-- `NFR-001`: Os testes devem usar as fronteiras reais de integração definidas pelo projeto, incluindo o pipeline HTTP e o Entity Framework Core InMemory como mecanismo de persistência do ambiente de testes, sem reduzir o cenário a chamadas diretas de métodos internos dos controllers.
-- `NFR-002`: Os dados de teste devem ser isolados entre cenários e não podem depender de dados pessoais, credenciais reais, serviços externos reais ou estado deixado por outro teste.
+- `NFR-001`: Os testes devem usar as fronteiras internas reais de integração definidas pelo projeto, incluindo o pipeline HTTP e o Entity Framework Core InMemory como mecanismo de persistência do ambiente de testes, sem reduzir o cenário a chamadas diretas de métodos internos dos controllers.
+- `NFR-002`: Os dados de teste devem ser isolados entre cenários e não podem depender de dados pessoais, credenciais reais, serviços, bancos, containers, rede ou qualquer outra dependência externa, nem de estado deixado por outro teste.
 - `NFR-003`: A suíte deve permanecer compatível com .NET 8, as convenções de `tests/Craftsman.Tests` e os gates de build, testes, vulnerabilidades e cobertura definidos pelo projeto.
 - `NFR-004`: Os testes devem propagar cancelamento e liberar recursos de aplicação, banco e servidor de teste ao final de cada execução, quando essas fronteiras fizerem parte do harness.
 
@@ -49,7 +55,7 @@
 - `CON-001`: A especificação deve ser implementada sem alterar código de produção nesta etapa de especificação e sem inventar requisitos além dos contratos documentados ou observados no código.
 - `CON-002`: O agente `integration-tests` será utilizado para a implementação dos testes; a seleção final de classes auxiliares, fixtures e estratégia de banco deve respeitar as convenções já existentes no repositório.
 - `CON-003`: As documentações em `docs` são a fonte de contexto solicitada, mas qualquer comportamento marcado como inferido ou não verificado deve ser tratado como hipótese até ser confirmado no código ou por teste.
-- `CON-004`: Não devem ser adicionados pacotes, serviços externos ou mecanismos de autenticação alternativos sem necessidade demonstrável e aprovação compatível com o workflow Spectro.
+- `CON-004`: Não devem ser adicionados pacotes, serviços externos, infraestrutura externa ou mecanismos de autenticação alternativos para executar a suíte; qualquer seam de teste deve reutilizar as convenções existentes e ter necessidade demonstrável e aprovação compatível com o workflow Spectro.
 
 ## Critérios de aceite
 
@@ -67,6 +73,12 @@
 - `AC-012`: Dado duas operações concorrentes sobre o mesmo pedido ou tarefa, quando executadas dentro da aplicação, então o teste confirma o tratamento documentado de conflito e a ausência de efeitos duplicados ou parcialmente aplicados.
 - `AC-013`: Dado uma falha simulada após uma etapa intermediária de uma operação, quando o fluxo é concluído ou falha, então o teste confirma o rollback ou a preservação de consistência definido pelo comportamento da aplicação, sem depender de componente externo.
 - `AC-014`: Dado o conjunto de testes implementado, quando os gates aplicáveis do projeto são executados, então build, testes, análise de vulnerabilidades e cobertura são reportados com evidências reais, sem alegar verificações não executadas.
+- `AC-015`: Dado um pedido elegível com estoque suficiente para todos os itens, quando `SendToProduction` é chamado por HTTP com autenticação, autorização e antiforgery válidos, então a resposta redireciona para os detalhes e a verificação posterior encontra o status `ReadyForProduction`, exatamente as tarefas esperadas, os consumos correspondentes e uma auditoria `SendToProduction` indicando planejamento confirmado.
+- `AC-016`: Dado um pedido cuja necessidade agregada de uma matéria-prima excede o saldo disponível, quando `SendToProduction` é chamado, então a resposta segue o contrato de redirecionamento, o pedido permanece `Normalized`, nenhuma tarefa é criada, nenhum movimento `Outbound` de produção é persistido e a auditoria registra `Planned = false`.
+- `AC-017`: Dado um pedido com produto inativo, ficha técnica ausente/inválida ou item sem produto vinculado, quando `SendToProduction` é chamado, então o resultado rejeita o planejamento sem alterações parciais em pedido, tarefas ou estoque; o cenário deve ser verificado separadamente para evitar que apenas o caso de estoque cubra todas as falhas.
+- `AC-018`: Dado o mesmo pedido elegível, quando `SendToProduction` é submetido novamente após um planejamento confirmado, então o teste confirma que o fluxo não cria uma segunda tarefa nem um segundo consumo para o mesmo pedido e registra o resultado conforme o contrato efetivo de deduplicação/rejeição.
+- `AC-019`: Dadas duas tentativas de `SendToProduction` para o mesmo pedido executadas de forma concorrente no limite suportado pelo harness, quando ambas terminam, então o teste confirma que no máximo um planejamento efetivo e seus consumos correspondentes permanecem persistidos, e que conflitos são tratados pelo resultado documentado sem efeitos parciais adicionais.
+- `AC-020`: Dado um POST de `SendToProduction` sem autenticação, sem a política de escrita ou sem antiforgery válido, quando a requisição é enviada, então a operação é rejeitada antes do planejamento e a verificação posterior confirma ausência de tarefas, consumo de estoque e auditoria de planejamento efetivo.
 
 ## Riscos, dependências e perguntas abertas
 
@@ -74,6 +86,9 @@
 - Risco: o fluxo de criação manual pode conter dados de cliente em logs; os testes devem evitar credenciais e PII reais e avaliar apenas o comportamento necessário ao contrato HTTP.
 - Dependência: controllers, serviços, repositórios, configuração de DI, banco de testes e fixtures existentes; a implementação deve confirmar os endpoints e nomes efetivos antes de escrever os testes.
 - Dependência: o agente `integration-tests` deve identificar o harness de integração existente e os comandos de execução compatíveis com a solução.
+- Dependência: os cenários de `SendToProduction` dependem de dados de teste que representem quantidade do pedido, composição da ficha técnica, saldo inicial e eventuais movimentos existentes, para comprovar a agregação da necessidade e a ausência de baixa parcial.
+- Pergunta: o comportamento esperado para uma segunda chamada depois de um planejamento confirmado é rejeição silenciosa, mensagem de erro ou outro resultado observável? A especificação exige ausência de duplicação, mas deixa o texto exato dependente do contrato confirmado durante a implementação.
+- Pergunta: o harness de integração consegue exercitar duas requisições concorrentes com o mesmo pedido e observar uma garantia transacional real? Caso não consiga, o teste deve registrar a limitação do InMemory em vez de afirmar equivalência com PostgreSQL.
 
 Revisão de segurança: parcial
 Escopo revisado: documentação e contratos descritos para controllers de pedidos e produção, incluindo autenticação, autorização, antiforgery, entradas, persistência, estoque, tarefas, eventos e idempotência.
