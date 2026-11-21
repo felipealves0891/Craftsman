@@ -830,7 +830,7 @@ public sealed class ManualOperationsTests
 
         await controller.SendToProduction(order.Id, CancellationToken.None);
 
-        Assert.Equal("Pedido nao pode ser enviado para producao. Verifique vinculos, estoque e tarefas ja existentes.", controller.TempData["Error"]);
+        Assert.Equal("Nao foi possivel enviar para producao: existe item sem vinculo com produto interno.", controller.TempData["Error"]);
         Assert.False(controller.TempData.ContainsKey("StockAlerts"));
         Assert.Empty(await productionTaskRepository.ListAsync());
     }

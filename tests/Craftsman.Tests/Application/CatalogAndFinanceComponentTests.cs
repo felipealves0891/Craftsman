@@ -300,13 +300,20 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(OrderDetailsPage.CustomerName)] = " ",
             [nameof(OrderDetailsPage.DiscountAmount)] = 0m,
             [nameof(OrderDetailsPage.Status)] = "Pendente",
-            [nameof(OrderDetailsPage.CanChangeOrder)] = false
+            [nameof(OrderDetailsPage.CanChangeOrder)] = false,
+            [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-production",
+            [nameof(OrderDetailsPage.ProductionPreflight)] = new OrderDetailsPage.ProductionPreflightRow(
+                true,
+                null,
+                Array.Empty<OrderDetailsPage.ProductionPreflightMaterialRow>())
         });
 
         Assert.Contains("Sem cliente", html);
         Assert.Contains("Sem desconto", html);
         Assert.DoesNotContain("SKU-", html);
+        Assert.Contains("production-preflight-modal", html);
         Assert.Contains("/Orders/SendToProduction/" + orderId, html);
+        Assert.Contains("Confirmar envio para producao", html);
         Assert.DoesNotContain("/ManualOrders/Edit/" + orderId, html);
         Assert.DoesNotContain("class=\"alert alert-success\"", html);
         Assert.DoesNotContain("class=\"alert alert-danger\"", html);

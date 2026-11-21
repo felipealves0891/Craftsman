@@ -24,6 +24,20 @@
             Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Shipping.Entities.ShipmentStatus), shipment.Status),
             shipment.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();
+    var productionPreflight = Model.ProductionPreflight is null
+        ? null
+        : new OrderDetailsPage.ProductionPreflightRow(
+            Model.ProductionPreflight.CanConfirm,
+            Model.ProductionPreflight.FailureMessage,
+            Model.ProductionPreflight.Materials.Select(material => new OrderDetailsPage.ProductionPreflightMaterialRow(
+                material.RawMaterialId,
+                material.Name,
+                material.UnitOfMeasure,
+                material.RequiredQuantity,
+                material.AvailableQuantity,
+                material.MissingQuantity,
+                material.IsConfigured,
+                material.IsAvailable)).ToArray());
     var shippingDate = Model.ShippingDate?.ToString("dd/MM/yyyy") ?? "-";
     var successMessage = TempData["Success"] as string;
     var errorMessage = TempData["Error"] as string;
@@ -52,4 +66,5 @@
            param-RequestVerificationToken="@requestVerificationToken"
            param-Items="@items"
            param-ProductionTasks="@productionTasks"
-           param-Shipments="@shipments" />
+           param-Shipments="@shipments"
+           param-ProductionPreflight="@productionPreflight" />

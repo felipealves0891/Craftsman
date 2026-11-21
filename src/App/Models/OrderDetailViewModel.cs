@@ -16,4 +16,5 @@ public sealed record OrderDetailViewModel(
     DateOnly? ShippingDate,
     IReadOnlyCollection<OrderItemViewModel> Items,
     IReadOnlyCollection<ProductionTaskListItemViewModel> ProductionTasks,
-    IReadOnlyCollection<ShipmentListItemViewModel> Shipments);
+    IReadOnlyCollection<ShipmentListItemViewModel> Shipments,
+    ProductionPreflightViewModel? ProductionPreflight = null);

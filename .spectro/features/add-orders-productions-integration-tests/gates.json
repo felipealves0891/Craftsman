@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "add-orders-productions-integration-tests",
+  "execution_id": "gate-20261121T211300Z",
+  "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
+  "code_revision": "82acdcdf4e16bcdb48273596522b014287c5b59b",
+  "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
+  "artifact_hashes": {
+    "spec.md": "8cb130da4a33378010455e3a4fdf59bad2c49765124026f4ad87093f9a1e0fbb",
+    "clarifications.md": "c155c2e019a60e7aeb7185b708b09ed95bd3f92d808fb07b1ff4049d43a3b139",
+    "plan.md": "3bee41fe44207f189bf5b1411227828b2f490e7dd98556c1ccadb50b58c2b376",
+    "tasks.md": "4c698ff549f617260ea568aa221896f4505d6df3edac34e59bf6cb911784c0c8"
+  },
+  "started_at": "2026-11-21T21:13:00.894Z",
+  "duration_ms": 65848,
+  "gates": [
+    {
+      "id": "GATE-001",
+      "name": "build",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet build --no-restore --warnaserror -v minimal",
+      "exit_code": 0,
+      "duration_ms": 16636,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/evidence/01-build.log"
+      ],
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/build",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-002",
+      "name": "test",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet test --no-restore --no-build",
+      "exit_code": 0,
+      "duration_ms": 10780,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/evidence/02-test.log"
+      ],
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/test",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-003",
+      "name": "security",
+      "required": true,
+      "status": "passed",
+      "command": "dotnet list package --vulnerable",
+      "exit_code": 0,
+      "duration_ms": 5901,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/evidence/03-security.log"
+      ],
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/security",
+      "output_files": [],
+      "output_file_count": 0
+    },
+    {
+      "id": "GATE-004",
+      "name": "coverage",
+      "required": true,
+      "status": "passed",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
+      "exit_code": 0,
+      "duration_ms": 32474,
+      "diagnostics": [],
+      "evidence": [
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/evidence/04-coverage.log"
+      ],
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T211300Z/coverage",
+      "output_files": [],
+      "output_file_count": 0
+    }
+  ],
+  "result": "passed"
+}

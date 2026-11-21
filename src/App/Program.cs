@@ -90,7 +90,10 @@ else
 using var scope = app.Services.CreateScope();
 
 await using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-await dbContext.Database.MigrateAsync();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    await dbContext.Database.MigrateAsync();
+}
 
 var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
 await identitySeeder.SeedAsync();

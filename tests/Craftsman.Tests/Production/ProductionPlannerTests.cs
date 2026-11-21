@@ -192,6 +192,25 @@ public sealed class ProductionPlannerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => planner.PlanAsync(order));
     }
 
+    [Fact]
+    public async Task Planner_rejects_inactive_raw_material_configuration_before_consumption()
+    {
+        await using var dbContext = CreateDbContext();
+        var rawMaterial = new RawMaterial(Guid.NewGuid(), "Tecido", "m", RawMaterialStatus.Inactive);
+        var product = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(rawMaterial.Id, 1)]);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "INACTIVE-MATERIAL-001"),
+            [new OrderItem(Guid.NewGuid(), "ITEM-1", "Bolsa", 1, new Money(10, "BRL"), product.Id)]);
+        var (planner, stockMovementRepository) = await CreatePlannerAsync(dbContext, rawMaterial, product, 5);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => planner.PlanAsync(order));
+
+        Assert.DoesNotContain(
+            await stockMovementRepository.ListAsync(),
+            movement => movement.Type == StockMovementType.Outbound);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
