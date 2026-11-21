@@ -67,7 +67,7 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-REV-001`, `TASK-REV-002`
 - Bloqueadas: nenhuma
 
 ## Evidências de execução
@@ -77,3 +77,27 @@
 - Segurança de dependências: `dotnet list src/App/Craftsman.csproj package --vulnerable --include-transitive` — nenhum pacote vulnerável encontrado.
 - Cobertura: `coverage-gate.ps1 -AllowDirtyTree` — aprovado na medição local: 88,17% linhas, 73,22% branches, 96,84% linhas novas e 88,24% branches novos. O modo oficial sem `-AllowDirtyTree` não executa com alterações locais não commitadas.
 - Revisão manual: fluxo preserva autorização, antiforgery, revalidação no servidor, ausência de consumo na prévia e mensagens sem detalhes técnicos.
+- Remediação `FINDING-001`: exceções inesperadas agora retornam mensagem segura com referência, registram log estruturado e têm testes de falha inesperada e falha de auditoria.
+- Remediação `FINDING-002`: gate configurado passou com 88,56% linhas, 73,85% branches, 99,57% linhas novas e 92,54% branches novos.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** Tratar exceções inesperadas no envio para produção com rollback seguro, log estruturado com correlação e mensagem TempData sem detalhes internos; adicionar teste HTTP/controlador.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** completed
+- **Finding:** FINDING-002
+- **Severity:** Medium
+- **Return stage:** gates
+- **Description:** Adicionar cobertura comportamental para os branches novos reportados e executar novamente o gate configurado até atingir New Branch Coverage mínimo de 85%, registrando a evidência.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+

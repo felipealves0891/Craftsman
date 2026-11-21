@@ -117,6 +117,28 @@ public sealed class OrdersController : Controller
             TempData["Error"] = "O pedido foi alterado durante o envio para producao. Atualize os dados e tente novamente.";
             return RedirectToAction(nameof(Details), new { id });
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            var correlationId = currentUserContext?.Current.CorrelationId;
+            logger?.LogError(exception, "Unexpected production planning failure for order {OrderId}. Correlation {CorrelationId}.", id, correlationId);
+
+            try
+            {
+                await auditService.RecordAsync(
+                    AuditAction.SendToProduction,
+                    "Order",
+                    id.ToString(),
+                    after: new { Planned = false, Failure = "Unexpected", CorrelationId = correlationId },
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception auditException)
+            {
+                logger?.LogError(auditException, "Could not record unexpected production planning failure for order {OrderId}.", id);
+            }
+
+            TempData["Error"] = GetUnexpectedFailureMessage(correlationId);
+            return RedirectToAction(nameof(Details), new { id });
+        }
 
         TempData[planningResult.Succeeded ? "Success" : "Error"] = planningResult.Succeeded
             ? "Pedido enviado para producao."
@@ -144,6 +166,11 @@ public sealed class OrdersController : Controller
             ProductionPlanningFailureReason.ConcurrencyConflict => "O pedido foi alterado durante o envio para producao. Atualize os dados e tente novamente.",
             _ => $"O envio para producao nao foi concluido. Tente novamente e informe a referencia {currentUserContext?.Current.CorrelationId ?? "indisponivel"} ao suporte."
         };
+    }
+
+    private static string GetUnexpectedFailureMessage(string? correlationId)
+    {
+        return $"O envio para producao nao foi concluido. Tente novamente e informe a referencia {correlationId ?? "indisponivel"} ao suporte.";
     }
 
     private static bool IsProductionPlanningConcurrencyFailure(Exception exception)

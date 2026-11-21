@@ -139,7 +139,6 @@ public sealed class OrderQueryService
 
         var failureMessage = result.FailureReason switch
         {
-            ProductionPlanningFailureReason.OrderNotFound => "O pedido nao foi encontrado.",
             ProductionPlanningFailureReason.AlreadyPlanned => "Este pedido ja possui planejamento de producao.",
             ProductionPlanningFailureReason.MissingProductMapping => "Existe item do pedido sem vinculo com produto interno.",
             ProductionPlanningFailureReason.InvalidProductConfiguration => "Existe produto sem cadastro ativo ou ficha tecnica valida.",

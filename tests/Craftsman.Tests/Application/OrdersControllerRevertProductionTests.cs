@@ -91,6 +91,39 @@ public sealed class OrdersControllerRevertProductionTests
     }
 
     [Fact]
+    public async Task Send_to_production_handles_unexpected_failure_with_safe_correlation_message()
+    {
+        await using var dbContext = CreateDbContext();
+        var audit = new RecordingAuditService();
+        var controller = CreateConcurrencyController(
+            dbContext,
+            audit,
+            new InvalidOperationException("unexpected internal failure"));
+
+        var result = await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        Assert.Contains("envio para producao nao foi concluido", controller.TempData["Error"]?.ToString());
+        Assert.Contains("referencia indisponivel", controller.TempData["Error"]?.ToString());
+        Assert.Equal(AuditAction.SendToProduction, audit.Action);
+    }
+
+    [Fact]
+    public async Task Send_to_production_survives_audit_failure_on_unexpected_error()
+    {
+        await using var dbContext = CreateDbContext();
+        var controller = CreateConcurrencyController(
+            dbContext,
+            new ThrowingAuditService(),
+            new InvalidOperationException("unexpected internal failure"));
+
+        var result = await controller.SendToProduction(Guid.NewGuid(), CancellationToken.None);
+
+        Assert.IsType<RedirectToActionResult>(result);
+        Assert.Contains("envio para producao nao foi concluido", controller.TempData["Error"]?.ToString());
+    }
+
+    [Fact]
     public async Task Revert_production_redirects_with_success_and_audits_the_operation()
     {
         await using var dbContext = CreateDbContext();
@@ -216,7 +249,8 @@ public sealed class OrdersControllerRevertProductionTests
             null!,
             new StockAlertAppService(rawMaterialRepository, movementRepository, orderRepository, productRepository),
             auditService,
-            new ThrowingConcurrencyTransactionalUnitOfWork(exception))
+            new ThrowingConcurrencyTransactionalUnitOfWork(exception),
+            NullLogger<OrdersController>.Instance)
         {
             TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider())
         };
@@ -291,6 +325,18 @@ public sealed class OrdersControllerRevertProductionTests
             Action = action;
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class ThrowingAuditService : IAuditService
+    {
+        public Task RecordAsync(
+            string action,
+            string entityName,
+            string? entityId = null,
+            object? before = null,
+            object? after = null,
+            CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("audit failure");
     }
 
     private sealed class EmptyTempDataProvider : ITempDataProvider

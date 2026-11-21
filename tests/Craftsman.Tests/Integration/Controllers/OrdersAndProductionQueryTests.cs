@@ -55,6 +55,98 @@ public sealed class OrdersAndProductionQueryTests
     }
 
     [Fact]
+    public async Task Order_details_shows_production_preflight_with_available_stock()
+    {
+        await using var factory = new Integration.Http.TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        await using (var db = factory.CreateDbContext())
+        {
+            await Integration.Http.TestDataFixture.SeedProductionPlanningScenarioAsync(db, stockQuantity: 10m);
+        }
+
+        using var response = await client.GetAsync($"/Orders/Details/{Integration.Http.TestDataFixture.OrderId}");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("production-preflight-modal", content);
+        Assert.Contains("Material de teste", content);
+        Assert.Contains("Disponivel", content);
+        Assert.Contains("Confirmar envio para producao", content);
+    }
+
+    [Fact]
+    public async Task Order_details_blocks_production_preflight_when_stock_is_insufficient()
+    {
+        await using var factory = new Integration.Http.TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        await using (var db = factory.CreateDbContext())
+        {
+            await Integration.Http.TestDataFixture.SeedProductionPlanningScenarioAsync(db, stockQuantity: 3m);
+        }
+
+        using var response = await client.GetAsync($"/Orders/Details/{Integration.Http.TestDataFixture.OrderId}");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Estoque insuficiente", content);
+        Assert.Contains("disabled", content);
+    }
+
+    [Fact]
+    public async Task Order_details_reports_invalid_product_configuration_in_preflight()
+    {
+        await using var factory = new Integration.Http.TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        await using (var db = factory.CreateDbContext())
+        {
+            await Integration.Http.TestDataFixture.SeedProductionPlanningScenarioAsync(db, includeBillOfMaterials: false);
+        }
+
+        using var response = await client.GetAsync($"/Orders/Details/{Integration.Http.TestDataFixture.OrderId}");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("produto sem cadastro ativo ou ficha tecnica valida", content);
+        Assert.Contains("disabled", content);
+    }
+
+    [Fact]
+    public async Task Order_details_reports_missing_product_mapping_in_preflight()
+    {
+        await using var factory = new Integration.Http.TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        await using (var db = factory.CreateDbContext())
+        {
+            await Integration.Http.TestDataFixture.SeedOrderAsync(db);
+            (await db.OrderItems.SingleAsync(item => item.Id == Integration.Http.TestDataFixture.OrderItemId)).ProductId = null;
+            await db.SaveChangesAsync();
+        }
+
+        using var response = await client.GetAsync($"/Orders/Details/{Integration.Http.TestDataFixture.OrderId}");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("item do pedido sem vinculo com produto interno", content);
+    }
+
+    [Fact]
+    public async Task Order_details_remains_available_for_already_planned_order()
+    {
+        await using var factory = new Integration.Http.TestWebApplicationFactory();
+        using var client = factory.CreateAuthenticatedClient("Consulta");
+        await using (var db = factory.CreateDbContext())
+        {
+            await Integration.Http.TestDataFixture.SeedProductionTaskAsync(db);
+        }
+
+        using var response = await client.GetAsync($"/Orders/Details/{Integration.Http.TestDataFixture.OrderId}");
+        var content = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Pronto para producao", content);
+    }
+
+    [Fact]
     public async Task Production_index_applies_status_and_fixed_date_filters()
     {
         await using var factory = new Integration.Http.TestWebApplicationFactory();
