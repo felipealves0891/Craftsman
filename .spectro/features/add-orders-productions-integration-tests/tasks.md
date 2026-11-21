@@ -66,7 +66,7 @@
 
 ## Progresso
 
-- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`, `TASK-REV-001`
+- Concluídas: `TASK-001`, `TASK-002`, `TASK-003`, `TASK-004`, `TASK-005`, `TASK-006`, `TASK-REV-001`, `TASK-REV-003`, `TASK-REV-004`
 - Bloqueadas: —
 
 ## Evidências de implementação
@@ -84,6 +84,7 @@
 
 - TASK-REV-001: testes HTTP adicionados para planejamento elegível, consumo de estoque e auditoria; rejeições de estoque insuficiente, produto inativo, BOM inválida, tarefa inexistente e transição inválida; ausência de efeitos parciais verificada. Suíte atual: 404 testes aprovados.
 - TASK-REV-002: o runner oficial foi renovado em `gate-20261121T195938Z`; build, testes e segurança passaram, mas cobertura permanece `failed` porque o script exige árvore tracked limpa. A execução explícita com `-AllowDirtyTree` passou: 88,15% linhas, 73,42% branches, 97,23% linhas novas e 92,70% branches novos. A tarefa permanece pendente até haver estado limpo ou autorização formal para a exceção.
+- TASK-REV-004: reversão HTTP após planejamento verifica compensação `Inbound`, auditoria, normalização e idempotência; exclusão após planejamento verifica remoção de tarefa e compensação de estoque. Suíte atual: 406 testes aprovados.
 
 ## TASK-REV-001 - Remediate FINDING-001
 
@@ -121,4 +122,18 @@
 - **Dependencies:** none
 - **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
 - **Expected tests:** Add or update behavior-focused coverage as required.
+
+
+## TASK-REV-004 - Remediate FINDING-004
+
+- **Status:** completed
+- **Finding:** FINDING-004
+- **Severity:** High
+- **Return stage:** implement
+- **Description:** Adicionar teste HTTP que planeje um pedido elegível, execute RevertProduction e verifique movimentos Inbound compensatórios auditáveis, ausência de duplicação na repetição e exclusão de dependências de produção; manter limitações do InMemory explícitas.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+
+- **Evidence:** `OrdersProductionMutationTests` covers planning through HTTP, compensating Inbound movement and `ProductionPlanningReverted` audit, repeated reversal without duplicate compensation, and deletion of an order with its production task and stock compensation. The EF Core InMemory limitation remains explicit: relational transaction/lock semantics are not proven.
 

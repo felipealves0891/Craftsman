@@ -285,6 +285,62 @@ public sealed class OrdersProductionMutationTests
     }
 
     [Fact]
+    public async Task Revert_production_restores_consumed_stock_audits_state_and_is_idempotent()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(client, "/Orders/Index");
+
+        using var planResponse = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        Assert.Equal(HttpStatusCode.Redirect, planResponse.StatusCode);
+
+        using var revertResponse = await client.PostAsync(
+            $"/Orders/RevertProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        Assert.Equal(HttpStatusCode.Redirect, revertResponse.StatusCode);
+
+        await using var afterFirstRevert = factory.CreateDbContext();
+        var outbound = await afterFirstRevert.StockMovements
+            .SingleAsync(movement => movement.Type == StockMovementType.Outbound.ToString());
+        var compensation = await afterFirstRevert.StockMovements
+            .SingleAsync(movement => movement.BusinessReference == $"production-reversal:{outbound.Id}");
+        var firstRevertAudit = await afterFirstRevert.AuditLogs
+            .SingleAsync(log => log.Action == AuditAction.ProductionPlanningReverted);
+
+        Assert.Equal(4m, outbound.Quantity);
+        Assert.Equal(StockMovementType.Inbound.ToString(), compensation.Type);
+        Assert.Equal(outbound.Quantity, compensation.Quantity);
+        Assert.Equal(TestDataFixture.RawMaterialId, compensation.RawMaterialId);
+        Assert.Equal("Production planning reversal", compensation.Reason);
+        Assert.Equal(nameof(OrderEntity).Replace("Entity", string.Empty), firstRevertAudit.EntityName);
+        Assert.Equal(TestDataFixture.OrderId.ToString(), firstRevertAudit.EntityId);
+        Assert.Contains("Reverted", firstRevertAudit.AfterJson, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("true", firstRevertAudit.AfterJson, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await afterFirstRevert.ProductionTasks.ToListAsync());
+        Assert.Equal(OrderStatus.Normalized.ToString(), (await afterFirstRevert.Orders.SingleAsync()).Status);
+
+        using var secondRevertResponse = await client.PostAsync(
+            $"/Orders/RevertProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        Assert.Equal(HttpStatusCode.Redirect, secondRevertResponse.StatusCode);
+
+        await using var afterSecondRevert = factory.CreateDbContext();
+        Assert.Single(await afterSecondRevert.StockMovements
+            .Where(movement => movement.BusinessReference == $"production-reversal:{outbound.Id}")
+            .ToListAsync());
+        Assert.Equal(2, await afterSecondRevert.AuditLogs
+            .CountAsync(log => log.Action == AuditAction.ProductionPlanningReverted));
+        Assert.Equal(OrderStatus.Normalized.ToString(), (await afterSecondRevert.Orders.SingleAsync()).Status);
+    }
+
+    [Fact]
     public async Task Delete_removes_order_and_dependencies_through_http_pipeline()
     {
         await using var factory = new TestWebApplicationFactory();
@@ -304,6 +360,48 @@ public sealed class OrdersProductionMutationTests
         await using var verification = factory.CreateDbContext();
         Assert.Empty(await verification.Orders.ToListAsync());
         Assert.Single(await verification.OrderDeletionProcesses.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Delete_after_planning_removes_task_and_compensates_consumed_stock()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionPlanningScenarioAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(client, "/Orders/Index");
+
+        using var planResponse = await client.PostAsync(
+            $"/Orders/SendToProduction?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        Assert.Equal(HttpStatusCode.Redirect, planResponse.StatusCode);
+
+        using var deleteResponse = await client.PostAsync(
+            $"/Orders/Delete?id={TestDataFixture.OrderId}",
+            HttpTestHelpers.AntiforgeryForm(token));
+        Assert.Equal(HttpStatusCode.Redirect, deleteResponse.StatusCode);
+        Assert.EndsWith("/Orders", deleteResponse.Headers.Location?.OriginalString);
+
+        await using var verification = factory.CreateDbContext();
+        var movements = await verification.StockMovements.ToListAsync();
+        var outbound = Assert.Single(movements, movement => movement.Type == StockMovementType.Outbound.ToString());
+        var compensation = Assert.Single(movements, movement => movement.BusinessReference != null
+            && movement.BusinessReference.StartsWith("order-delete:", StringComparison.Ordinal));
+        var deletionProcess = Assert.Single(await verification.OrderDeletionProcesses.ToListAsync());
+
+        Assert.Equal(StockMovementType.Inbound.ToString(), compensation.Type);
+        Assert.Equal(outbound.Quantity, compensation.Quantity);
+        Assert.Equal(TestDataFixture.RawMaterialId, compensation.RawMaterialId);
+        Assert.Equal("Order deletion stock compensation", compensation.Reason);
+        Assert.Contains(outbound.Id.ToString(), compensation.BusinessReference, StringComparison.Ordinal);
+        Assert.Empty(await verification.Orders.ToListAsync());
+        Assert.Empty(await verification.ProductionTasks.ToListAsync());
+        Assert.Equal(OrderStatus.ReadyForProduction.ToString(), deletionProcess.Status);
+        Assert.NotNull(deletionProcess.CompletedAt);
+        Assert.Equal(1, deletionProcess.ProductionTaskCount);
     }
 
     [Fact]
