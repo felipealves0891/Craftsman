@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "add-orders-productions-integration-tests",
+  "current_phase": "gates",
+  "status": "failed",
+  "phases": {
+    "gates": {
+      "status": "failed",
+      "execution_id": "gate-20261121T195938Z",
+      "report": ".spectro/features/add-orders-productions-integration-tests/gates.json"
+    }
+  },
+  "attempts": {},
+  "invalidated_executions": [],
+  "last_failure": null,
+  "last_execution_id": "gate-20261121T195938Z",
+  "updated_at": "2026-11-21T19:59:57.764Z"
+}
