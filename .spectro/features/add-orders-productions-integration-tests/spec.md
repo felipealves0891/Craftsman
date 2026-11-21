@@ -47,7 +47,7 @@ O fluxo `OrdersController.SendToProduction` recebe um pedido por POST, exige a p
 
 - `NFR-001`: Os testes devem usar as fronteiras internas reais de integração definidas pelo projeto, incluindo o pipeline HTTP e o Entity Framework Core InMemory como mecanismo de persistência do ambiente de testes, sem reduzir o cenário a chamadas diretas de métodos internos dos controllers.
 - `NFR-002`: Os dados de teste devem ser isolados entre cenários e não podem depender de dados pessoais, credenciais reais, serviços, bancos, containers, rede ou qualquer outra dependência externa, nem de estado deixado por outro teste.
-- `NFR-003`: A suíte deve permanecer compatível com .NET 8, as convenções de `tests/Craftsman.Tests` e os gates de build, testes, vulnerabilidades e cobertura definidos pelo projeto.
+- `NFR-003`: A suíte deve permanecer compatível com o target efetivo do projeto (`net10.0`), as convenções de `tests/Craftsman.Tests` e os gates de build, testes, vulnerabilidades e cobertura definidos pelo projeto; esta feature não propõe migração de target.
 - `NFR-004`: Os testes devem propagar cancelamento e liberar recursos de aplicação, banco e servidor de teste ao final de cada execução, quando essas fronteiras fizerem parte do harness.
 
 ### Restrições

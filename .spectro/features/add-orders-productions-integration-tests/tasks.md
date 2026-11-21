@@ -13,7 +13,7 @@
 | `TASK-008` | Cobrir pedido inexistente e segunda submissão, verificando duplicação de tarefas, consumo e auditoria conforme contrato observado | `FR-004`, `FR-006`, `FR-008` | `AC-006`, `AC-010`, `AC-018` | `TASK-006`, `TASK-007` | completed |
 | `TASK-009` | Cobrir autenticação, policy `Write` e antiforgery especificamente no endpoint `SendToProduction` | `FR-005`, `FR-008` | `AC-008`, `AC-009`, `AC-020` | `TASK-002`, `TASK-006` | completed |
 | `TASK-010` | Avaliar e, somente se demonstrável no InMemory, testar concorrência interna; caso contrário registrar formalmente a limitação | `FR-006`, `FR-008`, `FR-009` | `AC-012`, `AC-019` | `TASK-007`, `TASK-008` | completed |
-| `TASK-011` | Executar gates e registrar evidências reais, limitações e ausência de dependências externas | `FR-007`, `NFR-003`, `NFR-004`, `CON-002`, `CON-004` | `AC-011`, `AC-014` | `TASK-007`, `TASK-008`, `TASK-009`, `TASK-010` | pending |
+| `TASK-011` | Executar gates e registrar evidências reais, limitações e ausência de dependências externas | `FR-007`, `NFR-003`, `NFR-004`, `CON-001`, `CON-002`, `CON-004` | `AC-011`, `AC-014` | `TASK-007`, `TASK-008`, `TASK-009`, `TASK-010` | pending |
 
 ## Detalhamento das tarefas
 
@@ -78,3 +78,34 @@
 - Suíte HTTP: `dotnet test tests/Craftsman.Tests/Craftsman.Tests.csproj --no-restore -m:1 -p:UseSharedCompilation=false --filter "FullyQualifiedName~Craftsman.Tests.Integration.Http" -v minimal` — 23 aprovados.
 - Build: `dotnet build tests/Craftsman.Tests/Craftsman.Tests.csproj --no-restore --warnaserror -v minimal -m:1 -p:UseSharedCompilation=false` — 0 warnings, 0 erros.
 - `TASK-010`: não foi adicionado teste artificial de concorrência; InMemory não comprova locks, isolamento, serialização ou deadlocks PostgreSQL.
+
+## TASK-REV-001 - Remediate FINDING-001
+
+- **Status:** completed
+- **Finding:** FINDING-001
+- **Severity:** Medium
+- **Return stage:** plan
+- **Description:** Vincular CON-001 a uma tarefa e validação explícitas no plano/tarefas, comprovando que a implementação não altera código de produção nesta feature.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.
+## TASK-REV-002 - Remediate FINDING-002
+
+- **Status:** completed
+- **Finding:** FINDING-002
+- **Severity:** Medium
+- **Return stage:** plan
+- **Description:** Adicionar AC-013 ao mapeamento de plano/tarefas ou esclarecer formalmente sua exclusão, incluindo a validação de rollback/preservação de consistência.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+
+## TASK-REV-003 - Remediate FINDING-003
+
+- **Status:** completed
+- **Finding:** FINDING-003
+- **Severity:** Medium
+- **Return stage:** clarify
+- **Description:** Alinhar NFR-003 com o target efetivo net10.0 ou registrar decisão formal que explique a compatibilidade exigida.
+- **Dependencies:** none
+- **Completion criteria:** Finding is resolved and relevant gates/review evidence are renewed.
+- **Expected tests:** Add or update behavior-focused coverage as required.

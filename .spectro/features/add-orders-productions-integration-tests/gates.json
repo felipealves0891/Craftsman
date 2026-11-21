@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
   "feature_id": "add-orders-productions-integration-tests",
-  "execution_id": "gate-20261121T201608Z",
+  "execution_id": "gate-20261121T210132Z",
   "project_root": "D:\\Felipe\\Repos\\Dotnet\\Craftsman",
-  "code_revision": "bd78748089c9c4bdbb2f327d023487acfbc4f388",
+  "code_revision": "b2a8f001338f4d9fa60cfc60a10f53cf8c8a8614",
   "config_hash": "sha256:b9a307e763df422657eaa0347cd6a0f308e455058d3d90ab1ba9dfb8ed2b7f77",
   "artifact_hashes": {
-    "spec.md": "dad28f171ce61aee5aa776bf3fc8e7dbaaf48a3303be950d7af279d52c9cc6be",
-    "clarifications.md": "bb16ce09287e2a6e0da23774d3a8a36ae67b2ccc0ca2e5d07e60679052f5b312",
-    "plan.md": "9709d0a337b87a8244f7e3ad55afa693f3288e1e21e304a2e56d9e1e0037d84d",
-    "tasks.md": "f1d6fb2f535ff483adbe02305ee13b3c4bad98962bd7e8de1e6f684d2aa0b837"
+    "spec.md": "e6bdcb4b421f4faecc740b8f85ffd4017cbdfc9ed668ee35c60f87de6ace2ed2",
+    "clarifications.md": "c155c2e019a60e7aeb7185b708b09ed95bd3f92d808fb07b1ff4049d43a3b139",
+    "plan.md": "cc74e745474c898e30a39ce6a420faaa09e048df3414b7ff82c8a4d95a13182b",
+    "tasks.md": "f1342fd42d4b0ddf51004f59a95f13d15dee5bd3a4c8d8d0f1ca7d944fea8ed2"
   },
-  "started_at": "2026-11-21T20:16:08.339Z",
-  "duration_ms": 64306,
+  "started_at": "2026-11-21T21:01:32.719Z",
+  "duration_ms": 75421,
   "gates": [
     {
       "id": "GATE-001",
@@ -21,12 +21,12 @@
       "status": "passed",
       "command": "dotnet build --no-restore --warnaserror -v minimal",
       "exit_code": 0,
-      "duration_ms": 10500,
+      "duration_ms": 21285,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/evidence/01-build.log"
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/evidence/01-build.log"
       ],
-      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/build",
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/build",
       "output_files": [],
       "output_file_count": 0
     },
@@ -37,12 +37,12 @@
       "status": "passed",
       "command": "dotnet test --no-restore --no-build",
       "exit_code": 0,
-      "duration_ms": 11604,
+      "duration_ms": 11187,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/evidence/02-test.log"
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/evidence/02-test.log"
       ],
-      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/test",
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/test",
       "output_files": [],
       "output_file_count": 0
     },
@@ -53,12 +53,12 @@
       "status": "passed",
       "command": "dotnet list package --vulnerable",
       "exit_code": 0,
-      "duration_ms": 4621,
+      "duration_ms": 10142,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/evidence/03-security.log"
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/evidence/03-security.log"
       ],
-      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/security",
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/security",
       "output_files": [],
       "output_file_count": 0
     },
@@ -69,12 +69,12 @@
       "status": "passed",
       "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \".spectro/tools/coverage-gate.ps1\" -Project \".\" -BaseBranch \"develop\" -MinLineCoverage 85 -MinBranchCoverage 60 -MinNewLineCoverage 90 -MinNewBranchCoverage 85",
       "exit_code": 0,
-      "duration_ms": 37434,
+      "duration_ms": 32753,
       "diagnostics": [],
       "evidence": [
-        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/evidence/04-coverage.log"
+        ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/evidence/04-coverage.log"
       ],
-      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T201608Z/coverage",
+      "output_directory": ".spectro/features/add-orders-productions-integration-tests/outputs/gate-20261121T210132Z/coverage",
       "output_files": [],
       "output_file_count": 0
     }

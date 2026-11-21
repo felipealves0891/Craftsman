@@ -5,14 +5,14 @@
   "status": "running",
   "phases": {
     "gates": {
-      "status": "completed",
-      "execution_id": "gate-20261121T201608Z",
+      "status": "invalidated",
+      "execution_id": "gate-20261121T210132Z",
       "report": ".spectro/features/add-orders-productions-integration-tests/gates.json"
     }
   },
   "attempts": {},
   "invalidated_executions": [],
   "last_failure": null,
-  "last_execution_id": "gate-20261121T201608Z",
-  "updated_at": "2026-11-21T21:30:00.000Z"
+  "last_execution_id": "gate-20261121T210132Z",
+  "updated_at": "2026-11-21T21:02:48.144Z"
 }

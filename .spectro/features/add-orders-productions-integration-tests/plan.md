@@ -79,8 +79,10 @@ Preparação e verificação podem acessar o `DbContext` diretamente; a operaç�
 | `FR-004` | `AC-006`, `AC-007` | `TASK-004`, `TASK-005`, `TASK-008` |
 | `FR-005` | `AC-008`, `AC-009`, `AC-020` | `TASK-002`, `TASK-009` |
 | `FR-006` | `AC-010`, `AC-018`, `AC-019` | `TASK-004`, `TASK-008`, `TASK-010` |
+| `FR-004`, `FR-006` | `AC-013` | `TASK-010`, `TASK-REV-002` |
 | `FR-007`, `NFR-002`, `NFR-004` | `AC-011` | `TASK-001`, `TASK-011` |
 | `FR-007`, `NFR-003` | `AC-014` | `TASK-011` |
 | `FR-008` | `AC-015` a `AC-020` | `TASK-007` a `TASK-010` |
 | `FR-009` | `AC-016`, `AC-017`, `AC-019` | `TASK-008`, `TASK-010` |
+| `CON-001` | `AC-011`, `AC-014` | `TASK-011`, `TASK-REV-001` |
 | `CON-002`, `CON-004` | `AC-011`, `AC-014` | `TASK-007`, `TASK-011` |
