@@ -277,6 +277,7 @@
                         <th>Produto</th>
                         <th>Quantidade</th>
                         <th>Status</th>
+                        <th>Acoes</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -287,6 +288,22 @@
                             <td>@task.ProductId</td>
                             <td>@task.Quantity</td>
                             <td>@task.Status</td>
+                            <td>
+                                <form action="/Production/Advance" method="post" class="production-task-actions">
+                                    <input name="__RequestVerificationToken" type="hidden" value="@RequestVerificationToken" />
+                                    <input type="hidden" name="id" value="@task.Id" />
+                                    <input type="hidden" name="returnOrderId" value="@OrderId" />
+                                    <button type="submit" name="action" value="start" class="btn btn-sm btn-outline-primary" title="Iniciar" aria-label="Iniciar" disabled="@(!task.CanStart)">
+                                        <i class="fas fa-play" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="complete" class="btn btn-sm btn-outline-success" title="Concluir" aria-label="Concluir" disabled="@(!task.CanComplete)">
+                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="submit" name="action" value="cancel" class="btn btn-sm btn-outline-danger" title="Cancelar" aria-label="Cancelar" disabled="@(!task.CanCancel)" onclick="return confirm('Confirma o cancelamento desta tarefa?');">
+                                        <i class="fas fa-times" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -354,7 +371,14 @@
     [ExcludeFromCodeCoverage]
     public sealed record OrderItemRow(string ExternalItemId, string Description, int Quantity, string ProductId);
     [ExcludeFromCodeCoverage]
-    public sealed record ProductionTaskRow(Guid Id, Guid ProductId, int Quantity, string Status);
+    public sealed record ProductionTaskRow(
+        Guid Id,
+        Guid ProductId,
+        int Quantity,
+        string Status,
+        bool CanStart = false,
+        bool CanComplete = false,
+        bool CanCancel = false);
     [ExcludeFromCodeCoverage]
     public sealed record ShipmentRow(string? TrackingCode, string Status, string CreatedAt);
     [ExcludeFromCodeCoverage]

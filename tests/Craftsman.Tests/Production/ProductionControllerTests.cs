@@ -92,6 +92,55 @@ public sealed class ProductionControllerTests
         Assert.Null(auditService.Action);
     }
 
+    [Fact]
+    public async Task Advance_from_order_details_returns_to_the_same_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = CreateOrder(OrderStatus.ReadyForProduction, "PROD-CONTROLLER-CONTEXT");
+        var task = CreateTask(order);
+        var orderRepository = new OrderRepository(dbContext);
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        await orderRepository.AddAsync(order);
+        await taskRepository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+        var controller = CreateController(dbContext, new FixedTimeProvider(DateTimeOffset.UtcNow));
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider());
+
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Advance(
+            task.Id,
+            "start",
+            CancellationToken.None,
+            order.Id));
+
+        Assert.Equal("Details", result.ActionName);
+        Assert.Equal("Orders", result.ControllerName);
+        Assert.Equal(order.Id, result.RouteValues!["id"]);
+    }
+
+    [Fact]
+    public async Task Advance_with_unrelated_return_order_does_not_redirect_to_that_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = CreateOrder(OrderStatus.ReadyForProduction, "PROD-CONTROLLER-SAFE-RETURN");
+        var task = CreateTask(order);
+        var orderRepository = new OrderRepository(dbContext);
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        await orderRepository.AddAsync(order);
+        await taskRepository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+        var controller = CreateController(dbContext, new FixedTimeProvider(DateTimeOffset.UtcNow));
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider());
+
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Advance(
+            task.Id,
+            "start",
+            CancellationToken.None,
+            Guid.NewGuid()));
+
+        Assert.Equal(nameof(ProductionController.Index), result.ActionName);
+        Assert.Null(result.ControllerName);
+    }
+
     private static ProductionController CreateController(
         AppDbContext dbContext,
         TimeProvider timeProvider,

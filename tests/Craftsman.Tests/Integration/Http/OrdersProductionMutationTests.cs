@@ -382,6 +382,31 @@ public sealed class OrdersProductionMutationTests
     }
 
     [Fact]
+    public async Task Advance_from_order_details_returns_to_the_same_order_through_http_pipeline()
+    {
+        await using var factory = new TestWebApplicationFactory();
+        await using (var db = factory.CreateDbContext())
+        {
+            await TestDataFixture.SeedProductionTaskAsync(db);
+        }
+
+        using var client = factory.CreateAuthenticatedClient("Operador");
+        var token = await HttpTestHelpers.GetAntiforgeryTokenAsync(
+            client,
+            $"/Orders/Details/{TestDataFixture.OrderId}");
+
+        using var response = await client.PostAsync(
+            $"/Production/Advance?id={TestDataFixture.TaskId}",
+            HttpTestHelpers.AntiforgeryForm(
+                token,
+                ("action", "start"),
+                ("returnOrderId", TestDataFixture.OrderId.ToString())));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.EndsWith($"/Orders/Details/{TestDataFixture.OrderId}", response.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
     public async Task Revert_production_removes_tasks_and_normalizes_order()
     {
         await using var factory = new TestWebApplicationFactory();

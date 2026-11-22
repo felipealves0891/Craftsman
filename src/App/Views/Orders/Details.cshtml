@@ -16,7 +16,10 @@
             task.Id,
             task.ProductId,
             task.Quantity,
-            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Production.Entities.ProductionTaskStatus), task.Status)))
+            Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Production.Entities.ProductionTaskStatus), task.Status),
+            task.CanStart,
+            task.CanComplete,
+            task.CanCancel))
         .ToArray();
     var shipments = Model.Shipments
         .Select(shipment => new OrderDetailsPage.ShipmentRow(
