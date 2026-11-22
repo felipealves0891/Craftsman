@@ -61,11 +61,15 @@ public sealed class ProductionController : Controller
     [HttpPost]
     [Authorize(Policy = ApplicationPolicies.Write)]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Advance(Guid id, string action, CancellationToken cancellationToken)
+    public async Task<IActionResult> Advance(Guid id, string action, CancellationToken cancellationToken, Guid? returnOrderId = null)
     {
+        var redirectToOrder = false;
         try
         {
-            await productionScheduleService.AdvanceAsync(id, action, cancellationToken);
+            redirectToOrder = returnOrderId.HasValue
+                && await productionScheduleService.GetOrderIdAsync(id, cancellationToken) == returnOrderId;
+            var orderId = await productionScheduleService.AdvanceAsync(id, action, cancellationToken);
+            redirectToOrder = returnOrderId == orderId;
             await auditService.RecordAsync(
                 AuditAction.ProductionAdvanced,
                 "ProductionTask",
@@ -78,6 +82,8 @@ public sealed class ProductionController : Controller
             TempData["Error"] = exception.Message;
         }
 
-        return RedirectToAction(nameof(Index));
+        return redirectToOrder
+            ? RedirectToAction("Details", "Orders", new { id = returnOrderId })
+            : RedirectToAction(nameof(Index));
     }
 }

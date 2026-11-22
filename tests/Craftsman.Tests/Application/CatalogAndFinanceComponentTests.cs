@@ -265,7 +265,7 @@ public sealed class CatalogAndFinanceComponentTests
             },
             [nameof(OrderDetailsPage.ProductionTasks)] = new[]
             {
-                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 2, "Planejada")
+                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 2, "Planejada", true, false, false)
             },
             [nameof(OrderDetailsPage.Shipments)] = new[]
             {
@@ -286,6 +286,9 @@ public sealed class CatalogAndFinanceComponentTests
         Assert.Contains("SKU-1", html);
         Assert.Contains("AB-123", html);
         Assert.Contains("csrf-order-details", html);
+        Assert.Contains("Acoes", html);
+        Assert.Contains("/Production/Advance", html);
+        Assert.Contains("name=\"returnOrderId\"", html);
     }
 
     [Fact]
@@ -305,6 +308,7 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(OrderDetailsPage.ProductionPreflight)] = new OrderDetailsPage.ProductionPreflightRow(
                 true,
                 null,
+                Array.Empty<OrderDetailsPage.ProductionPreflightProductRow>(),
                 Array.Empty<OrderDetailsPage.ProductionPreflightMaterialRow>())
         });
 
@@ -321,6 +325,64 @@ public sealed class CatalogAndFinanceComponentTests
     }
 
     [Fact]
+    public async Task Order_details_renders_expandable_product_materials_and_consolidated_summary()
+    {
+        var orderId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var materialId = Guid.NewGuid();
+        var html = await RenderAsync<OrderDetailsPage>(new Dictionary<string, object?>
+        {
+            [nameof(OrderDetailsPage.OrderId)] = orderId,
+            [nameof(OrderDetailsPage.Source)] = "Manual",
+            [nameof(OrderDetailsPage.ExternalOrderId)] = "SO-PREFLIGHT-1",
+            [nameof(OrderDetailsPage.Status)] = "Normalizado",
+            [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-product-breakdown",
+            [nameof(OrderDetailsPage.ProductionPreflight)] = new OrderDetailsPage.ProductionPreflightRow(
+                true,
+                null,
+                new[]
+                {
+                    new OrderDetailsPage.ProductionPreflightProductRow(
+                        productId,
+                        "Bolsa",
+                        2,
+                        new[]
+                        {
+                            new OrderDetailsPage.ProductionPreflightProductMaterialRow(
+                                materialId,
+                                "Tecido",
+                                "m",
+                                4m,
+                                7m,
+                                0m,
+                                true,
+                                true)
+                        })
+                },
+                new[]
+                {
+                    new OrderDetailsPage.ProductionPreflightMaterialRow(
+                        materialId,
+                        "Tecido",
+                        "m",
+                        4m,
+                        7m,
+                        0m,
+                        true,
+                        true)
+                })
+        });
+
+        Assert.Contains("production-product-breakdown", html);
+        Assert.Contains("Bolsa", html);
+        Assert.Contains("quantidade 2", html);
+        Assert.Contains("Necessario no produto", html);
+        Assert.Contains("Resumo consolidado do pedido", html);
+        Assert.Contains("O estoque exibido abaixo e global e compartilhado entre os produtos.", html);
+        Assert.Contains("csrf-product-breakdown", html);
+    }
+
+    [Fact]
     public async Task Order_details_shows_revert_production_action_when_order_is_eligible()
     {
         var orderId = Guid.NewGuid();
@@ -333,13 +395,34 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-revert",
             [nameof(OrderDetailsPage.ProductionTasks)] = new[]
             {
-                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 1, "Planejada")
+                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 1, "Planejada", true, false, false)
             }
         });
 
         Assert.Contains("/Orders/RevertProduction/" + orderId, html);
         Assert.Contains("csrf-revert", html);
         Assert.Contains("Reverter envio para producao", html);
+    }
+
+    [Fact]
+    public async Task Order_details_disables_incompatible_actions_and_confirms_cancel()
+    {
+        var html = await RenderAsync<OrderDetailsPage>(new Dictionary<string, object?>
+        {
+            [nameof(OrderDetailsPage.OrderId)] = Guid.NewGuid(),
+            [nameof(OrderDetailsPage.Status)] = "Em producao",
+            [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-actions",
+            [nameof(OrderDetailsPage.ProductionTasks)] = new[]
+            {
+                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 1, "Em producao", false, true, true),
+                new OrderDetailsPage.ProductionTaskRow(Guid.NewGuid(), Guid.NewGuid(), 1, "Concluida", false, false, false)
+            }
+        });
+
+        Assert.Contains("Confirma o cancelamento desta tarefa?", html);
+        Assert.Contains("title=\"Iniciar\" aria-label=\"Iniciar\" disabled", html);
+        Assert.Contains("title=\"Concluir\" aria-label=\"Concluir\" disabled", html);
+        Assert.Contains("title=\"Cancelar\" aria-label=\"Cancelar\" disabled", html);
     }
 
     [Fact]

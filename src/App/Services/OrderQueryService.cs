@@ -136,6 +136,25 @@ public sealed class OrderQueryService
                 material.IsAvailable))
             .ToList()
             .AsReadOnly();
+        var products = result.Products
+            .Select(product => new ProductionPreflightProductViewModel(
+                product.ProductId,
+                product.Name,
+                product.Quantity,
+                product.Materials
+                    .Select(material => new ProductionPreflightProductMaterialViewModel(
+                        material.RawMaterialId,
+                        material.Name,
+                        material.UnitOfMeasure,
+                        material.RequiredQuantity,
+                        material.AvailableQuantity,
+                        material.MissingQuantity,
+                        material.IsConfigured,
+                        material.IsAvailable))
+                    .ToList()
+                    .AsReadOnly()))
+            .ToList()
+            .AsReadOnly();
 
         var failureMessage = result.FailureReason switch
         {
@@ -145,7 +164,7 @@ public sealed class OrderQueryService
             _ => null
         };
 
-        return new ProductionPreflightViewModel(result.CanConfirm, failureMessage, materials);
+        return new ProductionPreflightViewModel(result.CanConfirm, failureMessage, products, materials);
     }
 
     private static bool IsAvailableForShipment(Order order)
