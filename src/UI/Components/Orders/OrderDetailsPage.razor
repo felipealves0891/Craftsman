@@ -61,52 +61,106 @@
                     {
                         <div class="alert alert-danger" role="alert">@ProductionPreflight.FailureMessage</div>
                     }
-                    @if (ProductionPreflight.Materials.Count == 0)
+                    @if (ProductionPreflight.Products.Count == 0 && ProductionPreflight.Materials.Count == 0)
                     {
                         <p class="mb-0">Nao foi possivel determinar os materiais necessarios. Corrija os pre-requisitos e atualize o pedido.</p>
                     }
                     else
                     {
                         <p>Confira os materiais necessarios antes de confirmar o envio.</p>
-                        <div class="table-responsive">
-                            <table class="table table-sm" aria-describedby="production-preflight-title">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Materia-prima</th>
-                                        <th scope="col">Necessario</th>
-                                        <th scope="col">Disponivel</th>
-                                        <th scope="col">Unidade</th>
-                                        <th scope="col">Situacao</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var material in ProductionPreflight.Materials)
-                                    {
-                                        var blocked = !material.IsAvailable;
-                                        <tr class="@(blocked ? "table-danger" : null)">
-                                            <th scope="row">@material.Name</th>
-                                            <td>@material.RequiredQuantity</td>
-                                            <td>@material.AvailableQuantity</td>
-                                            <td>@material.UnitOfMeasure</td>
-                                            <td>
-                                                @if (!material.IsConfigured)
+                        @if (ProductionPreflight.Products.Count > 0)
+                        {
+                            <h3 class="h6 mt-3">Materiais por produto</h3>
+                            @foreach (var product in ProductionPreflight.Products)
+                            {
+                                <details class="production-product-breakdown mb-3" open>
+                                    <summary class="font-weight-bold">@product.Name — quantidade @product.Quantity</summary>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm" aria-label="Materiais do produto @product.Name">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Materia-prima</th>
+                                                    <th scope="col">Necessario no produto</th>
+                                                    <th scope="col">Estoque global</th>
+                                                    <th scope="col">Unidade</th>
+                                                    <th scope="col">Situacao</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var material in product.Materials)
                                                 {
-                                                    <span class="text-danger">Erro de configuracao</span>
+                                                    var blocked = !material.IsAvailable;
+                                                    <tr class="@(blocked ? "table-danger" : null)">
+                                                        <th scope="row">@material.Name</th>
+                                                        <td>@material.RequiredQuantity</td>
+                                                        <td>@material.AvailableQuantity</td>
+                                                        <td>@material.UnitOfMeasure</td>
+                                                        <td>
+                                                            @if (!material.IsConfigured)
+                                                            {
+                                                                <span class="text-danger">Erro de configuracao</span>
+                                                            }
+                                                            else if (blocked)
+                                                            {
+                                                                <span class="text-danger">Estoque insuficiente (faltam @material.MissingQuantity @material.UnitOfMeasure)</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-success">Disponivel</span>
+                                                            }
+                                                        </td>
+                                                    </tr>
                                                 }
-                                                else if (blocked)
-                                                {
-                                                    <span class="text-danger">Estoque insuficiente (faltam @material.MissingQuantity @material.UnitOfMeasure)</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-success">Disponivel</span>
-                                                }
-                                            </td>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </details>
+                            }
+                        }
+                        @if (ProductionPreflight.Materials.Count > 0)
+                        {
+                            <h3 class="h6 mt-4">Resumo consolidado do pedido</h3>
+                            <p class="small text-muted">O estoque exibido abaixo e global e compartilhado entre os produtos.</p>
+                            <div class="table-responsive">
+                                <table class="table table-sm" aria-label="Resumo consolidado de materiais">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Materia-prima</th>
+                                            <th scope="col">Necessario no pedido</th>
+                                            <th scope="col">Estoque global</th>
+                                            <th scope="col">Unidade</th>
+                                            <th scope="col">Situacao</th>
                                         </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var material in ProductionPreflight.Materials)
+                                        {
+                                            var blocked = !material.IsAvailable;
+                                            <tr class="@(blocked ? "table-danger" : null)">
+                                                <th scope="row">@material.Name</th>
+                                                <td>@material.RequiredQuantity</td>
+                                                <td>@material.AvailableQuantity</td>
+                                                <td>@material.UnitOfMeasure</td>
+                                                <td>
+                                                    @if (!material.IsConfigured)
+                                                    {
+                                                        <span class="text-danger">Erro de configuracao</span>
+                                                    }
+                                                    else if (blocked)
+                                                    {
+                                                        <span class="text-danger">Estoque insuficiente (faltam @material.MissingQuantity @material.UnitOfMeasure)</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-success">Disponivel</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
                     }
                 </div>
                 <div class="modal-footer">
@@ -307,7 +361,24 @@
     public sealed record ProductionPreflightRow(
         bool CanConfirm,
         string? FailureMessage,
+        IReadOnlyCollection<ProductionPreflightProductRow> Products,
         IReadOnlyCollection<ProductionPreflightMaterialRow> Materials);
+    [ExcludeFromCodeCoverage]
+    public sealed record ProductionPreflightProductRow(
+        Guid ProductId,
+        string Name,
+        int Quantity,
+        IReadOnlyCollection<ProductionPreflightProductMaterialRow> Materials);
+    [ExcludeFromCodeCoverage]
+    public sealed record ProductionPreflightProductMaterialRow(
+        Guid RawMaterialId,
+        string Name,
+        string UnitOfMeasure,
+        decimal RequiredQuantity,
+        decimal AvailableQuantity,
+        decimal MissingQuantity,
+        bool IsConfigured,
+        bool IsAvailable);
     [ExcludeFromCodeCoverage]
     public sealed record ProductionPreflightMaterialRow(
         Guid RawMaterialId,

@@ -305,6 +305,7 @@ public sealed class CatalogAndFinanceComponentTests
             [nameof(OrderDetailsPage.ProductionPreflight)] = new OrderDetailsPage.ProductionPreflightRow(
                 true,
                 null,
+                Array.Empty<OrderDetailsPage.ProductionPreflightProductRow>(),
                 Array.Empty<OrderDetailsPage.ProductionPreflightMaterialRow>())
         });
 
@@ -318,6 +319,64 @@ public sealed class CatalogAndFinanceComponentTests
         Assert.DoesNotContain("class=\"alert alert-success\"", html);
         Assert.DoesNotContain("class=\"alert alert-danger\"", html);
         Assert.DoesNotContain("class=\"alert alert-warning\"", html);
+    }
+
+    [Fact]
+    public async Task Order_details_renders_expandable_product_materials_and_consolidated_summary()
+    {
+        var orderId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var materialId = Guid.NewGuid();
+        var html = await RenderAsync<OrderDetailsPage>(new Dictionary<string, object?>
+        {
+            [nameof(OrderDetailsPage.OrderId)] = orderId,
+            [nameof(OrderDetailsPage.Source)] = "Manual",
+            [nameof(OrderDetailsPage.ExternalOrderId)] = "SO-PREFLIGHT-1",
+            [nameof(OrderDetailsPage.Status)] = "Normalizado",
+            [nameof(OrderDetailsPage.RequestVerificationToken)] = "csrf-product-breakdown",
+            [nameof(OrderDetailsPage.ProductionPreflight)] = new OrderDetailsPage.ProductionPreflightRow(
+                true,
+                null,
+                new[]
+                {
+                    new OrderDetailsPage.ProductionPreflightProductRow(
+                        productId,
+                        "Bolsa",
+                        2,
+                        new[]
+                        {
+                            new OrderDetailsPage.ProductionPreflightProductMaterialRow(
+                                materialId,
+                                "Tecido",
+                                "m",
+                                4m,
+                                7m,
+                                0m,
+                                true,
+                                true)
+                        })
+                },
+                new[]
+                {
+                    new OrderDetailsPage.ProductionPreflightMaterialRow(
+                        materialId,
+                        "Tecido",
+                        "m",
+                        4m,
+                        7m,
+                        0m,
+                        true,
+                        true)
+                })
+        });
+
+        Assert.Contains("production-product-breakdown", html);
+        Assert.Contains("Bolsa", html);
+        Assert.Contains("quantidade 2", html);
+        Assert.Contains("Necessario no produto", html);
+        Assert.Contains("Resumo consolidado do pedido", html);
+        Assert.Contains("O estoque exibido abaixo e global e compartilhado entre os produtos.", html);
+        Assert.Contains("csrf-product-breakdown", html);
     }
 
     [Fact]

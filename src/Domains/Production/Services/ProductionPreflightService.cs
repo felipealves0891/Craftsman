@@ -46,7 +46,7 @@ public sealed class ProductionPreflightService
         }
 
         var materials = await inventoryService.GetAvailabilityAsync(preparation.Requirements, cancellationToken);
-        var result = materials
+        var consolidatedMaterials = materials
             .Select(material => new ProductionPreflightMaterial(
                 material.RawMaterialId,
                 material.Name,
@@ -59,7 +59,32 @@ public sealed class ProductionPreflightService
             .ToList()
             .AsReadOnly();
 
-        return ProductionPreflightResult.Success(result);
+        var availabilityByMaterialId = materials.ToDictionary(material => material.RawMaterialId);
+        var products = preparation.PlannedItems
+            .Select(item => new ProductionPreflightProduct(
+                item.Product.Id,
+                item.Product.Name,
+                item.OrderItem.Quantity,
+                item.Requirements
+                    .Select(requirement =>
+                    {
+                        var availability = availabilityByMaterialId[requirement.RawMaterialId];
+                        return new ProductionPreflightProductMaterial(
+                            availability.RawMaterialId,
+                            availability.Name,
+                            availability.UnitOfMeasure,
+                            requirement.RequiredQuantity,
+                            availability.AvailableQuantity,
+                            availability.MissingQuantity,
+                            availability.IsConfigured,
+                            availability.IsAvailable);
+                    })
+                    .ToList()
+                    .AsReadOnly()))
+            .ToList()
+            .AsReadOnly();
+
+        return ProductionPreflightResult.Success(consolidatedMaterials, products);
     }
 }
 
@@ -73,26 +98,48 @@ public sealed record ProductionPreflightMaterial(
     bool IsAvailable,
     decimal MissingQuantity);
 
+public sealed record ProductionPreflightProduct(
+    Guid ProductId,
+    string Name,
+    int Quantity,
+    IReadOnlyCollection<ProductionPreflightProductMaterial> Materials);
+
+public sealed record ProductionPreflightProductMaterial(
+    Guid RawMaterialId,
+    string Name,
+    string UnitOfMeasure,
+    decimal RequiredQuantity,
+    decimal AvailableQuantity,
+    decimal MissingQuantity,
+    bool IsConfigured,
+    bool IsAvailable);
+
 public sealed class ProductionPreflightResult
 {
     private ProductionPreflightResult(
         IReadOnlyCollection<ProductionPreflightMaterial> materials,
+        IReadOnlyCollection<ProductionPreflightProduct> products,
         ProductionPlanningFailureReason failureReason)
     {
         Materials = materials;
+        Products = products;
         FailureReason = failureReason;
     }
 
     public IReadOnlyCollection<ProductionPreflightMaterial> Materials { get; }
+
+    public IReadOnlyCollection<ProductionPreflightProduct> Products { get; }
 
     public ProductionPlanningFailureReason FailureReason { get; }
 
     public bool CanConfirm => FailureReason == ProductionPlanningFailureReason.None
         && Materials.All(material => material.IsAvailable);
 
-    public static ProductionPreflightResult Success(IReadOnlyCollection<ProductionPreflightMaterial> materials) =>
-        new(materials, ProductionPlanningFailureReason.None);
+    public static ProductionPreflightResult Success(
+        IReadOnlyCollection<ProductionPreflightMaterial> materials,
+        IReadOnlyCollection<ProductionPreflightProduct> products) =>
+        new(materials, products, ProductionPlanningFailureReason.None);
 
     public static ProductionPreflightResult Failed(ProductionPlanningFailureReason failureReason) =>
-        new([], failureReason);
+        new([], [], failureReason);
 }

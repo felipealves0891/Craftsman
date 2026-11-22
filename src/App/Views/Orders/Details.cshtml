@@ -24,11 +24,29 @@
             Craftsman.App.Presentation.EnumPresentation.Label(typeof(Craftsman.Domain.Shipping.Entities.ShipmentStatus), shipment.Status),
             shipment.CreatedAt.ToLocalTime().ToString("g")))
         .ToArray();
+    var productionPreflightProducts = Model.ProductionPreflight?.Products
+        .Select(product => new OrderDetailsPage.ProductionPreflightProductRow(
+            product.ProductId,
+            product.Name,
+            product.Quantity,
+            product.Materials
+                .Select(material => new OrderDetailsPage.ProductionPreflightProductMaterialRow(
+                    material.RawMaterialId,
+                    material.Name,
+                    material.UnitOfMeasure,
+                    material.RequiredQuantity,
+                    material.AvailableQuantity,
+                    material.MissingQuantity,
+                    material.IsConfigured,
+                    material.IsAvailable))
+                .ToArray()))
+        .ToArray() ?? [];
     var productionPreflight = Model.ProductionPreflight is null
         ? null
         : new OrderDetailsPage.ProductionPreflightRow(
             Model.ProductionPreflight.CanConfirm,
             Model.ProductionPreflight.FailureMessage,
+            productionPreflightProducts,
             Model.ProductionPreflight.Materials.Select(material => new OrderDetailsPage.ProductionPreflightMaterialRow(
                 material.RawMaterialId,
                 material.Name,
