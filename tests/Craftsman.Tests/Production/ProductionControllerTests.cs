@@ -141,6 +141,49 @@ public sealed class ProductionControllerTests
         Assert.Null(result.ControllerName);
     }
 
+    [Fact]
+    public async Task Advance_invalid_transition_from_order_details_returns_to_the_same_order()
+    {
+        await using var dbContext = CreateDbContext();
+        var order = CreateOrder(OrderStatus.ReadyForProduction, "PROD-CONTROLLER-CONTEXT-ERROR");
+        var task = CreateTask(order);
+        var orderRepository = new OrderRepository(dbContext);
+        var taskRepository = new ProductionTaskRepository(dbContext);
+        await orderRepository.AddAsync(order);
+        await taskRepository.AddAsync(task);
+        await dbContext.SaveChangesAsync();
+        var controller = CreateController(dbContext, new FixedTimeProvider(DateTimeOffset.UtcNow));
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider());
+
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Advance(
+            task.Id,
+            "complete",
+            CancellationToken.None,
+            order.Id));
+
+        Assert.Equal("Details", result.ActionName);
+        Assert.Equal("Orders", result.ControllerName);
+        Assert.Equal(order.Id, result.RouteValues!["id"]);
+        Assert.Contains("expected InProduction", Assert.IsType<string>(controller.TempData["Error"]));
+    }
+
+    [Fact]
+    public async Task Advance_for_missing_task_ignores_return_order_context()
+    {
+        await using var dbContext = CreateDbContext();
+        var controller = CreateController(dbContext, new FixedTimeProvider(DateTimeOffset.UtcNow));
+        controller.TempData = new TempDataDictionary(new DefaultHttpContext(), new EmptyTempDataProvider());
+
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Advance(
+            Guid.NewGuid(),
+            "start",
+            CancellationToken.None,
+            Guid.NewGuid()));
+
+        Assert.Equal(nameof(ProductionController.Index), result.ActionName);
+        Assert.Contains("not found", Assert.IsType<string>(controller.TempData["Error"]));
+    }
+
     private static ProductionController CreateController(
         AppDbContext dbContext,
         TimeProvider timeProvider,
