@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "feature_id": "order-details-production-task-actions",
+  "current_phase": "review",
+  "status": "completed",
+  "phases": {
+    "gates": {
+      "status": "completed",
+      "execution_id": "gate-20261122T190145Z",
+      "report": ".spectro/features/order-details-production-task-actions/gates.json"
+    }
+  },
+  "attempts": {
+    "implementation-defect:GATE-004": 1,
+    "environment-failure:GATE-004": 1
+  },
+  "invalidated_executions": [
+    "gate-20261122T185438Z",
+    "gate-20261122T185713Z"
+  ],
+  "last_failure": {
+    "category": "environment-failure",
+    "stage": "gates",
+    "execution_id": "gate-20261122T185713Z",
+    "gate_ids": [
+      "GATE-004"
+    ],
+    "diagnostics": [
+      "coverage: ERRO: Working tree possui altera��es tracked n�o commitadas. Commit antes de medir ou use -AllowDirtyTree (n�o recomendado).\r\nRESULTADO: false"
+    ],
+    "detected_at": "2026-11-22T18:57:43.920Z"
+  },
+  "last_execution_id": "gate-20261122T190145Z",
+  "updated_at": "2026-11-22T19:03:01.667Z"
+}

@@ -61,7 +61,7 @@ public sealed class ProductionScheduleService
         return viewModels.AsReadOnly();
     }
 
-    public async Task AdvanceAsync(Guid id, string action, CancellationToken cancellationToken = default)
+    public async Task<Guid> AdvanceAsync(Guid id, string action, CancellationToken cancellationToken = default)
     {
         var task = await productionTaskRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new InvalidOperationException("Production task was not found.");
@@ -84,6 +84,14 @@ public sealed class ProductionScheduleService
 
         await productionTaskRepository.UpdateAsync(task, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return task.OrderId;
+    }
+
+    public async Task<Guid?> GetOrderIdAsync(Guid taskId, CancellationToken cancellationToken = default)
+    {
+        var task = await productionTaskRepository.GetByIdAsync(taskId, cancellationToken);
+        return task?.OrderId;
     }
 
     private async Task StartOrderProductionAsync(Guid orderId, CancellationToken cancellationToken)

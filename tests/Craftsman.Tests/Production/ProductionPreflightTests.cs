@@ -52,6 +52,49 @@ public sealed class ProductionPreflightTests
     }
 
     [Fact]
+    public async Task Preflight_preserves_product_material_breakdown_and_consolidated_availability()
+    {
+        await using var db = CreateDbContext();
+        var material = new RawMaterial(Guid.NewGuid(), "Tecido", "m");
+        var bag = new Product(Guid.NewGuid(), "Bolsa", billOfMaterials: [new BillOfMaterialsItem(material.Id, 2)]);
+        var caseProduct = new Product(Guid.NewGuid(), "Estojo", billOfMaterials: [new BillOfMaterialsItem(material.Id, 3)]);
+        var order = new Order(
+            Guid.NewGuid(),
+            new OrderOrigin("Manual", "PREFLIGHT-MULTI-001"),
+            [
+                new OrderItem(Guid.NewGuid(), "ITEM-BAG", "Bolsa", 2, new Money(10, "BRL"), bag.Id),
+                new OrderItem(Guid.NewGuid(), "ITEM-CASE", "Estojo", 1, new Money(8, "BRL"), caseProduct.Id)
+            ]);
+        var materialRepository = new RawMaterialRepository(db);
+        var movementRepository = new StockMovementRepository(db);
+        var productRepository = new ProductRepository(db);
+        var orderRepository = new OrderRepository(db);
+        await materialRepository.AddAsync(material);
+        await productRepository.AddAsync(bag);
+        await productRepository.AddAsync(caseProduct);
+        await orderRepository.AddAsync(order);
+        await movementRepository.AddAsync(new StockMovement(
+            Guid.NewGuid(), material.Id, StockMovementType.Inbound, 7, "Initial stock", null));
+        await db.SaveChangesAsync();
+
+        var service = new ProductionPreflightService(
+            orderRepository,
+            new ProductionTaskRepository(db),
+            new ProductionPlanPreparationService(productRepository),
+            new InventoryService(materialRepository, movementRepository));
+
+        var result = await service.GetAsync(order.Id);
+
+        Assert.True(result.CanConfirm);
+        Assert.Equal(2, result.Products.Count);
+        Assert.Equal(new[] { 4m, 3m }, result.Products.SelectMany(product => product.Materials).Select(materialRow => materialRow.RequiredQuantity));
+        var consolidated = Assert.Single(result.Materials);
+        Assert.Equal(7m, consolidated.RequiredQuantity);
+        Assert.Equal(7m, consolidated.AvailableQuantity);
+        Assert.True(consolidated.IsAvailable);
+    }
+
+    [Fact]
     public async Task Preflight_blocks_inactive_material_as_configuration_error()
     {
         await using var db = CreateDbContext();
